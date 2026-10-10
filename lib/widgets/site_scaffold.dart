@@ -31,6 +31,7 @@ class SiteScaffold extends StatefulWidget {
     required this.children,
     this.darkHero = false,
     this.logoHero = false,
+    this.darkPage = false,
     this.overlay,
   });
 
@@ -43,6 +44,9 @@ class SiteScaffold extends StatefulWidget {
 
   /// La prima sezione mostra già il logo grande (home).
   final bool logoHero;
+
+  /// Tutta la pagina è su fondo scuro: la barra resta scura anche scorrendo.
+  final bool darkPage;
 
   /// Elemento fisso sopra al contenuto (es. barra del preventivo).
   final Widget? overlay;
@@ -59,13 +63,15 @@ class _SiteScaffoldState extends State<SiteScaffold> {
   @override
   void initState() {
     super.initState();
-    _onDark = widget.darkHero;
+    _onDark = widget.darkHero || widget.darkPage;
     _scroll.addListener(_update);
   }
 
   void _update() {
     final o = _scroll.offset;
-    final onDark = widget.darkHero && o < context.screenH - _navH(context);
+    final onDark =
+        widget.darkPage ||
+        (widget.darkHero && o < context.screenH - _navH(context));
     final scrolled = o > 10;
     if (onDark != _onDark || scrolled != _scrolled) {
       setState(() {
@@ -90,7 +96,7 @@ class _SiteScaffoldState extends State<SiteScaffold> {
     final dark = _onDark;
     final fg = dark ? Palette.paper : Palette.ink;
     return Scaffold(
-      backgroundColor: Palette.paper,
+      backgroundColor: widget.darkPage ? Palette.ink : Palette.paper,
       body: Stack(
         children: [
           SingleChildScrollView(

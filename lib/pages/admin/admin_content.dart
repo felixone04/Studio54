@@ -193,6 +193,19 @@ class AdminHomeEditor extends StatelessWidget {
             changed,
           ),
         ),
+        Panel(
+          title: 'Pagina preventivo',
+          subtitle: 'La foto in apertura.',
+          child: ImageField(
+            label: 'Foto di apertura',
+            aspect: 16 / 9,
+            value: d.bannerImage,
+            onChanged: (v) {
+              d.bannerImage = v;
+              changed();
+            },
+          ),
+        ),
       ],
     );
   }

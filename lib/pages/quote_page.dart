@@ -9,10 +9,17 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/photo_ui.dart';
+import '../widgets/sections.dart';
 import '../widgets/site_scaffold.dart';
 
 /// Larghezza massima del contenuto: la pagina resta raccolta e leggibile.
 const _maxW = 1120.0;
+
+// Toni scuri, come l'apertura della home e la pellicola dei servizi.
+const _card = Palette.ink2;
+const _line = Palette.lineDark;
+const _muted = Palette.ash;
+const _error = Color(0xFFF2B8B5);
 
 class QuotePage extends StatefulWidget {
   const QuotePage({super.key, this.preService, this.prePackage});
@@ -165,8 +172,14 @@ class _QuotePageState extends State<QuotePage> {
     final ids = _ids(s);
     final showBar = _sent == null && ids.isNotEmpty && !_formVisible;
 
+    final heroImage = s.content.bannerImage.trim().isNotEmpty
+        ? s.content.bannerImage
+        : (s.heroPhotos.isEmpty ? '' : s.heroPhotos.first.url);
+
     return SiteScaffold(
       location: '/preventivo',
+      darkHero: true,
+      darkPage: true,
       overlay: Positioned(
         left: 0,
         right: 0,
@@ -184,6 +197,7 @@ class _QuotePageState extends State<QuotePage> {
       ),
       children: [
         SizedBox(key: _topAnchor, height: 0),
+        _Hero(image: heroImage, step: _sent != null || _formVisible ? 2 : 1),
         _Page(
           child: _sent != null
               ? _Success(
@@ -197,8 +211,6 @@ class _QuotePageState extends State<QuotePage> {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _Header(step: _formVisible ? 2 : 1),
-                    SizedBox(height: context.fluid(28, 44)),
                     _Card(
                       number: '1',
                       title: 'Cosa ti serve',
@@ -283,159 +295,207 @@ class _QuotePageState extends State<QuotePage> {
         : Column(children: [a, const SizedBox(height: 16), b]);
 
     const gap = SizedBox(height: 18);
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          pair(
-            TextFormField(
-              controller: _first,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.givenName],
-              decoration: const InputDecoration(labelText: 'Nome'),
-              validator: (v) => req(v, 'Inserisci il nome'),
+    final light = Theme.of(context);
+    return Theme(
+      data: _darkFormTheme(light),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            pair(
+              TextFormField(
+                controller: _first,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.givenName],
+                decoration: const InputDecoration(labelText: 'Nome'),
+                validator: (v) => req(v, 'Inserisci il nome'),
+              ),
+              TextFormField(
+                controller: _last,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.familyName],
+                decoration: const InputDecoration(labelText: 'Cognome'),
+                validator: (v) => req(v, 'Inserisci il cognome'),
+              ),
             ),
-            TextFormField(
-              controller: _last,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.familyName],
-              decoration: const InputDecoration(labelText: 'Cognome'),
-              validator: (v) => req(v, 'Inserisci il cognome'),
-            ),
-          ),
-          gap,
-          pair(
-            TextFormField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.telephoneNumber],
-              decoration: const InputDecoration(labelText: 'Telefono'),
-              validator: (v) {
-                final d = (v ?? '').replaceAll(RegExp(r'\D'), '');
-                return d.length < 6 ? 'Inserisci un numero valido' : null;
-              },
-            ),
-            TextFormField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.email],
-              decoration: const InputDecoration(labelText: 'Email'),
-              validator: (v) =>
-                  RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                      .hasMatch((v ?? '').trim())
-                  ? null
-                  : 'Inserisci un indirizzo email valido',
-            ),
-          ),
-          gap,
-          pair(
-            DropdownButtonFormField<String>(
-              initialValue: _eventType,
-              isExpanded: true,
-              dropdownColor: Colors.white,
-              decoration: const InputDecoration(labelText: 'Tipo di evento'),
-              items: [
-                for (final t in s.content.eventTypes)
-                  DropdownMenuItem(value: t, child: Text(t)),
-              ],
-              onChanged: (v) => setState(() => _eventType = v),
-              validator: (v) => v == null ? 'Scegli il tipo di evento' : null,
-            ),
-            _DateField(
-              value: _eventDate,
-              onChanged: (d) => setState(() => _eventDate = d),
-            ),
-          ),
-          if (_eventType == 'Altro') ...[
             gap,
-            TextFormField(
-              controller: _other,
-              decoration: const InputDecoration(
-                labelText: 'Di che evento si tratta?',
+            pair(
+              TextFormField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.telephoneNumber],
+                decoration: const InputDecoration(labelText: 'Telefono'),
+                validator: (v) {
+                  final d = (v ?? '').replaceAll(RegExp(r'\D'), '');
+                  return d.length < 6 ? 'Inserisci un numero valido' : null;
+                },
+              ),
+              TextFormField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.email],
+                decoration: const InputDecoration(labelText: 'Email'),
+                validator: (v) =>
+                    RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                        .hasMatch((v ?? '').trim())
+                    ? null
+                    : 'Inserisci un indirizzo email valido',
               ),
             ),
-          ],
-          gap,
-          TextFormField(
-            controller: _message,
-            minLines: 1,
-            maxLines: 5,
-            decoration: const InputDecoration(
-              labelText: 'Note (luogo, numero di invitati…)',
+            gap,
+            pair(
+              DropdownButtonFormField<String>(
+                initialValue: _eventType,
+                isExpanded: true,
+                dropdownColor: _card,
+                decoration: const InputDecoration(labelText: 'Tipo di evento'),
+                items: [
+                  for (final t in s.content.eventTypes)
+                    DropdownMenuItem(value: t, child: Text(t)),
+                ],
+                onChanged: (v) => setState(() => _eventType = v),
+                validator: (v) => v == null ? 'Scegli il tipo di evento' : null,
+              ),
+              _DateField(
+                pickerTheme: light,
+                value: _eventDate,
+                onChanged: (d) => setState(() => _eventDate = d),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => setState(() {
-              _privacy = !_privacy;
-              _privacyError = false;
-            }),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: Checkbox(
-                    value: _privacy,
-                    onChanged: (v) => setState(() {
-                      _privacy = v ?? false;
-                      _privacyError = false;
-                    }),
-                  ),
+            if (_eventType == 'Altro') ...[
+              gap,
+              TextFormField(
+                controller: _other,
+                decoration: const InputDecoration(
+                  labelText: 'Di che evento si tratta?',
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'Acconsento al trattamento dei miei dati per essere ricontattato.',
-                      style: body(13.5, color: Palette.stone),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (_privacyError)
-            Padding(
-              padding: const EdgeInsets.only(top: 8, left: 38),
-              child: Text(
-                'Serve il consenso per inviare la richiesta.',
-                style: body(13, color: const Color(0xFFB3261E)),
-              ),
-            ),
-          const SizedBox(height: 28),
-          Wrap(
-            spacing: 18,
-            runSpacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              PillButton(
-                'Invia la richiesta',
-                loading: _sending,
-                icon: Icons.arrow_forward_rounded,
-                onTap: () => _submit(s),
-              ),
-              Text(
-                'Gratuito e senza impegno.',
-                style: body(13.5, color: Palette.stone),
               ),
             ],
-          ),
-        ],
+            gap,
+            TextFormField(
+              controller: _message,
+              minLines: 1,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                labelText: 'Note (luogo, numero di invitati…)',
+              ),
+            ),
+            const SizedBox(height: 24),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() {
+                _privacy = !_privacy;
+                _privacyError = false;
+              }),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: Checkbox(
+                      value: _privacy,
+                      onChanged: (v) => setState(() {
+                        _privacy = v ?? false;
+                        _privacyError = false;
+                      }),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Acconsento al trattamento dei miei dati per essere ricontattato.',
+                        style: body(13.5, color: _muted),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_privacyError)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 38),
+                child: Text(
+                  'Serve il consenso per inviare la richiesta.',
+                  style: body(13, color: _error),
+                ),
+              ),
+            const SizedBox(height: 28),
+            Wrap(
+              spacing: 18,
+              runSpacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                PillButton(
+                  'Invia la richiesta',
+                  onDark: true,
+                  loading: _sending,
+                  icon: Icons.arrow_forward_rounded,
+                  onTap: () => _submit(s),
+                ),
+                Text(
+                  'Gratuito e senza impegno.',
+                  style: body(13.5, color: _muted),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
+/// Il tema del sito è chiaro: qui campi e spunte diventano chiari su scuro.
+ThemeData _darkFormTheme(ThemeData light) {
+  UnderlineInputBorder u(Color c, [double w = 1]) => UnderlineInputBorder(
+    borderSide: BorderSide(color: c, width: w),
+  );
+  return light.copyWith(
+    colorScheme: light.colorScheme.copyWith(
+      onSurface: Palette.paper,
+      onSurfaceVariant: _muted,
+      error: _error,
+    ),
+    textTheme: light.textTheme.apply(
+      bodyColor: Palette.paper,
+      displayColor: Palette.paper,
+    ),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: Palette.paper,
+      selectionColor: Palette.paper.withValues(alpha: 0.25),
+      selectionHandleColor: Palette.paper,
+    ),
+    inputDecorationTheme: light.inputDecorationTheme.copyWith(
+      border: u(_line),
+      enabledBorder: u(const Color(0x59FFFFFF)),
+      focusedBorder: u(Palette.paper, 2),
+      errorBorder: u(_error),
+      focusedErrorBorder: u(_error, 2),
+      labelStyle: body(15, color: _muted),
+      floatingLabelStyle: label(11, color: Palette.paper),
+      errorStyle: body(12.5, color: _error),
+      suffixIconColor: _muted,
+    ),
+    iconTheme: const IconThemeData(color: _muted),
+    checkboxTheme: CheckboxThemeData(
+      side: const BorderSide(color: Palette.paper, width: 1.4),
+      fillColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? Palette.paper : null,
+      ),
+      checkColor: const WidgetStatePropertyAll(Palette.ink),
+    ),
+  );
+}
+
 // ---------------------------------------------------------------- struttura
 
-/// Contenuto centrato e raccolto, su fondo chiaro.
+/// Contenuto centrato e raccolto, sul fondo scuro della pagina.
 class _Page extends StatelessWidget {
   const _Page({required this.child});
   final Widget child;
@@ -444,7 +504,7 @@ class _Page extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.fromLTRB(
       context.gutter,
-      context.fluid(32, 64),
+      context.fluid(8, 20),
       context.gutter,
       context.fluid(70, 120),
     ),
@@ -457,12 +517,22 @@ class _Page extends StatelessWidget {
   );
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.step});
+/// Apertura fotografica: foto scura, mirino, titolo e passaggi.
+/// Sfuma in basso nel nero della pagina.
+class _Hero extends StatelessWidget {
+  const _Hero({required this.image, required this.step});
+  final String image;
   final int step;
 
   @override
   Widget build(BuildContext context) {
+    final navH = context.fluid(66, 88);
+    final g = context.gutter;
+    // Su telefono il testo va su più righe: serve un po' più di altezza.
+    final h = (context.screenH * 0.56).clamp(
+      context.isPhone ? 470.0 : 380.0,
+      560.0,
+    );
     final steps = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -471,40 +541,126 @@ class _Header extends StatelessWidget {
           width: 36,
           height: 1,
           margin: const EdgeInsets.symmetric(horizontal: 12),
-          color: Palette.lineLight,
+          color: Palette.paper.withValues(alpha: 0.3),
         ),
         _StepDot(n: 2, text: 'Contatti', active: step >= 2),
       ],
     );
     final text = Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Tag('Preventivo gratuito'),
-        const SizedBox(height: 16),
-        Text('Raccontaci il tuo evento', style: display(context.fluid(30, 44))),
-        const SizedBox(height: 10),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
+        const MaskReveal(
+          child: Tag('Preventivo gratuito', color: Palette.paper),
+        ),
+        SizedBox(height: context.fluid(12, 16)),
+        MaskReveal(
+          delay: 120,
           child: Text(
-            'Scegli cosa ti serve e lasciaci i tuoi contatti: ti richiamiamo '
-            'noi con una proposta su misura.',
-            style: body(context.fluid(15, 16.5), color: Palette.stone),
+            'RACCONTACI IL TUO EVENTO',
+            style: display(
+              context.fluid(26, 44),
+              color: Palette.paper,
+              spacing: 0.08,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        MaskReveal(
+          delay: 240,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Text(
+              'Scegli cosa ti serve e lasciaci i tuoi contatti: '
+              'ti richiamiamo noi con una proposta su misura.',
+              style: display(
+                context.fluid(16, 19),
+                color: Palette.paper.withValues(alpha: 0.8),
+                italic: true,
+                height: 1.4,
+              ),
+            ),
           ),
         ),
       ],
     );
-    if (context.isTablet) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [text, const SizedBox(height: 22), steps],
-      );
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(child: text),
-        steps,
-      ],
+    return SizedBox(
+      height: h,
+      child: ClipRect(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const ColoredBox(color: Palette.ink),
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1.1, end: 1.0),
+              duration: const Duration(seconds: 3),
+              curve: Curves.easeOutCubic,
+              builder: (_, s, child) => Transform.scale(scale: s, child: child),
+              child: SizedBox.expand(
+                child: PhotoImage(
+                  image,
+                  dark: true,
+                  alignment: const Alignment(0, -0.2),
+                ),
+              ),
+            ),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x99000000),
+                    Color(0x80000000),
+                    Color(0xF20B0B0B),
+                    Palette.ink,
+                  ],
+                  stops: [0, 0.45, 0.88, 1],
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(g * 0.7, navH + 6, g * 0.7, 18),
+              child: const Viewfinder(
+                color: Color(0x80FFFFFF),
+                length: 24,
+                stroke: 1,
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                g + 8,
+                navH,
+                g + 8,
+                context.fluid(44, 60),
+              ),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: _maxW - 16),
+                  child: context.isTablet
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            text,
+                            const SizedBox(height: 22),
+                            FittedBox(fit: BoxFit.scaleDown, child: steps),
+                          ],
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(child: text),
+                            steps,
+                          ],
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -526,14 +682,18 @@ class _StepDot extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: active ? Palette.ink : Colors.transparent,
-          border: Border.all(color: active ? Palette.ink : Palette.lineLight),
+          color: active ? Palette.paper : Colors.transparent,
+          border: Border.all(
+            color: active
+                ? Palette.paper
+                : Palette.paper.withValues(alpha: 0.4),
+          ),
         ),
         child: Text(
           '$n',
           style: body(
             12,
-            color: active ? Palette.paper : Palette.stone,
+            color: active ? Palette.ink : _muted,
             weight: FontWeight.w500,
             height: 1,
           ),
@@ -542,13 +702,13 @@ class _StepDot extends StatelessWidget {
       const SizedBox(width: 8),
       Text(
         text.toUpperCase(),
-        style: label(10.5, color: active ? Palette.ink : Palette.stone),
+        style: label(10.5, color: active ? Palette.paper : _muted),
       ),
     ],
   );
 }
 
-/// Scheda bianca con numero di passaggio e titolo.
+/// Scheda scura con numero di passaggio e titolo.
 class _Card extends StatelessWidget {
   const _Card({
     super.key,
@@ -569,21 +729,23 @@ class _Card extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Numerazione da fotogramma di pellicola, come nella home.
         Text(
-          number,
-          style: display(context.fluid(22, 28), color: Palette.stone),
+          '0${number}A',
+          style: cameraText(11, color: const Color(0xFFE8C27A)),
         ),
         Container(
           width: 1,
           height: 22,
           margin: const EdgeInsets.symmetric(horizontal: 14),
-          color: Palette.lineLight,
+          color: _line,
         ),
         Flexible(
           child: Text(
             title.toUpperCase(),
             style: display(
               context.fluid(17, 21),
+              color: Palette.paper,
               weight: FontWeight.w400,
               spacing: 0.1,
             ),
@@ -594,8 +756,8 @@ class _Card extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(pad),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Palette.lineLight),
+        color: _card,
+        border: Border.all(color: _line),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -640,12 +802,12 @@ class _Segmented extends StatelessWidget {
               height: 38,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: active ? Palette.ink : Colors.transparent,
+                color: active ? Palette.paper : Colors.transparent,
                 borderRadius: BorderRadius.circular(40),
               ),
               child: Text(
                 text.toUpperCase(),
-                style: label(10.5, color: active ? Palette.paper : Palette.ink),
+                style: label(10.5, color: active ? Palette.ink : Palette.paper),
               ),
             ),
           ),
@@ -656,7 +818,7 @@ class _Segmented extends StatelessWidget {
       width: 300,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        border: Border.all(color: Palette.lineLight),
+        border: Border.all(color: _line),
         borderRadius: BorderRadius.circular(40),
       ),
       child: Row(
@@ -681,13 +843,15 @@ class _Check extends StatelessWidget {
     height: 26,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: selected ? Palette.ink : Colors.white.withValues(alpha: 0.85),
-      border: Border.all(color: selected ? Palette.ink : Palette.lineLight),
+      color: selected ? Palette.paper : Colors.black.withValues(alpha: 0.45),
+      border: Border.all(
+        color: selected ? Palette.paper : const Color(0x99FFFFFF),
+      ),
     ),
     child: AnimatedOpacity(
       opacity: selected ? 1 : 0,
       duration: const Duration(milliseconds: 200),
-      child: const Icon(Icons.check_rounded, size: 16, color: Colors.white),
+      child: const Icon(Icons.check_rounded, size: 16, color: Palette.ink),
     ),
   );
 }
@@ -759,7 +923,7 @@ class _PackageGrid extends StatelessWidget {
         const SizedBox(height: 18),
         HoverLink(
           'Preferisci scegliere voce per voce? Componi su misura →',
-          style: body(14, color: Palette.stone, weight: FontWeight.w500),
+          style: body(14, color: _muted, weight: FontWeight.w500),
           onTap: onCustom,
         ),
       ],
@@ -808,11 +972,9 @@ class _PackageCardState extends State<_PackageCard> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Palette.ink,
               border: Border.all(
-                color: sel
-                    ? Palette.ink
-                    : (_hover ? Palette.stone : Palette.lineLight),
+                color: sel ? Palette.paper : (_hover ? _muted : _line),
                 width: sel ? 1.5 : 1,
               ),
               borderRadius: BorderRadius.circular(3),
@@ -842,10 +1004,10 @@ class _PackageCardState extends State<_PackageCard> {
                               horizontal: 10,
                               vertical: 5,
                             ),
-                            color: Palette.ink,
+                            color: Palette.paper,
                             child: Text(
                               'PIÙ SCELTO',
-                              style: label(9, color: Palette.paper),
+                              style: label(9, color: Palette.ink),
                             ),
                           ),
                         ),
@@ -866,6 +1028,7 @@ class _PackageCardState extends State<_PackageCard> {
                         p.name.toUpperCase(),
                         style: display(
                           19,
+                          color: Palette.paper,
                           weight: FontWeight.w400,
                           spacing: 0.1,
                         ),
@@ -874,11 +1037,11 @@ class _PackageCardState extends State<_PackageCard> {
                         const SizedBox(height: 4),
                         Text(
                           p.tagline,
-                          style: body(13.5, color: Palette.stone, height: 1.4),
+                          style: body(13.5, color: _muted, height: 1.4),
                         ),
                       ],
                       const SizedBox(height: 12),
-                      Container(height: 1, color: Palette.lineLight),
+                      Container(height: 1, color: _line),
                       const SizedBox(height: 12),
                       for (final n in names)
                         Padding(
@@ -891,12 +1054,19 @@ class _PackageCardState extends State<_PackageCard> {
                                 child: Icon(
                                   Icons.check_rounded,
                                   size: 14,
-                                  color: Palette.stone,
+                                  color: _muted,
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: Text(n, style: body(13.5, height: 1.4)),
+                                child: Text(
+                                  n,
+                                  style: body(
+                                    13.5,
+                                    color: const Color(0xD9F6F5F2),
+                                    height: 1.4,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -940,7 +1110,7 @@ class _ServiceGrid extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 14),
             child: Text(
               cats[c].toUpperCase(),
-              style: label(10.5, color: Palette.stone),
+              style: label(10.5, color: _muted),
             ),
           ),
           _Grid(
@@ -996,11 +1166,9 @@ class _ServiceTileState extends State<_ServiceTile> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Palette.ink,
               border: Border.all(
-                color: sel
-                    ? Palette.ink
-                    : (_hover ? Palette.stone : Palette.lineLight),
+                color: sel ? Palette.paper : (_hover ? _muted : _line),
                 width: sel ? 1.5 : 1,
               ),
               borderRadius: BorderRadius.circular(3),
@@ -1034,7 +1202,12 @@ class _ServiceTileState extends State<_ServiceTile> {
                     s.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: body(13.5, weight: FontWeight.w500, height: 1.35),
+                    style: body(
+                      13.5,
+                      color: Palette.paper,
+                      weight: FontWeight.w500,
+                      height: 1.35,
+                    ),
                   ),
                 ),
               ],
@@ -1067,10 +1240,8 @@ class _Summary extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Palette.paper,
-        border: Border.all(
-          color: error != null ? const Color(0xFFB3261E) : Palette.lineLight,
-        ),
+        color: Palette.ink,
+        border: Border.all(color: error != null ? _error : _line),
         borderRadius: BorderRadius.circular(3),
       ),
       child: Column(
@@ -1082,13 +1253,13 @@ class _Summary extends StatelessWidget {
                 : (package != null
                       ? 'PACCHETTO ${package!.name.toUpperCase()}'
                       : 'SU MISURA · ${ids.length} VOCI'),
-            style: label(10.5, color: Palette.stone),
+            style: label(10.5, color: _muted),
           ),
           const SizedBox(height: 10),
           if (ids.isEmpty)
             Text(
               'Non hai ancora scelto nulla: seleziona un pacchetto o dei servizi qui sopra.',
-              style: body(14, color: Palette.stone),
+              style: body(14, color: _muted),
             )
           else
             Wrap(
@@ -1099,8 +1270,8 @@ class _Summary extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Palette.lineLight),
+                      color: Colors.transparent,
+                      border: Border.all(color: _line),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: Row(
@@ -1111,7 +1282,7 @@ class _Summary extends StatelessWidget {
                             state.serviceById(id)?.name ?? '—',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: body(13, height: 1.2),
+                            style: body(13, color: Palette.paper, height: 1.2),
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -1123,7 +1294,7 @@ class _Summary extends StatelessWidget {
                             child: Icon(
                               Icons.close_rounded,
                               size: 15,
-                              color: Palette.stone,
+                              color: _muted,
                             ),
                           ),
                         ),
@@ -1134,7 +1305,7 @@ class _Summary extends StatelessWidget {
             ),
           if (error != null) ...[
             const SizedBox(height: 10),
-            Text(error!, style: body(13.5, color: const Color(0xFFB3261E))),
+            Text(error!, style: body(13.5, color: _error)),
           ],
         ],
       ),
@@ -1156,7 +1327,8 @@ class _SelectionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
     return Material(
-      color: Palette.ink,
+      color: _card,
+      shape: const Border(top: BorderSide(color: _line)),
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           context.gutter,
@@ -1192,7 +1364,14 @@ class _SelectionBar extends StatelessWidget {
 }
 
 class _DateField extends StatelessWidget {
-  const _DateField({required this.value, required this.onChanged});
+  const _DateField({
+    required this.pickerTheme,
+    required this.value,
+    required this.onChanged,
+  });
+
+  /// Il calendario a comparsa resta chiaro, come il resto dei dialoghi.
+  final ThemeData pickerTheme;
   final DateTime? value;
   final ValueChanged<DateTime?> onChanged;
 
@@ -1210,6 +1389,7 @@ class _DateField extends StatelessWidget {
           firstDate: now,
           lastDate: now.add(const Duration(days: 365 * 4)),
           locale: const Locale('it', 'IT'),
+          builder: (_, child) => Theme(data: pickerTheme, child: child!),
         );
         if (d != null) onChanged(d);
       },
@@ -1225,7 +1405,7 @@ class _DateField extends StatelessWidget {
                   onPressed: () => onChanged(null),
                 ),
         ),
-        child: Text(text, style: body(16)),
+        child: Text(text, style: body(16, color: Palette.paper)),
       ),
     );
   }
@@ -1244,31 +1424,35 @@ class _Success extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(context.fluid(26, 48)),
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Palette.lineLight),
+            color: _card,
+            border: Border.all(color: _line),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Stack(
             children: [
               const Positioned.fill(
-                child: Viewfinder(color: Palette.ink, length: 18, stroke: 1),
+                child: Viewfinder(
+                  color: Color(0x80FFFFFF),
+                  length: 18,
+                  stroke: 1,
+                ),
               ),
               Column(
                 children: [
-                  const BrandMark(height: 30, onDark: false),
+                  const BrandMark(height: 30),
                   const SizedBox(height: 22),
-                  const Tag('Richiesta inviata'),
+                  const Tag('Richiesta inviata', color: Palette.paper),
                   const SizedBox(height: 16),
                   Text(
                     'Grazie, ${quote.firstName}',
                     textAlign: TextAlign.center,
-                    style: display(context.fluid(28, 38)),
+                    style: display(context.fluid(28, 38), color: Palette.paper),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'Ti richiameremo al ${quote.phone} per parlarne insieme.',
                     textAlign: TextAlign.center,
-                    style: body(15.5, color: Palette.stone),
+                    style: body(15.5, color: _muted),
                   ),
                   const SizedBox(height: 28),
                   Wrap(
@@ -1279,11 +1463,16 @@ class _Success extends StatelessWidget {
                     children: [
                       PillButton(
                         'Torna alla home',
+                        onDark: true,
                         onTap: () => context.go('/'),
                       ),
                       HoverLink(
                         'Nuova richiesta',
-                        style: body(14.5, weight: FontWeight.w500),
+                        style: body(
+                          14.5,
+                          color: Palette.paper,
+                          weight: FontWeight.w500,
+                        ),
                         onTap: onNew,
                       ),
                     ],

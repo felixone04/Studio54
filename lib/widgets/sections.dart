@@ -116,7 +116,7 @@ class HeroSlideshow extends StatefulWidget {
 }
 
 class _HeroSlideshowState extends State<HeroSlideshow> {
-  static const _interval = Duration(seconds: 6);
+  static const _interval = Duration(seconds: 3);
   int _i = 0;
   Timer? _t;
 
@@ -164,13 +164,13 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
           children: [
             const ColoredBox(color: Palette.ink),
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 1400),
+              duration: const Duration(milliseconds: 900),
               child: photo == null
                   ? const SizedBox.shrink()
                   : TweenAnimationBuilder<double>(
                       key: ValueKey(photo.id),
-                      tween: Tween(begin: 1.0, end: 1.08),
-                      duration: const Duration(seconds: 10),
+                      tween: Tween(begin: 1.0, end: 1.06),
+                      duration: _interval + const Duration(milliseconds: 900),
                       builder: (_, s, child) =>
                           Transform.scale(scale: s, child: child),
                       child: SizedBox.expand(
