@@ -48,6 +48,8 @@ class AppState extends ChangeNotifier {
     settings = s is Map
         ? AdminSettings.fromJson(Map<String, dynamic>.from(s))
         : AdminSettings();
+    final until = settings.sessionUntil;
+    adminAuthenticated = until != null && DateTime.now().isBefore(until);
 
     loaded = true;
     notifyListeners();
@@ -245,7 +247,7 @@ class AppState extends ChangeNotifier {
   String _hash(String salt, String pw) =>
       sha256.convert(utf8.encode('$salt::$pw')).toString();
 
-  Future<void> setAdminPassword(String pw) async {
+  Future<void> setAdminPassword(String pw, {bool remember = true}) async {
     final r = Random.secure();
     final salt = base64Url.encode(
       List<int>.generate(16, (_) => r.nextInt(256)),
@@ -253,23 +255,34 @@ class AppState extends ChangeNotifier {
     settings.passwordSalt = salt;
     settings.passwordHash = _hash(salt, pw);
     adminAuthenticated = true;
+    if (remember) _rememberSession();
     await _persist('settings', settings.toJson());
   }
 
-  bool login(String pw) {
-    final ok =
-        hasAdminPassword &&
-        _hash(settings.passwordSalt, pw) == settings.passwordHash;
-    if (ok) {
-      adminAuthenticated = true;
+  /// Verifica la password senza modificare lo stato di accesso.
+  bool checkPassword(String pw) =>
+      hasAdminPassword &&
+      _hash(settings.passwordSalt, pw) == settings.passwordHash;
+
+  Future<bool> login(String pw, {bool remember = true}) async {
+    if (!checkPassword(pw)) return false;
+    adminAuthenticated = true;
+    if (remember) {
+      _rememberSession();
+      await _persist('settings', settings.toJson());
+    } else {
       notifyListeners();
     }
-    return ok;
+    return true;
   }
 
-  void logout() {
+  void _rememberSession() =>
+      settings.sessionUntil = DateTime.now().add(const Duration(days: 30));
+
+  Future<void> logout() async {
     adminAuthenticated = false;
-    notifyListeners();
+    settings.sessionUntil = null;
+    await _persist('settings', settings.toJson());
   }
 
   /// Caratteri occupati dalle immagini incorporate (data URL) nell'archivio del

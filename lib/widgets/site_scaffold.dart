@@ -196,21 +196,15 @@ class _NavBar extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         if (!compact) ...[
-          for (final (t, p) in _navItems.take(2)) ...[
+          for (var i = 0; i < _navItems.length; i++) ...[
+            if (i > 0) const SizedBox(width: 34),
             HoverLink(
-              t.toUpperCase(),
-              active: location == p,
+              _navItems[i].$1.toUpperCase(),
+              active: location == _navItems[i].$2,
               style: label(11.5, color: fg),
-              onTap: () => context.go(p),
+              onTap: () => context.go(_navItems[i].$2),
             ),
-            const SizedBox(width: 34),
           ],
-          PillButton(
-            'Preventivo',
-            onDark: onDark,
-            filled: location != '/preventivo',
-            onTap: () => context.go('/preventivo'),
-          ),
         ] else
           _MenuButton(color: fg, onTap: () => _openMenu(context, location)),
       ],
@@ -332,12 +326,12 @@ class _FullMenu extends StatelessWidget {
                     context.go(_navItems[i].$2);
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.only(top: 10, right: 14),
+                          padding: const EdgeInsets.only(top: 6, right: 14),
                           child: Text(
                             '0${i + 1}',
                             style: label(11, color: accent),
@@ -350,7 +344,7 @@ class _FullMenu extends StatelessWidget {
                             child: Text(
                               _navItems[i].$1,
                               style: display(
-                                64,
+                                40,
                                 color: location == _navItems[i].$2
                                     ? accent
                                     : Palette.paper,
@@ -367,13 +361,13 @@ class _FullMenu extends StatelessWidget {
               if (c.phone.isNotEmpty)
                 GestureDetector(
                   onTap: () => openUrl('tel:${digitsOf(c.phone)}'),
-                  child: Text(c.phone, style: body(16, color: Palette.paper)),
+                  child: Text(c.phone, style: body(14.5, color: Palette.ash)),
                 ),
               if (c.email.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 GestureDetector(
                   onTap: () => openUrl('mailto:${c.email}'),
-                  child: Text(c.email, style: body(16, color: Palette.paper)),
+                  child: Text(c.email, style: body(14.5, color: Palette.ash)),
                 ),
               ],
               const SizedBox(height: 28),

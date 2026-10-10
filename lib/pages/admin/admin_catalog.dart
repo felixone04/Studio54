@@ -6,7 +6,6 @@ import 'dart:convert';
 
 import '../../models/models.dart';
 import '../../state/app_state.dart';
-import '../../widgets/common.dart';
 import 'admin_widgets.dart';
 
 List<T> _move<T>(List<T> list, int oldIndex, int newIndex) {
@@ -14,11 +13,6 @@ List<T> _move<T>(List<T> list, int oldIndex, int newIndex) {
   l.insert(newIndex, l.removeAt(oldIndex));
   return l;
 }
-
-Widget _thumb(String url, {double w = 76, double h = 54}) => ClipRRect(
-  borderRadius: BorderRadius.circular(4),
-  child: SizedBox(width: w, height: h, child: PhotoImage(url)),
-);
 
 Widget _storageWarning(AppState s) {
   final mb = s.embeddedImageChars / (1024 * 1024);
@@ -87,85 +81,35 @@ class AdminServices extends StatelessWidget {
                       s.setServices(_move(s.services, o, n)),
                   itemBuilder: (context, i) {
                     final it = s.services[i];
-                    return Container(
+                    return AdminListRow(
                       key: ValueKey(it.id),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(context).dividerColor,
+                      index: i,
+                      image: it.image,
+                      title: it.name,
+                      dimmed: !it.active,
+                      subtitle:
+                          '${it.category}${it.internalPrice != null ? '  ·  ${formatEuro(it.internalPrice!)} (interno)' : ''}',
+                      trailing: [
+                        Tooltip(
+                          message: it.active ? 'Visibile sul sito' : 'Nascosto',
+                          child: Switch(
+                            value: it.active,
+                            onChanged: (v) {
+                              it.active = v;
+                              s.setServices([...s.services]);
+                            },
                           ),
                         ),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          ReorderableDragStartListener(
-                            index: i,
-                            child: const Icon(
-                              Icons.drag_indicator_rounded,
-                              color: Colors.black38,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          _thumb(it.image),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  it.name,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: it.active ? null : Colors.black38,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  '${it.category}${it.internalPrice != null ? '  ·  ${formatEuro(it.internalPrice!)} (interno)' : ''}',
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Tooltip(
-                            message: it.active
-                                ? 'Visibile sul sito'
-                                : 'Nascosto',
-                            child: Switch(
-                              value: it.active,
-                              onChanged: (v) {
-                                it.active = v;
-                                s.setServices([...s.services]);
-                              },
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => _editService(context, it),
-                            icon: const Icon(Icons.edit_outlined),
-                            tooltip: 'Modifica',
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              if (await confirmDialog(
-                                context,
-                                'Eliminare “${it.name}”? Verrà tolto anche dai pacchetti che lo contengono.',
-                              )) {
-                                s.deleteService(it.id);
-                              }
-                            },
-                            icon: const Icon(Icons.delete_outline_rounded),
-                            tooltip: 'Elimina',
-                          ),
-                        ],
-                      ),
+                      ],
+                      onEdit: () => _editService(context, it),
+                      onDelete: () async {
+                        if (await confirmDialog(
+                          context,
+                          'Eliminare “${it.name}”? Verrà tolto anche dai pacchetti che lo contengono.',
+                        )) {
+                          s.deleteService(it.id);
+                        }
+                      },
                     );
                   },
                 ),
@@ -224,7 +168,7 @@ class _ServiceDialogState extends State<_ServiceDialog> {
         widget.existing == null ? 'Nuovo servizio / prodotto' : 'Modifica',
       ),
       content: SizedBox(
-        width: 560,
+        width: dialogWidth(context, 560),
         child: SingleChildScrollView(
           child: Form(
             key: _form,
@@ -389,106 +333,45 @@ class AdminPackages extends StatelessWidget {
                       s.setPackages(_move(s.packages, o, n)),
                   itemBuilder: (context, i) {
                     final p = s.packages[i];
-                    return Container(
+                    return AdminListRow(
                       key: ValueKey(p.id),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(context).dividerColor,
-                          ),
+                      index: i,
+                      image: p.image,
+                      title: p.name,
+                      dimmed: !p.active,
+                      leadingExtra: p.featured
+                          ? const Icon(
+                              Icons.star_rounded,
+                              size: 17,
+                              color: Color(0xFFC8A04A),
+                            )
+                          : null,
+                      subtitle:
+                          serviceNames(s.services, p.serviceIds) ??
+                          'Nessun servizio incluso',
+                      trailing: [
+                        Switch(
+                          value: p.active,
+                          onChanged: (v) {
+                            p.active = v;
+                            s.setPackages([...s.packages]);
+                          },
                         ),
+                      ],
+                      onEdit: () => showDialog(
+                        context: context,
+                        builder: (_) => _PackageDialog(existing: p),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          ReorderableDragStartListener(
-                            index: i,
-                            child: const Icon(
-                              Icons.drag_indicator_rounded,
-                              color: Colors.black38,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          _thumb(p.image),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        p.name,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: p.active
-                                              ? null
-                                              : Colors.black38,
-                                        ),
-                                      ),
-                                    ),
-                                    if (p.featured) ...[
-                                      const SizedBox(width: 8),
-                                      const Icon(
-                                        Icons.star_rounded,
-                                        size: 17,
-                                        color: Color(0xFFC8A04A),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  serviceNames(s.services, p.serviceIds) ??
-                                      'Nessun servizio incluso',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.black54,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Switch(
-                            value: p.active,
-                            onChanged: (v) {
-                              p.active = v;
-                              s.setPackages([...s.packages]);
-                            },
-                          ),
-                          IconButton(
-                            onPressed: () => showDialog(
-                              context: context,
-                              builder: (_) => _PackageDialog(existing: p),
-                            ),
-                            icon: const Icon(Icons.edit_outlined),
-                            tooltip: 'Modifica',
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              if (await confirmDialog(
-                                context,
-                                'Eliminare il pacchetto “${p.name}”?',
-                              )) {
-                                s.setPackages(
-                                  s.packages
-                                      .where((e) => e.id != p.id)
-                                      .toList(),
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.delete_outline_rounded),
-                            tooltip: 'Elimina',
-                          ),
-                        ],
-                      ),
+                      onDelete: () async {
+                        if (await confirmDialog(
+                          context,
+                          'Eliminare il pacchetto “${p.name}”?',
+                        )) {
+                          s.setPackages(
+                            s.packages.where((e) => e.id != p.id).toList(),
+                          );
+                        }
+                      },
                     );
                   },
                 ),
@@ -524,7 +407,7 @@ class _PackageDialogState extends State<_PackageDialog> {
         widget.existing == null ? 'Nuovo pacchetto' : 'Modifica pacchetto',
       ),
       content: SizedBox(
-        width: 600,
+        width: dialogWidth(context, 600),
         child: SingleChildScrollView(
           child: Form(
             key: _form,
@@ -746,96 +629,47 @@ class _AdminGalleryState extends State<AdminGallery> {
                       p.location,
                       p.year,
                     ].where((e) => e.isNotEmpty).join(' · ');
-                    return Container(
+                    return AdminListRow(
                       key: ValueKey(p.id),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(context).dividerColor,
+                      index: i,
+                      image: p.url,
+                      title: p.title,
+                      subtitle: meta,
+                      trailing: [
+                        Tooltip(
+                          message: p.inHero
+                              ? 'Nella prima schermata'
+                              : 'Solo nella mostra',
+                          child: IconButton(
+                            onPressed: () {
+                              p.inHero = !p.inHero;
+                              s.setGallery([...s.gallery]);
+                            },
+                            icon: Icon(
+                              p.inHero
+                                  ? Icons.star_rounded
+                                  : Icons.star_border_rounded,
+                              color: p.inHero
+                                  ? const Color(0xFFC8A04A)
+                                  : Colors.black38,
+                            ),
                           ),
                         ),
+                      ],
+                      onEdit: () => showDialog(
+                        context: context,
+                        builder: (_) => _PhotoDialog(existing: p),
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          ReorderableDragStartListener(
-                            index: i,
-                            child: const Icon(
-                              Icons.drag_indicator_rounded,
-                              color: Colors.black38,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          _thumb(p.url, w: 104, h: 70),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  p.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                if (meta.isNotEmpty)
-                                  Text(
-                                    meta,
-                                    style: const TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          Tooltip(
-                            message: p.inHero
-                                ? 'Nel carosello iniziale'
-                                : 'Solo nella mostra',
-                            child: IconButton(
-                              onPressed: () {
-                                p.inHero = !p.inHero;
-                                s.setGallery([...s.gallery]);
-                              },
-                              icon: Icon(
-                                p.inHero
-                                    ? Icons.star_rounded
-                                    : Icons.star_border_rounded,
-                                color: p.inHero
-                                    ? const Color(0xFFC8A04A)
-                                    : Colors.black38,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => showDialog(
-                              context: context,
-                              builder: (_) => _PhotoDialog(existing: p),
-                            ),
-                            icon: const Icon(Icons.edit_outlined),
-                            tooltip: 'Modifica',
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              if (await confirmDialog(
-                                context,
-                                'Eliminare “${p.title}” dalla galleria?',
-                              )) {
-                                s.setGallery(
-                                  s.gallery.where((e) => e.id != p.id).toList(),
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.delete_outline_rounded),
-                            tooltip: 'Elimina',
-                          ),
-                        ],
-                      ),
+                      onDelete: () async {
+                        if (await confirmDialog(
+                          context,
+                          'Eliminare “${p.title}” dalla galleria?',
+                        )) {
+                          s.setGallery(
+                            s.gallery.where((e) => e.id != p.id).toList(),
+                          );
+                        }
+                      },
                     );
                   },
                 ),
@@ -866,7 +700,7 @@ class _PhotoDialogState extends State<_PhotoDialog> {
     return AlertDialog(
       title: Text(widget.existing == null ? 'Nuova foto' : 'Modifica foto'),
       content: SizedBox(
-        width: 560,
+        width: dialogWidth(context, 560),
         child: SingleChildScrollView(
           child: Form(
             key: _form,
@@ -917,18 +751,16 @@ class _PhotoDialogState extends State<_PhotoDialog> {
                   onChanged: (v) => _d.caption = v,
                 ),
                 const SizedBox(height: 16),
+                TextFormField(
+                  initialValue: _d.category,
+                  decoration: const InputDecoration(
+                    labelText: 'Categoria (es. Matrimonio)',
+                  ),
+                  onChanged: (v) => _d.category = v,
+                ),
+                const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(
-                      child: TextFormField(
-                        initialValue: _d.category,
-                        decoration: const InputDecoration(
-                          labelText: 'Categoria',
-                        ),
-                        onChanged: (v) => _d.category = v,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
                         initialValue: _d.location,
@@ -949,7 +781,7 @@ class _PhotoDialogState extends State<_PhotoDialog> {
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Mostra anche nel carosello iniziale'),
+                  title: const Text('Mostra anche nella prima schermata'),
                   value: _d.inHero,
                   onChanged: (v) => setState(() => _d.inHero = v),
                 ),

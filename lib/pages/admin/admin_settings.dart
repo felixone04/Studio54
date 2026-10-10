@@ -356,7 +356,7 @@ class _PasswordFormState extends State<_PasswordForm> {
                     labelText: 'Password attuale',
                   ),
                   validator: (v) =>
-                      s.login(v ?? '') ? null : 'Password non corretta',
+                      s.checkPassword(v ?? '') ? null : 'Password non corretta',
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
@@ -428,7 +428,7 @@ class _RestoreDialogState extends State<_RestoreDialog> {
     return AlertDialog(
       title: const Text('Ripristina da backup'),
       content: SizedBox(
-        width: 520,
+        width: dialogWidth(context, 520),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

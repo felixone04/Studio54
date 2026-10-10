@@ -167,7 +167,7 @@ class AdminDashboard extends StatelessWidget {
           subtitle: 'Ecco la situazione di ${s.content.studioName}.',
           actions: [
             OutlinedButton.icon(
-              onPressed: () => context.go('/'),
+              onPressed: openSiteInNewTab,
               icon: const Icon(Icons.open_in_new_rounded, size: 18),
               label: const Text('Vedi il sito'),
             ),

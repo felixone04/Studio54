@@ -35,6 +35,9 @@ Color accentOnPaper(Color accent) {
 extension AccentX on BuildContext {
   Color get accent => Theme.of(this).colorScheme.primary;
   Color get accentInk => accentOnPaper(Theme.of(this).colorScheme.primary);
+
+  /// Colore del brand (uguale sul sito e nell'area riservata).
+  Color get brand => Theme.of(this).colorScheme.tertiary;
 }
 
 /// Titoli: Bodoni Moda, alto contrasto, da manifesto d'arte.
@@ -90,6 +93,7 @@ class AppTheme {
         primary: accent,
         onPrimary: Palette.ink,
         secondary: accent,
+        tertiary: accent,
         surface: Palette.paper,
         onSurface: Palette.ink,
         error: const Color(0xFFB3261E),
@@ -138,22 +142,19 @@ class AppTheme {
 
   /// Tema chiaro e più "gestionale" per l'area riservata.
   static ThemeData admin(Color accent) {
-    final hsl = HSLColor.fromColor(accent);
-    final strong = hsl
-        .withLightness(0.36)
-        .withSaturation((hsl.saturation * 0.9).clamp(0.0, 1.0))
-        .toColor();
+    const strong = Palette.ink;
     final base = ThemeData(
       brightness: Brightness.light,
       useMaterial3: true,
       colorScheme: ColorScheme.light(
         primary: strong,
-        onPrimary: Colors.white,
-        secondary: strong,
+        onPrimary: Palette.paper,
+        secondary: accentOnPaper(accent),
+        tertiary: accent,
         surface: Colors.white,
-        onSurface: const Color(0xFF1D1B19),
+        onSurface: Palette.ink,
       ),
-      scaffoldBackgroundColor: const Color(0xFFF5F2ED),
+      scaffoldBackgroundColor: Palette.paper,
     );
     OutlineInputBorder b(Color c, [double w = 1]) => OutlineInputBorder(
       borderRadius: BorderRadius.circular(3),

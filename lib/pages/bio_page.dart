@@ -33,7 +33,6 @@ class BioPage extends StatelessWidget {
         if (paragraphs.isNotEmpty) _Story(paragraphs: paragraphs),
         if (c.timeline.isNotEmpty) _Timeline(items: c.timeline),
         if (c.team.isNotEmpty) _Team(title: c.teamTitle, members: c.team),
-        CtaBanner(content: c),
       ],
     );
   }

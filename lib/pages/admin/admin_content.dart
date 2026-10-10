@@ -22,10 +22,11 @@ class AdminPageScroll extends StatelessWidget {
         mobile ? 16 : 36,
         48,
       ),
-      child: Center(
+      child: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1180),
-          child: child,
+          child: SizedBox(width: double.infinity, child: child),
         ),
       ),
     );
@@ -164,17 +165,6 @@ class AdminHomeEditor extends StatelessWidget {
           ),
         ),
         Panel(
-          title: 'Striscia scorrevole',
-          subtitle: 'Le parole che scorrono sotto l\'apertura.',
-          child: field(
-            'Parole',
-            d.marquee,
-            (v) => d.marquee = v,
-            changed,
-            helper: 'Separale con una virgola. Es: Matrimoni, Ritratti, Eventi',
-          ),
-        ),
-        Panel(
           title: 'Manifesto',
           subtitle: 'Una frase sola, molto grande.',
           child: field(
@@ -223,38 +213,6 @@ class AdminHomeEditor extends StatelessWidget {
             d.servicesTitle,
             (v) => d.servicesTitle = v,
             changed,
-          ),
-        ),
-        Panel(
-          title: 'Invito finale',
-          subtitle: 'In fondo alla home e alla biografia.',
-          child: Column(
-            children: [
-              field('Titolo', d.bannerTitle, (v) => d.bannerTitle = v, changed),
-              _gap,
-              field(
-                'Riga sotto (breve)',
-                d.bannerText,
-                (v) => d.bannerText = v,
-                changed,
-              ),
-              _gap,
-              field(
-                'Testo del pulsante',
-                d.bannerButton,
-                (v) => d.bannerButton = v,
-                changed,
-              ),
-              _gap,
-              ImageField(
-                label: 'Immagine di sfondo',
-                value: d.bannerImage,
-                onChanged: (v) {
-                  d.bannerImage = v;
-                  changed();
-                },
-              ),
-            ],
           ),
         ),
       ],
@@ -442,7 +400,7 @@ class AdminBioEditor extends StatelessWidget {
                   },
                   child: Column(
                     children: [
-                      Row(
+                      FieldRow(
                         children: [
                           Expanded(
                             child: BoundField(
@@ -593,7 +551,7 @@ class AdminIdentityEditor extends StatelessWidget {
           subtitle: 'Compaiono nel footer del sito. I campi vuoti non vengono mostrati.',
           child: Column(
             children: [
-              Row(
+              FieldRow(
                 children: [
                   Expanded(
                     child: BoundField(
@@ -651,7 +609,7 @@ class AdminIdentityEditor extends StatelessWidget {
                 },
               ),
               _gap,
-              Row(
+              FieldRow(
                 children: [
                   Expanded(
                     child: BoundField(

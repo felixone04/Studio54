@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/models.dart';
 import '../theme/app_theme.dart';
@@ -28,7 +27,11 @@ class _MaskRevealState extends State<MaskReveal> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: 150 + widget.delay), () {
+    // Al primo avvio aspetta che sparisca il logo d'apertura (web/index.html),
+    // così l'animazione si vede invece di avvenire sotto il logo.
+    final sinceStart = DateTime.now().difference(appStartedAt).inMilliseconds;
+    final intro = math.max(0, splashMs - sinceStart);
+    Future.delayed(Duration(milliseconds: 150 + intro + widget.delay), () {
       if (mounted) setState(() => _on = true);
     });
   }
@@ -44,135 +47,6 @@ class _MaskRevealState extends State<MaskReveal> {
       ),
     );
   }
-}
-
-/// Bollino circolare con testo che ruota lentamente.
-class RotatingBadge extends StatefulWidget {
-  const RotatingBadge({
-    super.key,
-    required this.text,
-    required this.size,
-    required this.onTap,
-    this.onDark = false,
-  });
-  final String text;
-  final double size;
-  final VoidCallback onTap;
-  final bool onDark;
-
-  @override
-  State<RotatingBadge> createState() => _RotatingBadgeState();
-}
-
-class _RotatingBadgeState extends State<RotatingBadge>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 18),
-  )..repeat();
-  bool _hover = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Ridisegna quando il font è arrivato.
-    GoogleFonts.pendingFonts().then((_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    final fg = widget.onDark ? Palette.paper : Palette.ink;
-    final s = widget.size;
-    return Semantics(
-      button: true,
-      label: widget.text,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: SizedBox(
-            width: s,
-            height: s,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                RotationTransition(
-                  turns: _c,
-                  child: CustomPaint(
-                    size: Size.square(s),
-                    painter: _CircleTextPainter(
-                      text: widget.text,
-                      style: label(s * 0.075, color: fg, spacing: 0.1),
-                    ),
-                  ),
-                ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: s * 0.42,
-                  height: s * 0.42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _hover ? fg : accent,
-                  ),
-                  child: AnimatedRotation(
-                    turns: _hover ? 0.125 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Icon(
-                      Icons.arrow_outward_rounded,
-                      size: s * 0.18,
-                      color: _hover
-                          ? (widget.onDark ? Palette.ink : Palette.paper)
-                          : Palette.ink,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CircleTextPainter extends CustomPainter {
-  _CircleTextPainter({required this.text, required this.style});
-  final String text;
-  final TextStyle style;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final chars = text.toUpperCase().characters.toList();
-    final r = size.width / 2;
-    final center = Offset(r, r);
-    for (var i = 0; i < chars.length; i++) {
-      final tp = TextPainter(
-        text: TextSpan(text: chars[i], style: style),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      canvas
-        ..save()
-        ..translate(center.dx, center.dy)
-        ..rotate(2 * math.pi * i / chars.length)
-        ..translate(0, -r + 2);
-      tp.paint(canvas, Offset(-tp.width / 2, 0));
-      canvas.restore();
-    }
-  }
-
-  @override
-  bool shouldRepaint(_CircleTextPainter oldDelegate) => true;
 }
 
 // ================================================================= HERO
@@ -299,46 +173,19 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
                       ),
                     ),
                   SizedBox(height: context.fluid(18, 30)),
-                  MaskReveal(
-                    delay: 500,
-                    child: Builder(
-                      builder: (context) {
-                        final title = Text(
-                          c.heroTitle,
-                          style: display(
-                            context.fluid(24, 40),
-                            color: Palette.paper,
-                            italic: true,
-                            height: 1.05,
-                          ),
-                        );
-                        final cta = PillButton(
-                          'Preventivo',
-                          onDark: true,
-                          onTap: () => context.go('/preventivo'),
-                        );
-                        if (phone) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (c.heroTitle.trim().isNotEmpty) ...[
-                                title,
-                                const SizedBox(height: 20),
-                              ],
-                              cta,
-                            ],
-                          );
-                        }
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(child: title),
-                            cta,
-                          ],
-                        );
-                      },
+                  if (c.heroTitle.trim().isNotEmpty)
+                    MaskReveal(
+                      delay: 500,
+                      child: Text(
+                        c.heroTitle,
+                        style: display(
+                          context.fluid(24, 40),
+                          color: Palette.paper,
+                          italic: true,
+                          height: 1.05,
+                        ),
+                      ),
                     ),
-                  ),
                   SizedBox(height: context.fluid(26, 44)),
                   _HeroBar(
                     index: _i,
@@ -487,45 +334,6 @@ class _RoundIconState extends State<_RoundIcon> {
   }
 }
 
-// ============================================================== MARQUEE
-
-class MarqueeBand extends StatelessWidget {
-  const MarqueeBand({super.key, required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    final items = text
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
-    if (items.isEmpty) return const SizedBox.shrink();
-    final size = context.fluid(38, 92);
-    return Container(
-      color: accent,
-      padding: EdgeInsets.symmetric(vertical: size * 0.32),
-      child: Marquee(
-        items: items,
-        pixelsPerSecond: context.fluid(50, 90),
-        style: display(size, color: Palette.ink, italic: true, height: 1.1),
-        separator: Padding(
-          padding: EdgeInsets.symmetric(horizontal: size * 0.45),
-          child: Container(
-            width: size * 0.16,
-            height: size * 0.16,
-            decoration: const BoxDecoration(
-              color: Palette.ink,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ============================================================ MANIFESTO
 
 class Statement extends StatelessWidget {
@@ -537,11 +345,6 @@ class Statement extends StatelessWidget {
   Widget build(BuildContext context) {
     final lines = text.split('\n').where((e) => e.trim().isNotEmpty).toList();
     final size = context.fluid(38, 108);
-    final badge = RotatingBadge(
-      text: 'Preventivo gratuito • Preventivo gratuito • ',
-      size: context.fluid(120, 170),
-      onTap: () => context.go('/preventivo'),
-    );
     return Section(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -567,8 +370,6 @@ class Statement extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: context.fluid(36, 56)),
-          Align(alignment: Alignment.centerRight, child: badge),
         ],
       ),
     );
@@ -871,16 +672,6 @@ class _ServicesStripState extends State<ServicesStrip> {
               ),
             ),
           ),
-          SizedBox(height: context.fluid(36, 64)),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.gutter),
-            child: PillButton(
-              'Componi il tuo preventivo',
-              onDark: true,
-              filled: false,
-              onTap: () => context.go('/preventivo'),
-            ),
-          ),
         ],
       ),
     );
@@ -947,24 +738,6 @@ class _ServiceCardState extends State<_ServiceCard> {
                             widget.number.toString().padLeft(2, '0'),
                             style: label(11, color: Palette.paper),
                           ),
-                          const Spacer(),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _hover ? accent : Colors.transparent,
-                              border: Border.all(
-                                color: _hover ? accent : Palette.paper,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.add_rounded,
-                              size: 20,
-                              color: _hover ? Palette.ink : Palette.paper,
-                            ),
-                          ),
                         ],
                       ),
                       const Spacer(),
@@ -988,66 +761,6 @@ class _ServiceCardState extends State<_ServiceCard> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-// =========================================================== BANNER
-
-/// Invito finale a tutto schermo.
-class CtaBanner extends StatelessWidget {
-  const CtaBanner({super.key, required this.content});
-  final SiteContent content;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    return SizedBox(
-      height: math.min(context.screenH, context.w * 1.6),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          PhotoImage(content.bannerImage, dark: true),
-          const ColoredBox(color: Color(0x8C000000)),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.gutter),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Reveal(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      content.bannerTitle,
-                      maxLines: 1,
-                      style: display(
-                        context.fluid(76, 240),
-                        color: Palette.paper,
-                        italic: true,
-                      ),
-                    ),
-                  ),
-                ),
-                if (content.bannerText.isNotEmpty) ...[
-                  SizedBox(height: context.fluid(14, 24)),
-                  Text(
-                    content.bannerText.toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: label(12, color: accent),
-                  ),
-                ],
-                SizedBox(height: context.fluid(30, 50)),
-                PillButton(
-                  content.bannerButton,
-                  onDark: true,
-                  big: true,
-                  onTap: () => context.go('/preventivo'),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

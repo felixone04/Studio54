@@ -518,11 +518,15 @@ class AdminSettings {
   String passwordSalt;
   String googleClientId;
   bool googleWasConnected;
+
+  /// Fine della sessione "ricordami" su questo dispositivo.
+  DateTime? sessionUntil;
   AdminSettings({
     this.passwordHash = '',
     this.passwordSalt = '',
     this.googleClientId = '',
     this.googleWasConnected = false,
+    this.sessionUntil,
   });
 
   factory AdminSettings.fromJson(Map<String, dynamic> j) => AdminSettings(
@@ -530,11 +534,13 @@ class AdminSettings {
     passwordSalt: j['passwordSalt'] ?? '',
     googleClientId: j['googleClientId'] ?? '',
     googleWasConnected: j['googleWasConnected'] ?? false,
+    sessionUntil: DateTime.tryParse(j['sessionUntil'] ?? ''),
   );
   Map<String, dynamic> toJson() => {
     'passwordHash': passwordHash,
     'passwordSalt': passwordSalt,
     'googleClientId': googleClientId,
     'googleWasConnected': googleWasConnected,
+    'sessionUntil': sessionUntil?.toIso8601String(),
   };
 }

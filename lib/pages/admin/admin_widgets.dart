@@ -1,10 +1,20 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../models/models.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/site_scaffold.dart' show openUrl;
+
+bool isNarrow(BuildContext context) => MediaQuery.sizeOf(context).width < 600;
+
+/// Larghezza del contenuto di una finestra di dialogo: [preferred] su
+/// schermi ampi, tutto lo spazio disponibile su telefono.
+double dialogWidth(BuildContext context, double preferred) =>
+    math.min(preferred, MediaQuery.sizeOf(context).width - 112);
 
 void toast(BuildContext context, String message, {bool error = false}) {
   final m = ScaffoldMessenger.maybeOf(context);
@@ -12,11 +22,9 @@ void toast(BuildContext context, String message, {bool error = false}) {
   m?.showSnackBar(
     SnackBar(
       content: Text(message),
-      backgroundColor: error
-          ? const Color(0xFF8E2F23)
-          : const Color(0xFF2B2824),
+      backgroundColor: error ? const Color(0xFF8E2F23) : Palette.ink,
       behavior: SnackBarBehavior.floating,
-      width: 520,
+      width: isNarrow(context) ? null : 520,
       duration: Duration(seconds: error ? 6 : 3),
     ),
   );
@@ -66,43 +74,42 @@ class AdminHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Wrap(
-        crossAxisAlignment: WrapCrossAlignment.center,
-        alignment: WrapAlignment.spaceBetween,
-        runSpacing: 14,
-        spacing: 16,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                style: t.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 620),
-                  child: Text(
-                    subtitle!,
-                    style: t.textTheme.bodyMedium?.copyWith(
-                      color: Colors.black54,
-                    ),
-                  ),
-                ),
-              ],
-            ],
+    final narrow = isNarrow(context);
+    final text = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title, style: display(narrow ? 34 : 46, height: 1.05)),
+        if (subtitle != null) ...[
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Text(subtitle!, style: body(14.5, color: Palette.stone)),
           ),
-          if (actions.isNotEmpty)
-            Wrap(spacing: 10, runSpacing: 10, children: actions),
         ],
-      ),
+      ],
+    );
+    return Padding(
+      padding: EdgeInsets.only(bottom: narrow ? 20 : 28),
+      child: narrow || actions.isEmpty
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                text,
+                if (actions.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Wrap(spacing: 10, runSpacing: 10, children: actions),
+                ],
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(child: text),
+                const SizedBox(width: 16),
+                Wrap(spacing: 10, runSpacing: 10, children: actions),
+              ],
+            ),
     );
   }
 }
@@ -122,45 +129,45 @@ class Panel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = Theme.of(context);
+    final narrow = isNarrow(context);
+    final heading = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (title != null) Text(title!, style: display(25, height: 1.1)),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(subtitle!, style: body(13, color: Palette.stone)),
+          ),
+      ],
+    );
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(22),
+        padding: EdgeInsets.all(narrow ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (title != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: 18),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: narrow || trailing == null
+                    ? Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            title!,
-                            style: t.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (subtitle != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 3),
-                              child: Text(
-                                subtitle!,
-                                style: t.textTheme.bodySmall?.copyWith(
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
+                          heading,
+                          if (trailing != null) ...[
+                            const SizedBox(height: 8),
+                            trailing!,
+                          ],
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: heading),
+                          trailing!,
                         ],
                       ),
-                    ),
-                    if (trailing != null) trailing!,
-                  ],
-                ),
               ),
             child,
           ],
@@ -249,7 +256,9 @@ class _BoundFieldState extends State<BoundField> {
       controller: _c,
       onChanged: widget.onChanged,
       maxLines: widget.maxLines,
-      minLines: widget.minLines ?? (widget.maxLines > 1 ? 3 : null),
+      minLines:
+          widget.minLines ??
+          (widget.maxLines > 1 ? math.min(3, widget.maxLines) : null),
       keyboardType: widget.keyboardType,
       decoration: InputDecoration(
         labelText: widget.label,
@@ -330,72 +339,87 @@ class _ImageFieldState extends State<ImageField> {
   @override
   Widget build(BuildContext context) {
     final isData = _isData(_value);
-    return Column(
+    final controls = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 8),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        TextField(
+          controller: _c,
+          onChanged: _set,
+          decoration: InputDecoration(
+            labelText: isData
+                ? 'Foto caricata dal dispositivo'
+                : 'Oppure incolla l\'indirizzo (URL)',
+            isDense: true,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 6,
           children: [
-            Container(
-              width: 150,
-              height: 150 / widget.aspect,
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFD8D2C8)),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: PhotoImage(_value),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: _c,
-                    onChanged: _set,
-                    decoration: InputDecoration(
-                      labelText: isData
-                          ? 'Immagine caricata dal computer'
-                          : 'Indirizzo (URL) dell\'immagine',
-                      isDense: true,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: _busy ? null : _pick,
-                        icon: _busy
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.upload_rounded, size: 18),
-                        label: const Text('Carica foto'),
+            FilledButton.icon(
+              onPressed: _busy ? null : _pick,
+              icon: _busy
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Palette.paper,
                       ),
-                      if (_value.isNotEmpty)
-                        TextButton(
-                          onPressed: () {
-                            _c.text = '';
-                            _set('');
-                          },
-                          child: const Text('Rimuovi'),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+                    )
+                  : const Icon(Icons.upload_rounded, size: 18),
+              label: const Text('Carica foto'),
             ),
+            if (_value.isNotEmpty)
+              TextButton(
+                onPressed: () {
+                  _c.text = '';
+                  _set('');
+                },
+                child: const Text('Rimuovi'),
+              ),
           ],
         ),
       ],
+    );
+    return LayoutBuilder(
+      builder: (context, box) {
+        final stacked = box.maxWidth < 440;
+        final previewW = stacked ? box.maxWidth : 160.0;
+        final preview = Container(
+          width: previewW,
+          height: stacked
+              ? previewW / math.max(widget.aspect, 1.2)
+              : 160 / widget.aspect,
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFD8D2C8)),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: PhotoImage(_value),
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.label, style: label(10.5)),
+            const SizedBox(height: 10),
+            if (stacked) ...[
+              preview,
+              const SizedBox(height: 12),
+              controls,
+            ] else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  preview,
+                  const SizedBox(width: 16),
+                  Expanded(child: controls),
+                ],
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -562,41 +586,61 @@ class SaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final narrow = isNarrow(context);
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    final h = 68.0 + bottom;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      height: dirty ? 68 : 0,
+      curve: Curves.easeOutCubic,
+      height: dirty ? h : 0,
       clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: Color(0xFFE5DFD5))),
-        boxShadow: dirty
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 14,
-                  offset: const Offset(0, -4),
-                ),
-              ]
-            : null,
-      ),
+      decoration: const BoxDecoration(color: Palette.ink),
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: SizedBox(
-          height: 68,
+          height: h,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.fromLTRB(
+              narrow ? 16 : 28,
+              0,
+              narrow ? 12 : 28,
+              bottom,
+            ),
             child: Row(
               children: [
-                const Icon(Icons.edit_note_rounded, size: 22),
-                const SizedBox(width: 10),
-                const Expanded(child: Text('Hai modifiche non salvate')),
+                if (!narrow) ...[
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: context.brand,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    narrow
+                        ? 'Modifiche non salvate'
+                        : 'Hai modifiche non salvate',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: body(14, color: Palette.paper),
+                  ),
+                ),
                 TextButton(
                   onPressed: onDiscard,
-                  child: const Text('Annulla modifiche'),
+                  style: TextButton.styleFrom(foregroundColor: Palette.ash),
+                  child: Text(narrow ? 'Annulla' : 'Annulla modifiche'),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 FilledButton.icon(
                   onPressed: onSave,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: context.brand,
+                    foregroundColor: Palette.ink,
+                  ),
                   icon: const Icon(Icons.check_rounded, size: 18),
                   label: const Text('Salva'),
                 ),
@@ -621,3 +665,171 @@ String? serviceNames(List<ServiceItem> all, List<String> ids) {
   ].whereType<String>().toList();
   return n.isEmpty ? null : n.join(' · ');
 }
+
+/// Riga di un elenco ordinabile (servizi, pacchetti, foto). Su telefono le
+/// azioni finiscono in un menu e si tocca la riga per modificare.
+class AdminListRow extends StatelessWidget {
+  const AdminListRow({
+    super.key,
+    required this.index,
+    required this.image,
+    required this.title,
+    required this.onEdit,
+    required this.onDelete,
+    this.subtitle,
+    this.dimmed = false,
+    this.leadingExtra,
+    this.trailing = const [],
+  });
+  final int index;
+  final String image;
+  final String title;
+  final String? subtitle;
+  final bool dimmed;
+  final Widget? leadingExtra;
+  final List<Widget> trailing;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final narrow = isNarrow(context);
+    final thumbW = narrow ? 58.0 : 88.0;
+    return Material(
+      color: Colors.white,
+      child: InkWell(
+        onTap: onEdit,
+        child: Container(
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: Color(0xFFEDE8DF))),
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: narrow ? 6 : 12,
+            vertical: 10,
+          ),
+          child: Row(
+            children: [
+              ReorderableDragStartListener(
+                index: index,
+                child: const Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Icon(
+                    Icons.drag_indicator_rounded,
+                    color: Colors.black38,
+                  ),
+                ),
+              ),
+              SizedBox(width: narrow ? 4 : 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: SizedBox(
+                  width: thumbW,
+                  height: thumbW * 0.72,
+                  child: Opacity(
+                    opacity: dimmed ? 0.45 : 1,
+                    child: PhotoImage(image),
+                  ),
+                ),
+              ),
+              SizedBox(width: narrow ? 10 : 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: body(
+                              15,
+                              weight: FontWeight.w600,
+                              color: dimmed ? Palette.stone : Palette.ink,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                        if (leadingExtra != null) ...[
+                          const SizedBox(width: 6),
+                          leadingExtra!,
+                        ],
+                      ],
+                    ),
+                    if (subtitle != null && subtitle!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          subtitle!,
+                          maxLines: narrow ? 1 : 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: body(13, color: Palette.stone, height: 1.35),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              ...trailing,
+              if (narrow)
+                PopupMenuButton<String>(
+                  tooltip: 'Azioni',
+                  icon: const Icon(Icons.more_vert_rounded),
+                  onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('Modifica')),
+                    PopupMenuItem(value: 'delete', child: Text('Elimina')),
+                  ],
+                )
+              else ...[
+                IconButton(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Modifica',
+                ),
+                IconButton(
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  tooltip: 'Elimina',
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Campi affiancati su schermi ampi, uno sotto l'altro su telefono.
+/// Accetta gli stessi figli di una [Row] (Expanded + SizedBox di spaziatura).
+class FieldRow extends StatelessWidget {
+  const FieldRow({super.key, required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isNarrow(context)) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final c in children)
+          if (c is Expanded)
+            c.child
+          else if (c is SizedBox && c.width != null && c.child == null)
+            const SizedBox(height: 16)
+          else
+            c,
+      ],
+    );
+  }
+}
+
+/// Apre il sito pubblico in una nuova scheda, lasciando aperta l'area
+/// riservata in quella attuale.
+void openSiteInNewTab() => openUrl(Uri.base.replace(fragment: '/').toString());

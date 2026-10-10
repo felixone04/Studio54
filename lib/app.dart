@@ -62,12 +62,17 @@ class _StudioAppState extends State<StudioApp> {
       ),
       GoRoute(
         path: '/admin',
-        pageBuilder: (c, s) => _fade(s, const AdminPage(section: null)),
+        pageBuilder: (c, s) => NoTransitionPage(
+          key: s.pageKey,
+          child: const AdminPage(section: null),
+        ),
         routes: [
           GoRoute(
             path: ':section',
-            pageBuilder: (c, s) =>
-                _fade(s, AdminPage(section: s.pathParameters['section'])),
+            pageBuilder: (c, s) => NoTransitionPage(
+              key: s.pageKey,
+              child: AdminPage(section: s.pathParameters['section']),
+            ),
           ),
         ],
       ),

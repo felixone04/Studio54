@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/google_token.dart';
 import '../../state/app_state.dart';
+import '../../theme/app_theme.dart';
 import 'admin_appointment.dart';
 import 'admin_widgets.dart';
 
@@ -404,11 +405,7 @@ class _MonthGrid extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
+                      Text(title, style: display(mobile ? 26 : 32)),
                       if (loading)
                         const Padding(
                           padding: EdgeInsets.only(left: 12),

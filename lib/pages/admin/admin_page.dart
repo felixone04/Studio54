@@ -5,12 +5,14 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/common.dart';
 import 'admin_calendar.dart';
 import 'admin_catalog.dart';
 import 'admin_content.dart';
 import 'admin_dashboard.dart';
 import 'admin_quotes.dart';
 import 'admin_settings.dart';
+import 'admin_widgets.dart';
 
 class _Section {
   const _Section(this.id, this.label, this.icon);
@@ -19,18 +21,36 @@ class _Section {
   final IconData icon;
 }
 
-const _sections = <_Section>[
-  _Section('panoramica', 'Panoramica', Icons.dashboard_outlined),
-  _Section('richieste', 'Richieste preventivo', Icons.request_quote_outlined),
-  _Section('calendario', 'Calendario', Icons.calendar_month_outlined),
-  _Section('servizi', 'Servizi e prodotti', Icons.design_services_outlined),
-  _Section('pacchetti', 'Pacchetti', Icons.card_giftcard_rounded),
-  _Section('galleria', 'Galleria', Icons.photo_library_outlined),
-  _Section('home', 'Pagina Home', Icons.web_outlined),
-  _Section('biografia', 'Biografia e team', Icons.history_edu_outlined),
-  _Section('contatti', 'Identità e contatti', Icons.contact_phone_outlined),
-  _Section('impostazioni', 'Impostazioni', Icons.settings_outlined),
+/// Voci del menu, raggruppate.
+const _groups = <(String, List<_Section>)>[
+  (
+    'Attività',
+    [
+      _Section('panoramica', 'Panoramica', Icons.space_dashboard_outlined),
+      _Section('richieste', 'Richieste', Icons.mark_email_unread_outlined),
+      _Section('calendario', 'Calendario', Icons.calendar_month_outlined),
+    ],
+  ),
+  (
+    'Catalogo',
+    [
+      _Section('servizi', 'Servizi e prodotti', Icons.design_services_outlined),
+      _Section('pacchetti', 'Pacchetti', Icons.card_giftcard_rounded),
+      _Section('galleria', 'Galleria', Icons.photo_library_outlined),
+    ],
+  ),
+  (
+    'Sito',
+    [
+      _Section('home', 'Pagina Home', Icons.web_outlined),
+      _Section('biografia', 'Biografia e team', Icons.history_edu_outlined),
+      _Section('contatti', 'Identità e contatti', Icons.badge_outlined),
+    ],
+  ),
+  ('Sistema', [_Section('impostazioni', 'Impostazioni', Icons.tune_rounded)]),
 ];
+
+final _sections = [for (final g in _groups) ...g.$2];
 
 class AdminPage extends StatelessWidget {
   const AdminPage({super.key, required this.section});
@@ -59,6 +79,8 @@ class _LoginState extends State<_Login> {
   final _pw = TextEditingController();
   final _pw2 = TextEditingController();
   bool _show = false;
+  bool _remember = true;
+  bool _busy = false;
   String? _error;
 
   @override
@@ -70,16 +92,27 @@ class _LoginState extends State<_Login> {
 
   Future<void> _submit() async {
     final s = context.read<AppState>();
+    setState(() => _error = null);
     if (!s.hasAdminPassword) {
       if (_pw.text.length < 8) {
         setState(() => _error = 'La password deve avere almeno 8 caratteri.');
-      } else if (_pw.text != _pw2.text) {
-        setState(() => _error = 'Le due password non coincidono.');
-      } else {
-        await s.setAdminPassword(_pw.text);
+        return;
       }
-    } else if (!s.login(_pw.text)) {
-      setState(() => _error = 'Password non corretta.');
+      if (_pw.text != _pw2.text) {
+        setState(() => _error = 'Le due password non coincidono.');
+        return;
+      }
+      setState(() => _busy = true);
+      await s.setAdminPassword(_pw.text, remember: _remember);
+    } else {
+      setState(() => _busy = true);
+      final ok = await s.login(_pw.text, remember: _remember);
+      if (!ok && mounted) {
+        setState(() {
+          _busy = false;
+          _error = 'Password non corretta.';
+        });
+      }
     }
   }
 
@@ -87,97 +120,182 @@ class _LoginState extends State<_Login> {
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
     final create = !s.hasAdminPassword;
-    final t = Theme.of(context);
-    return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(34),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Icon(
-                      Icons.lock_outline_rounded,
-                      size: 34,
-                      color: t.colorScheme.primary,
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      create ? 'Crea la password' : 'Area riservata',
-                      textAlign: TextAlign.center,
-                      style: t.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      create
-                          ? 'È la prima volta: scegli una password per proteggere la gestione del sito.'
-                          : s.content.studioName,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.black54),
-                    ),
-                    const SizedBox(height: 26),
-                    TextField(
-                      controller: _pw,
-                      obscureText: !_show,
-                      autofocus: true,
-                      onSubmitted: (_) => create ? null : _submit(),
-                      decoration: InputDecoration(
-                        labelText: create
-                            ? 'Nuova password (almeno 8 caratteri)'
-                            : 'Password',
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(() => _show = !_show),
-                          icon: Icon(
-                            _show
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (create) ...[
-                      const SizedBox(height: 14),
-                      TextField(
-                        controller: _pw2,
-                        obscureText: !_show,
-                        onSubmitted: (_) => _submit(),
-                        decoration: const InputDecoration(
-                          labelText: 'Ripeti la password',
-                        ),
-                      ),
-                    ],
-                    if (_error != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _error!,
-                        style: const TextStyle(color: Color(0xFFB3382A)),
-                      ),
-                    ],
-                    const SizedBox(height: 22),
-                    FilledButton(
-                      onPressed: _submit,
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                      ),
-                      child: Text(create ? 'Crea e accedi' : 'Entra'),
-                    ),
-                    const SizedBox(height: 10),
-                    TextButton(
-                      onPressed: () => context.go('/'),
-                      child: const Text('← Torna al sito'),
-                    ),
-                  ],
+    final wide = MediaQuery.sizeOf(context).width >= 900;
+    final photo = s.heroPhotos.isNotEmpty ? s.heroPhotos.first.url : '';
+
+    final form = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 380),
+      child: AutofillGroup(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Tag(create ? 'Primo accesso' : 'Area riservata'),
+            const SizedBox(height: 18),
+            Text(
+              create ? 'Scegli la\npassword.' : 'Bentornato.',
+              style: display(wide ? 54 : 44, height: 1.0),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              create
+                  ? 'Servirà per entrare nella gestione del sito.'
+                  : 'Inserisci la password per gestire il sito.',
+              style: body(14.5, color: Palette.stone),
+            ),
+            const SizedBox(height: 28),
+            TextField(
+              controller: _pw,
+              obscureText: !_show,
+              autofocus: true,
+              autofillHints: [
+                create ? AutofillHints.newPassword : AutofillHints.password,
+              ],
+              onSubmitted: (_) => create ? null : _submit(),
+              decoration: InputDecoration(
+                labelText: create
+                    ? 'Nuova password (min. 8 caratteri)'
+                    : 'Password',
+                suffixIcon: IconButton(
+                  tooltip: _show ? 'Nascondi' : 'Mostra',
+                  onPressed: () => setState(() => _show = !_show),
+                  icon: Icon(
+                    _show
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
+            if (create) ...[
+              const SizedBox(height: 14),
+              TextField(
+                controller: _pw2,
+                obscureText: !_show,
+                autofillHints: const [AutofillHints.newPassword],
+                onSubmitted: (_) => _submit(),
+                decoration: const InputDecoration(
+                  labelText: 'Ripeti la password',
+                ),
+              ),
+            ],
+            const SizedBox(height: 6),
+            CheckboxListTile(
+              value: _remember,
+              onChanged: (v) => setState(() => _remember = v ?? true),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: Text('Ricordami su questo dispositivo', style: body(14)),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 4),
+              Text(_error!, style: body(14, color: const Color(0xFFB3261E))),
+            ],
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: _busy ? null : _submit,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                shape: const StadiumBorder(),
+              ),
+              child: _busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Palette.paper,
+                      ),
+                    )
+                  : Text(
+                      create ? 'CREA E ENTRA' : 'ENTRA',
+                      style: label(12, color: Palette.paper),
+                    ),
+            ),
+            const SizedBox(height: 14),
+            Center(
+              child: TextButton.icon(
+                onPressed: () => context.go('/'),
+                icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                label: const Text('Torna al sito'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final poster = Stack(
+      fit: StackFit.expand,
+      children: [
+        PhotoImage(photo, dark: true),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0x33000000), Color(0xCC000000)],
+            ),
           ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(wide ? 48 : 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  s.content.studioName,
+                  maxLines: 1,
+                  style: display(
+                    wide ? 88 : 46,
+                    color: Palette.paper,
+                    italic: true,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text('AREA RISERVATA', style: label(10.5, color: context.brand)),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    if (wide) {
+      return Scaffold(
+        body: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(flex: 6, child: poster),
+            Expanded(
+              flex: 5,
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(40),
+                  child: form,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(height: 220, child: poster),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 32, 22, 40),
+              child: Center(child: form),
+            ),
+          ],
         ),
       ),
     );
@@ -186,12 +304,20 @@ class _LoginState extends State<_Login> {
 
 // ======================================================================== SHELL
 
-class _Shell extends StatelessWidget {
+class _Shell extends StatefulWidget {
   const _Shell({required this.section});
   final String? section;
 
-  String get _current =>
-      _sections.any((e) => e.id == section) ? section! : 'panoramica';
+  @override
+  State<_Shell> createState() => _ShellState();
+}
+
+class _ShellState extends State<_Shell> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  String get _current => _sections.any((e) => e.id == widget.section)
+      ? widget.section!
+      : 'panoramica';
 
   Widget _page() {
     final page = switch (_current) {
@@ -209,182 +335,269 @@ class _Shell extends StatelessWidget {
     return KeyedSubtree(key: ValueKey(_current), child: page);
   }
 
+  void _select(String id) {
+    _scaffoldKey.currentState?.closeDrawer();
+    if (id != _current) context.go('/admin/$id');
+  }
+
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 900;
-    final nav = _NavList(
-      current: _current,
-      onSelect: (id) {
-        if (!wide) Navigator.of(context).maybePop();
-        context.go('/admin/$id');
-      },
-    );
+    final nav = _NavPanel(current: _current, onSelect: _select);
 
     if (wide) {
       return Scaffold(
+        key: _scaffoldKey,
         body: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(
-              width: 270,
-              child: Material(
-                color: Colors.white,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    border: Border(right: BorderSide(color: Color(0xFFE5DFD5))),
-                  ),
-                  child: nav,
-                ),
-              ),
-            ),
+            SizedBox(width: 264, child: nav),
             Expanded(child: _page()),
           ],
         ),
       );
     }
+    final current = _sections.firstWhere((e) => e.id == _current);
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Palette.ink,
+        foregroundColor: Palette.paper,
         surfaceTintColor: Colors.transparent,
-        title: Text(_sections.firstWhere((e) => e.id == _current).label),
+        titleSpacing: 0,
+        title: Text(
+          current.label,
+          style: display(24, color: Palette.paper, italic: true),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Vedi il sito',
+            onPressed: openSiteInNewTab,
+            icon: const Icon(Icons.open_in_new_rounded),
+          ),
+        ],
       ),
-      drawer: Drawer(backgroundColor: Colors.white, child: nav),
+      drawer: Drawer(
+        width: 290,
+        backgroundColor: Palette.ink,
+        shape: const RoundedRectangleBorder(),
+        child: nav,
+      ),
       body: _page(),
     );
   }
 }
 
-class _NavList extends StatelessWidget {
-  const _NavList({required this.current, required this.onSelect});
+class _NavPanel extends StatelessWidget {
+  const _NavPanel({required this.current, required this.onSelect});
   final String current;
   final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
-    final primary = Theme.of(context).colorScheme.primary;
     final newQuotes = s.quotes
         .where((q) => q.status == QuoteStatus.nuova)
         .length;
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+    return Material(
+      color: Palette.ink,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 20, 26),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    s.content.studioName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: display(27, color: Palette.paper, italic: true),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'AREA RISERVATA',
+                    style: label(9.5, color: context.brand),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: [
+                  for (final (title, items) in _groups) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
+                      child: Text(
+                        title.toUpperCase(),
+                        style: label(9.5, color: const Color(0xFF6E6862)),
+                      ),
+                    ),
+                    for (final sec in items)
+                      _NavItem(
+                        section: sec,
+                        selected: sec.id == current,
+                        badge: sec.id == 'richieste' && newQuotes > 0
+                            ? newQuotes
+                            : null,
+                        onTap: () => onSelect(sec.id),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+            Container(height: 1, color: Palette.lineDark),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+              child: Column(
+                children: [
+                  _NavAction(
+                    icon: Icons.open_in_new_rounded,
+                    text: 'Vedi il sito',
+                    onTap: openSiteInNewTab,
+                  ),
+                  _NavAction(
+                    icon: Icons.logout_rounded,
+                    text: 'Esci',
+                    onTap: () async {
+                      await context.read<AppState>().logout();
+                      if (context.mounted) context.go('/admin');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatefulWidget {
+  const _NavItem({
+    required this.section,
+    required this.selected,
+    required this.onTap,
+    this.badge,
+  });
+  final _Section section;
+  final bool selected;
+  final VoidCallback onTap;
+  final int? badge;
+
+  @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final sel = widget.selected;
+    final fg = sel || _hover ? Palette.paper : Palette.ash;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: sel
+                  ? Colors.white.withValues(alpha: 0.09)
+                  : (_hover ? Colors.white.withValues(alpha: 0.04) : null),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: Row(
               children: [
-                Container(
-                  width: 36,
-                  height: 36,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 3,
+                  height: sel ? 18 : 0,
+                  margin: const EdgeInsets.only(right: 10),
                   decoration: BoxDecoration(
-                    color: primary,
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: const Icon(
-                    Icons.photo_camera_outlined,
-                    color: Colors.white,
-                    size: 20,
+                    color: context.brand,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
+                Icon(widget.section.icon, size: 19, color: fg),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        s.content.studioName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const Text(
-                        'Area riservata',
-                        style: TextStyle(color: Colors.black54, fontSize: 12.5),
-                      ),
-                    ],
+                  child: Text(
+                    widget.section.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: body(
+                      14,
+                      color: fg,
+                      weight: sel ? FontWeight.w600 : FontWeight.w400,
+                      height: 1.2,
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: [
-                for (final sec in _sections)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: ListTile(
-                      dense: true,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                if (widget.badge != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.brand,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${widget.badge}',
+                      style: body(
+                        12,
+                        color: Palette.ink,
+                        weight: FontWeight.w700,
+                        height: 1.3,
                       ),
-                      selected: sec.id == current,
-                      selectedTileColor: primary.withValues(alpha: 0.12),
-                      selectedColor: primary,
-                      leading: Icon(sec.icon, size: 21),
-                      title: Text(
-                        sec.label,
-                        style: TextStyle(
-                          fontWeight: sec.id == current
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                          fontSize: 14.5,
-                        ),
-                      ),
-                      trailing: sec.id == 'richieste' && newQuotes > 0
-                          ? Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFC25B2E),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '$newQuotes',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            )
-                          : null,
-                      onTap: () => onSelect(sec.id),
                     ),
                   ),
               ],
             ),
           ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.open_in_new_rounded, size: 20),
-                  title: const Text('Vedi il sito'),
-                  onTap: () => context.go('/'),
-                ),
-                ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.logout_rounded, size: 20),
-                  title: const Text('Esci'),
-                  onTap: () {
-                    context.read<AppState>().logout();
-                    context.go('/admin');
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavAction extends StatelessWidget {
+  const _NavAction({
+    required this.icon,
+    required this.text,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String text;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: Palette.ash),
+            const SizedBox(width: 12),
+            Text(text, style: body(14, color: Palette.ash, height: 1.2)),
+          ],
+        ),
       ),
     );
   }

@@ -17,7 +17,6 @@ class HomePage extends StatelessWidget {
       darkHero: true,
       children: [
         HeroSlideshow(content: c, photos: s.heroPhotos),
-        MarqueeBand(text: c.marquee),
         if (c.manifestoTitle.trim().isNotEmpty)
           Statement(text: c.manifestoTitle, number: '01'),
         if (s.gallery.isNotEmpty)
@@ -28,7 +27,6 @@ class HomePage extends StatelessWidget {
             services: s.activeServices,
             number: '03',
           ),
-        CtaBanner(content: c),
       ],
     );
   }

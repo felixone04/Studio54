@@ -6,8 +6,10 @@ import 'package:visibility_detector/visibility_detector.dart';
 import 'app.dart';
 import 'data/repository.dart';
 import 'state/app_state.dart';
+import 'widgets/common.dart';
 
 Future<void> main() async {
+  appStartedAt = DateTime.now();
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('it_IT');
   VisibilityDetectorController.instance.updateInterval = const Duration(

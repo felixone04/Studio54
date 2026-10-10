@@ -180,7 +180,7 @@ class _AppointmentDialogState extends State<_AppointmentDialog> {
     return AlertDialog(
       title: Text(e == null ? 'Nuovo appuntamento' : 'Modifica appuntamento'),
       content: SizedBox(
-        width: 520,
+        width: dialogWidth(context, 520),
         child: SingleChildScrollView(
           child: Form(
             key: _form,

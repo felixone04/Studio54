@@ -18,33 +18,88 @@
   <title>Studio Fotografico</title>
   <link rel="manifest" href="manifest.json">
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital@0;1&family=Manrope:wght@600&display=swap" rel="stylesheet">
+
   <style>
-    html, body { margin: 0; height: 100%; background: #0D0C0B; }
+    html, body { margin: 0; height: 100%; background: #0A0A0A; }
+    /* Logo d'apertura: copre il sito per almeno 2 secondi, poi sfuma. */
     #splash {
-      position: fixed; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 22px;
-      background: #0D0C0B; color: #F2ECE2; z-index: 0;
-      font-family: Georgia, 'Times New Roman', serif; letter-spacing: .5em;
-      font-size: 15px; text-transform: uppercase;
-      transition: opacity .6s ease;
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #0A0A0A; color: #F4F0E8; padding: 0 24px; text-align: center;
+      transition: opacity .8s ease, visibility .8s ease;
     }
-    #splash i {
-      width: 46px; height: 1px; background: #C8A97A; display: block;
-      animation: grow 1.4s ease-in-out infinite alternate;
+    #splash.hide { opacity: 0; visibility: hidden; }
+    #splash .name {
+      font-family: 'Bodoni Moda', Georgia, 'Times New Roman', serif;
+      font-size: clamp(44px, 10vw, 112px); line-height: 1; letter-spacing: -0.02em;
+      opacity: 0; transform: translateY(18px);
+      animation: rise 1s cubic-bezier(.2,.7,.2,1) .15s forwards;
     }
-    @keyframes grow { from { transform: scaleX(.2); } to { transform: scaleX(1); } }
+    #splash .name em { font-style: italic; color: #D4A85A; }
+    #splash .bar {
+      width: min(220px, 50vw); height: 1px; margin: 34px 0 20px;
+      background: rgba(244,240,232,.18); overflow: hidden;
+    }
+    #splash .bar i {
+      display: block; height: 100%; width: 100%; background: #D4A85A;
+      transform-origin: left; transform: scaleX(0); animation: fill 2s ease-in-out forwards;
+    }
+    #splash .tag {
+      font-family: 'Manrope', Arial, sans-serif; font-weight: 600; font-size: 11px;
+      letter-spacing: .32em; text-transform: uppercase; color: #A19A90;
+      opacity: 0; animation: fade .8s ease .6s forwards;
+    }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+    @keyframes fill { to { transform: scaleX(1); } }
+    @keyframes fade { to { opacity: 1; } }
   </style>
 
   <!-- Google Identity Services: serve per collegare Google Calendar dall'area admin -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <div id="splash"><span>Studio fotografico</span><i></i></div>
+  <div id="splash" aria-label="Caricamento">
+    <div class="name" id="splash-name">Studio <em>Lumen</em></div>
+    <div class="bar"><i></i></div>
+    <div class="tag" id="splash-tag">Fotografia d'autore</div>
+  </div>
   <script>
-    window.addEventListener('flutter-first-frame', function () {
-      var s = document.getElementById('splash');
-      if (s) { s.style.opacity = 0; setTimeout(function () { s.remove(); }, 700); }
-    });
+    (function () {
+      var start = Date.now();
+      var MIN_MS = 2000; // durata minima del logo d'apertura
+
+      // Usa nome e slogan salvati dall'area riservata, se presenti.
+      try {
+        var raw = localStorage.getItem('flutter.studio.v2.content');
+        if (raw) {
+          var c = JSON.parse(JSON.parse(raw));
+          var words = String(c.studioName || '').trim().split(/\s+/);
+          if (words[0]) {
+            var el = document.getElementById('splash-name');
+            el.textContent = words[0] + (words.length > 1 ? ' ' : '');
+            if (words.length > 1) {
+              var em = document.createElement('em');
+              em.textContent = words.slice(1).join(' ');
+              el.appendChild(em);
+            }
+          }
+          if (c.tagline) document.getElementById('splash-tag').textContent = c.tagline;
+        }
+      } catch (e) {}
+
+      window.addEventListener('flutter-first-frame', function () {
+        var wait = Math.max(0, MIN_MS - (Date.now() - start));
+        setTimeout(function () {
+          var s = document.getElementById('splash');
+          if (!s) return;
+          s.classList.add('hide');
+          setTimeout(function () { s.remove(); }, 900);
+        }, wait);
+      });
+    })();
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
