@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Studio fotografico: matrimoni, cerimonie, ritratti ed eventi. Richiedi un preventivo personalizzato.">
+  <meta name="theme-color" content="#0D0C0B">
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Studio Fotografico">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Studio Fotografico</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body { margin: 0; height: 100%; background: #0D0C0B; }
+    #splash {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 22px;
+      background: #0D0C0B; color: #F2ECE2; z-index: 0;
+      font-family: Georgia, 'Times New Roman', serif; letter-spacing: .5em;
+      font-size: 15px; text-transform: uppercase;
+      transition: opacity .6s ease;
+    }
+    #splash i {
+      width: 46px; height: 1px; background: #C8A97A; display: block;
+      animation: grow 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes grow { from { transform: scaleX(.2); } to { transform: scaleX(1); } }
+  </style>
+
+  <!-- Google Identity Services: serve per collegare Google Calendar dall'area admin -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div id="splash"><span>Studio fotografico</span><i></i></div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var s = document.getElementById('splash');
+      if (s) { s.style.opacity = 0; setTimeout(function () { s.remove(); }, 700); }
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
