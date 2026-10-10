@@ -15,6 +15,7 @@ class HomePage extends StatelessWidget {
     return SiteScaffold(
       location: '/',
       darkHero: true,
+      logoHero: true,
       children: [
         HeroSlideshow(content: c, photos: s.heroPhotos),
         if (c.manifestoTitle.trim().isNotEmpty)

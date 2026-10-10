@@ -37,7 +37,7 @@ class _AdminQuotesState extends State<AdminQuotes> {
       children: [
         const AdminHeader(
           title: 'Richieste di preventivo',
-          subtitle: 'Chi ha chiesto di essere richiamato. Cambia lo stato man mano che li contatti e fissa un appuntamento.',
+          subtitle: 'Chi ha chiesto di essere richiamato.',
         ),
         Wrap(
           spacing: 8,
@@ -221,9 +221,10 @@ class _QuoteCard extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   SizedBox(
-                    width: 190,
+                    width: 210,
                     child: DropdownButtonFormField<QuoteStatus>(
                       initialValue: q.status,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Stato',
                         isDense: true,

@@ -162,17 +162,7 @@ class AdminDashboard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AdminHeader(
-          title: 'Benvenuto',
-          subtitle: 'Ecco la situazione di ${s.content.studioName}.',
-          actions: [
-            OutlinedButton.icon(
-              onPressed: openSiteInNewTab,
-              icon: const Icon(Icons.open_in_new_rounded, size: 18),
-              label: const Text('Vedi il sito'),
-            ),
-          ],
-        ),
+        AdminHeader(title: 'Benvenuto', subtitle: 'La situazione di oggi.'),
         LayoutBuilder(
           builder: (context, box) {
             final cols = box.maxWidth > 900 ? 4 : 2;
@@ -200,41 +190,6 @@ class AdminDashboard extends StatelessWidget {
           const SizedBox(height: 20),
           next,
         ],
-        const SizedBox(height: 22),
-        Panel(
-          title: 'Azioni rapide',
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _Quick(
-                'Aggiungi foto',
-                Icons.add_photo_alternate_outlined,
-                () => context.go('/admin/galleria'),
-              ),
-              _Quick(
-                'Nuovo servizio',
-                Icons.add_circle_outline_rounded,
-                () => context.go('/admin/servizi'),
-              ),
-              _Quick(
-                'Modifica la home',
-                Icons.web_outlined,
-                () => context.go('/admin/home'),
-              ),
-              _Quick(
-                'Modifica la biografia',
-                Icons.history_edu_outlined,
-                () => context.go('/admin/biografia'),
-              ),
-              _Quick(
-                'Contatti e identità',
-                Icons.contact_phone_outlined,
-                () => context.go('/admin/contatti'),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -297,18 +252,4 @@ class _Stat extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Quick extends StatelessWidget {
-  const _Quick(this.label, this.icon, this.onTap);
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => OutlinedButton.icon(
-    onPressed: onTap,
-    icon: Icon(icon, size: 18),
-    label: Text(label),
-  );
 }

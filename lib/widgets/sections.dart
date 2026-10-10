@@ -8,10 +8,11 @@ import '../models/models.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
 import 'lightbox.dart';
+import 'photo_ui.dart';
 
 // ============================================================ animazioni
 
-/// Il testo "sale" da dietro una maschera, come nei titoli di testa.
+/// Il contenuto "sale" da dietro una maschera, come nei titoli di testa.
 class MaskReveal extends StatefulWidget {
   const MaskReveal({super.key, required this.child, this.delay = 0});
   final Widget child;
@@ -41,18 +42,70 @@ class _MaskRevealState extends State<MaskReveal> {
     return ClipRect(
       child: AnimatedSlide(
         offset: _on ? Offset.zero : const Offset(0, 1.1),
-        duration: const Duration(milliseconds: 1200),
+        duration: const Duration(milliseconds: 1100),
         curve: Curves.easeOutQuart,
-        child: widget.child,
+        child: AnimatedOpacity(
+          opacity: _on ? 1 : 0,
+          duration: const Duration(milliseconds: 900),
+          child: widget.child,
+        ),
       ),
+    );
+  }
+}
+
+/// Titolo di sezione: etichetta piccola + titolo leggero, ben leggibile.
+class SectionTitle extends StatelessWidget {
+  const SectionTitle({
+    super.key,
+    required this.kicker,
+    required this.title,
+    this.number,
+    this.onDark = false,
+    this.trailing,
+    this.center = false,
+  });
+  final String kicker;
+  final String title;
+  final String? number;
+  final bool onDark;
+  final Widget? trailing;
+  final bool center;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = onDark ? Palette.paper : Palette.ink;
+    final text = Column(
+      crossAxisAlignment: center
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
+      children: [
+        Tag(kicker, number: number, color: fg),
+        SizedBox(height: context.fluid(14, 20)),
+        Reveal(
+          child: Text(
+            title,
+            textAlign: center ? TextAlign.center : TextAlign.start,
+            style: display(context.fluid(32, 54), color: fg),
+          ),
+        ),
+      ],
+    );
+    if (trailing == null) return text;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(child: text),
+        trailing!,
+      ],
     );
   }
 }
 
 // ================================================================= HERO
 
-/// Apertura: foto a tutto schermo in dissolvenza con il nome dello studio
-/// gigante, come il manifesto di una mostra.
+/// Apertura: foto a tutto schermo inquadrate da un mirino, con il logo al
+/// centro e il "display" della fotocamera in basso.
 class HeroSlideshow extends StatefulWidget {
   const HeroSlideshow({super.key, required this.content, required this.photos});
   final SiteContent content;
@@ -98,11 +151,10 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
     final c = widget.content;
     final photos = widget.photos;
     final h = context.screenH;
-    final phone = context.isPhone;
-    final accent = Theme.of(context).colorScheme.primary;
     final photo = photos.isEmpty ? null : photos[_i % photos.length];
-    final nameSize = math.min(context.w * (phone ? 0.2 : 0.15), h * 0.25);
-    final words = c.studioName.trim().split(RegExp(r'\s+'));
+    final navH = context.fluid(66, 88);
+    final g = context.gutter;
+    final logoW = math.min(context.w * 0.64, 470.0);
 
     return SizedBox(
       height: h,
@@ -110,14 +162,14 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            ColoredBox(color: Palette.ink),
+            const ColoredBox(color: Palette.ink),
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 1600),
+              duration: const Duration(milliseconds: 1400),
               child: photo == null
                   ? const SizedBox.shrink()
                   : TweenAnimationBuilder<double>(
                       key: ValueKey(photo.id),
-                      tween: Tween(begin: 1.0, end: 1.12),
+                      tween: Tween(begin: 1.0, end: 1.08),
                       duration: const Duration(seconds: 10),
                       builder: (_, s, child) =>
                           Transform.scale(scale: s, child: child),
@@ -126,77 +178,78 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
                       ),
                     ),
             ),
+            // Velatura: più scura al centro per il logo, e in basso.
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  radius: 0.9,
+                  colors: [Color(0x8C000000), Color(0x40000000)],
+                ),
+              ),
+            ),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0x55000000),
-                    Color(0x11000000),
-                    Color(0x99000000),
-                    Color(0xE6000000),
+                    Color(0x66000000),
+                    Color(0x00000000),
+                    Color(0xB3000000),
                   ],
-                  stops: [0, 0.35, 0.75, 1],
+                  stops: [0, 0.4, 1],
                 ),
               ),
             ),
+            // Mirino.
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                context.gutter,
-                0,
-                context.gutter,
-                context.fluid(22, 40),
+              padding: EdgeInsets.fromLTRB(g * 0.7, navH + 6, g * 0.7, g * 0.7),
+              child: const Viewfinder(
+                color: Color(0x99FFFFFF),
+                length: 28,
+                stroke: 1,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  MaskReveal(child: Tag(c.heroKicker, color: Palette.paper)),
-                  SizedBox(height: context.fluid(10, 18)),
-                  for (var i = 0; i < words.length; i++)
-                    MaskReveal(
-                      delay: 120 + i * 140,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
+            ),
+            // Logo e frase.
+            Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: g),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    MaskReveal(child: BrandLogo(width: logoW)),
+                    if (c.heroTitle.trim().isNotEmpty) ...[
+                      SizedBox(height: context.fluid(22, 34)),
+                      MaskReveal(
+                        delay: 250,
                         child: Text(
-                          words[i],
-                          maxLines: 1,
+                          c.heroTitle.toUpperCase(),
+                          textAlign: TextAlign.center,
                           style: display(
-                            nameSize,
-                            color: i.isOdd ? accent : Palette.paper,
-                            italic: i.isOdd,
-                            height: 0.92,
+                            context.fluid(13, 16),
+                            color: Palette.paper,
+                            weight: FontWeight.w300,
+                            spacing: 0.3,
                           ),
                         ),
                       ),
-                    ),
-                  SizedBox(height: context.fluid(18, 30)),
-                  if (c.heroTitle.trim().isNotEmpty)
-                    MaskReveal(
-                      delay: 500,
-                      child: Text(
-                        c.heroTitle,
-                        style: display(
-                          context.fluid(24, 40),
-                          color: Palette.paper,
-                          italic: true,
-                          height: 1.05,
-                        ),
-                      ),
-                    ),
-                  SizedBox(height: context.fluid(26, 44)),
-                  _HeroBar(
-                    index: _i,
-                    total: photos.length,
-                    photo: photo,
-                    interval: _interval,
-                    onPrev: () => _go(_i - 1),
-                    onNext: () => _go(_i + 1),
-                    onSelect: _go,
-                  ),
-                ],
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            // Display della fotocamera.
+            Positioned(
+              left: g * 0.7 + 18,
+              right: g * 0.7 + 18,
+              bottom: g * 0.7 + 14,
+              child: _CameraBar(
+                index: _i,
+                total: photos.length,
+                photo: photo,
+                interval: _interval,
+                onPrev: () => _go(_i - 1),
+                onNext: () => _go(_i + 1),
               ),
             ),
           ],
@@ -206,15 +259,14 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
   }
 }
 
-class _HeroBar extends StatelessWidget {
-  const _HeroBar({
+class _CameraBar extends StatelessWidget {
+  const _CameraBar({
     required this.index,
     required this.total,
     required this.photo,
     required this.interval,
     required this.onPrev,
     required this.onNext,
-    required this.onSelect,
   });
   final int index;
   final int total;
@@ -222,58 +274,47 @@ class _HeroBar extends StatelessWidget {
   final Duration interval;
   final VoidCallback onPrev;
   final VoidCallback onNext;
-  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
+    final phone = context.isPhone;
+    final counter =
+        '${(index + 1).toString().padLeft(2, '0')} / ${total.toString().padLeft(2, '0')}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
+        // Avanzamento dello scatto corrente.
+        Container(
+          height: 1,
+          color: Colors.white.withValues(alpha: 0.2),
+          alignment: Alignment.centerLeft,
+          child: TweenAnimationBuilder<double>(
+            key: ValueKey('bar$index'),
+            tween: Tween(begin: 0, end: 1),
+            duration: interval,
+            builder: (_, v, _) => FractionallySizedBox(
+              widthFactor: v,
+              child: Container(color: Colors.white.withValues(alpha: 0.8)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         Row(
           children: [
-            for (var i = 0; i < total; i++)
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onSelect(i),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 2,
-                      vertical: 8,
-                    ),
-                    child: Container(
-                      height: 2,
-                      color: Colors.white.withValues(alpha: 0.25),
-                      alignment: Alignment.centerLeft,
-                      child: i == index
-                          ? TweenAnimationBuilder<double>(
-                              key: ValueKey('bar$index'),
-                              tween: Tween(begin: 0, end: 1),
-                              duration: interval,
-                              builder: (_, v, _) => FractionallySizedBox(
-                                widthFactor: v,
-                                child: Container(color: accent),
-                              ),
-                            )
-                          : FractionallySizedBox(
-                              widthFactor: i < index ? 1 : 0,
-                              child: Container(color: Palette.paper),
-                            ),
-                    ),
-                  ),
+            if (!phone) ...[
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE5483B),
+                  shape: BoxShape.circle,
                 ),
               ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Text(
-              '${(index + 1).toString().padLeft(2, '0')} — ${total.toString().padLeft(2, '0')}',
-              style: label(11, color: Palette.paper),
-            ),
-            const SizedBox(width: 16),
+              const SizedBox(width: 8),
+              Text('RAW   AF-S', style: cameraText(10.5)),
+              const SizedBox(width: 24),
+            ],
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 500),
@@ -282,13 +323,21 @@ class _HeroBar extends StatelessWidget {
                   key: ValueKey(photo?.id),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: display(17, color: Palette.paper, italic: true),
+                  textAlign: phone ? TextAlign.start : TextAlign.center,
+                  style: display(
+                    phone ? 14 : 16,
+                    color: Palette.paper,
+                    italic: true,
+                  ),
                 ),
               ),
             ),
-            _RoundIcon(Icons.arrow_back_rounded, onPrev),
-            const SizedBox(width: 8),
-            _RoundIcon(Icons.arrow_forward_rounded, onNext),
+            const SizedBox(width: 16),
+            Text(counter, style: cameraText(10.5)),
+            const SizedBox(width: 12),
+            _IconCircle(Icons.chevron_left_rounded, onPrev, 'Foto precedente'),
+            const SizedBox(width: 6),
+            _IconCircle(Icons.chevron_right_rounded, onNext, 'Foto successiva'),
           ],
         ),
       ],
@@ -296,38 +345,45 @@ class _HeroBar extends StatelessWidget {
   }
 }
 
-class _RoundIcon extends StatefulWidget {
-  const _RoundIcon(this.icon, this.onTap);
+class _IconCircle extends StatefulWidget {
+  const _IconCircle(this.icon, this.onTap, this.tooltip);
   final IconData icon;
   final VoidCallback onTap;
+  final String tooltip;
 
   @override
-  State<_RoundIcon> createState() => _RoundIconState();
+  State<_IconCircle> createState() => _IconCircleState();
 }
 
-class _RoundIconState extends State<_RoundIcon> {
+class _IconCircleState extends State<_IconCircle> {
   bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    const base = Palette.paper;
-    const inv = Palette.ink;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _hover ? base : Colors.transparent,
-            border: Border.all(color: base.withValues(alpha: 0.6)),
+    return Semantics(
+      button: true,
+      label: widget.tooltip,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _hover ? Palette.paper : Colors.transparent,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+            ),
+            child: Icon(
+              widget.icon,
+              size: 20,
+              color: _hover ? Palette.ink : Palette.paper,
+            ),
           ),
-          child: Icon(widget.icon, size: 18, color: _hover ? inv : base),
         ),
       ),
     );
@@ -336,6 +392,7 @@ class _RoundIconState extends State<_RoundIcon> {
 
 // ============================================================ MANIFESTO
 
+/// Una frase sola, centrata, sotto la fotocamera del logo.
 class Statement extends StatelessWidget {
   const Statement({super.key, required this.text, required this.number});
   final String text;
@@ -344,33 +401,42 @@ class Statement extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lines = text.split('\n').where((e) => e.trim().isNotEmpty).toList();
-    final size = context.fluid(38, 108);
+    final size = context.fluid(24, 42);
     return Section(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Tag('Manifesto', number: number),
-          SizedBox(height: context.fluid(28, 48)),
-          Reveal(
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  for (var i = 0; i < lines.length; i++)
-                    TextSpan(
-                      text:
-                          '${lines[i].trim()}${i < lines.length - 1 ? '\n' : ''}',
-                      style: display(
-                        size,
-                        italic: i.isOdd,
-                        color: i.isOdd ? context.accentInk : Palette.ink,
-                        height: 1.02,
-                      ),
-                    ),
-                ],
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Column(
+            children: [
+              const BrandMark(height: 26, onDark: false),
+              SizedBox(height: context.fluid(22, 30)),
+              Tag('Manifesto', number: number),
+              SizedBox(height: context.fluid(22, 34)),
+              Reveal(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      for (var i = 0; i < lines.length; i++)
+                        TextSpan(
+                          text:
+                              '${lines[i].trim()}${i < lines.length - 1 ? '\n' : ''}',
+                          style: display(
+                            size,
+                            italic: i.isOdd,
+                            color: i.isOdd ? Palette.stone : Palette.ink,
+                            height: 1.3,
+                          ),
+                        ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
+              SizedBox(height: context.fluid(26, 36)),
+              Container(width: 48, height: 1, color: Palette.ink),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -378,7 +444,8 @@ class Statement extends StatelessWidget {
 
 // ========================================================== GALLERIA
 
-/// "La mostra": parete con le opere disposte su colonne sfalsate.
+/// Il portfolio come un provino a contatto: colonne sfalsate, numero di
+/// fotogramma e, al passaggio del mouse, mirino e griglia dei terzi.
 class GalleryWall extends StatelessWidget {
   const GalleryWall({
     super.key,
@@ -394,37 +461,24 @@ class GalleryWall extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cols = context.w < 600 ? 2 : (context.w < 1024 ? 2 : 3);
-    final gap = context.fluid(12, 36);
-    final stagger = context.fluid(40, 140);
+    final cols = context.w < 1024 ? 2 : 3;
+    final gap = context.fluid(10, 28);
+    final stagger = context.fluid(30, 110);
     return Section(
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Tag(content.galleryKicker, number: number),
-          SizedBox(height: context.fluid(14, 22)),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Flexible(
-                child: Reveal(
-                  child: Text(
-                    content.galleryTitle,
-                    style: display(context.fluid(64, 200), height: 0.9),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Padding(
-                padding: EdgeInsets.only(top: context.fluid(8, 24)),
-                child: Text(
-                  '(${photos.length})',
-                  style: display(context.fluid(20, 40), italic: true),
-                ),
-              ),
-            ],
+          SectionTitle(
+            kicker: content.galleryKicker,
+            title: content.galleryTitle,
+            number: number,
+            trailing: Text(
+              '${photos.length} SCATTI',
+              style: label(10.5, color: Palette.stone),
+            ),
           ),
-          SizedBox(height: context.fluid(36, 80)),
+          SizedBox(height: context.fluid(30, 60)),
           LayoutBuilder(
             builder: (context, box) {
               final colW = (box.maxWidth - gap * (cols - 1)) / cols;
@@ -441,10 +495,10 @@ class GalleryWall extends StatelessWidget {
                           children: [
                             for (var i = c; i < photos.length; i += cols)
                               Padding(
-                                padding: EdgeInsets.only(bottom: gap * 1.6),
+                                padding: EdgeInsets.only(bottom: gap * 1.5),
                                 child: Reveal(
-                                  delay: Duration(milliseconds: 80 * c),
-                                  child: _Artwork(
+                                  delay: Duration(milliseconds: 70 * c),
+                                  child: _Frame(
                                     photo: photos[i],
                                     number: i + 1,
                                     ratio: _ratios[i % _ratios.length],
@@ -468,8 +522,8 @@ class GalleryWall extends StatelessWidget {
   }
 }
 
-class _Artwork extends StatefulWidget {
-  const _Artwork({
+class _Frame extends StatefulWidget {
+  const _Frame({
     required this.photo,
     required this.number,
     required this.ratio,
@@ -481,16 +535,20 @@ class _Artwork extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_Artwork> createState() => _ArtworkState();
+  State<_Frame> createState() => _FrameState();
 }
 
-class _ArtworkState extends State<_Artwork> {
+class _FrameState extends State<_Frame> {
   bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
     final small = context.isPhone;
+    final meta = [
+      widget.photo.category,
+      widget.photo.location,
+      widget.photo.year,
+    ].where((e) => e.isNotEmpty).join(' · ');
     return Semantics(
       button: true,
       label: widget.photo.title,
@@ -510,56 +568,62 @@ class _ArtworkState extends State<_Artwork> {
                     fit: StackFit.expand,
                     children: [
                       AnimatedScale(
-                        scale: _hover ? 1.06 : 1,
-                        duration: const Duration(milliseconds: 900),
+                        scale: _hover ? 1.04 : 1,
+                        duration: const Duration(milliseconds: 800),
                         curve: Curves.easeOutCubic,
                         child: PhotoImage(widget.photo.url),
                       ),
-                      Positioned(
-                        right: 12,
-                        bottom: 12,
-                        child: AnimatedScale(
-                          scale: _hover ? 1 : 0,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOutBack,
-                          child: Container(
-                            width: 46,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              color: accent,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.open_in_full_rounded,
-                              size: 18,
-                              color: Palette.ink,
-                            ),
-                          ),
-                        ),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(end: _hover ? 1 : 0),
+                        duration: const Duration(milliseconds: 300),
+                        builder: (_, t, _) => ThirdsGrid(opacity: t),
+                      ),
+                      FocusFrame(
+                        active: _hover,
+                        length: 16,
+                        inset: 12,
+                        focusPoint: true,
                       ),
                     ],
                   ),
                 ),
               ),
-              SizedBox(height: small ? 8 : 14),
+              SizedBox(height: small ? 8 : 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     widget.number.toString().padLeft(2, '0'),
-                    style: label(small ? 9.5 : 10.5, color: context.accentInk),
+                    style: label(small ? 9 : 10, color: Palette.stone),
                   ),
-                  SizedBox(width: small ? 8 : 14),
+                  SizedBox(width: small ? 8 : 12),
                   Expanded(
-                    child: Text(
-                      widget.photo.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: display(
-                        small ? 15 : 21,
-                        italic: true,
-                        height: 1.1,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.photo.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: display(
+                            small ? 14 : 17,
+                            weight: FontWeight.w400,
+                          ),
+                        ),
+                        if (meta.isNotEmpty && !small) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            meta.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: label(
+                              9.5,
+                              color: Palette.stone,
+                              weight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -574,7 +638,7 @@ class _ArtworkState extends State<_Artwork> {
 
 // ============================================================ SERVIZI
 
-/// Striscia orizzontale di grandi card fotografiche, una per servizio.
+/// I servizi come fotogrammi di una pellicola 35 mm che scorre.
 class ServicesStrip extends StatefulWidget {
   const ServicesStrip({
     super.key,
@@ -612,64 +676,64 @@ class _ServicesStripState extends State<ServicesStrip> {
   @override
   Widget build(BuildContext context) {
     final list = widget.services.where((s) => s.image.isNotEmpty).toList();
-    final cardW = context.isPhone ? context.w * 0.72 : context.fluid(260, 400);
-    final cardH = cardW * 1.32;
-    final gap = context.fluid(12, 24);
+    final frameW = context.isPhone ? context.w * 0.68 : context.fluid(240, 340);
+    final frameH = frameW * 1.25;
     return Container(
       color: Palette.ink,
-      padding: EdgeInsets.symmetric(vertical: context.fluid(72, 150)),
+      padding: EdgeInsets.symmetric(vertical: context.fluid(70, 130)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: context.gutter),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Tag(
-                        'Servizi',
-                        number: widget.number,
-                        color: Palette.paper,
-                      ),
-                      SizedBox(height: context.fluid(14, 22)),
-                      Reveal(
-                        child: Text(
-                          widget.title,
-                          style: display(
-                            context.fluid(48, 140),
-                            color: Palette.paper,
-                            height: 0.92,
-                          ),
+            child: SectionTitle(
+              kicker: 'Servizi',
+              title: widget.title,
+              number: widget.number,
+              onDark: true,
+              trailing: context.isPhone
+                  ? null
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _IconCircle(
+                          Icons.chevron_left_rounded,
+                          () => _by(-frameW * 2),
+                          'Indietro',
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (!context.isPhone) ...[
-                  _RoundIcon(Icons.arrow_back_rounded, () => _by(-cardW * 2)),
-                  const SizedBox(width: 8),
-                  _RoundIcon(Icons.arrow_forward_rounded, () => _by(cardW * 2)),
-                ],
-              ],
+                        const SizedBox(width: 8),
+                        _IconCircle(
+                          Icons.chevron_right_rounded,
+                          () => _by(frameW * 2),
+                          'Avanti',
+                        ),
+                      ],
+                    ),
             ),
           ),
-          SizedBox(height: context.fluid(36, 70)),
-          SizedBox(
-            height: cardH,
-            child: ListView.separated(
-              controller: _c,
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: context.gutter),
-              itemCount: list.length,
-              separatorBuilder: (_, _) => SizedBox(width: gap),
-              itemBuilder: (_, i) => SizedBox(
-                width: cardW,
-                child: _ServiceCard(service: list[i], number: i + 1),
-              ),
+          SizedBox(height: context.fluid(34, 56)),
+          // La pellicola.
+          Container(
+            color: const Color(0xFF050505),
+            child: Column(
+              children: [
+                const Sprockets(height: 26, color: Color(0x40F6F5F2)),
+                SizedBox(
+                  height: frameH,
+                  child: ListView.separated(
+                    controller: _c,
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.symmetric(horizontal: context.gutter),
+                    itemCount: list.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
+                    itemBuilder: (_, i) => SizedBox(
+                      width: frameW,
+                      child: _FilmFrame(service: list[i], number: i + 1),
+                    ),
+                  ),
+                ),
+                const Sprockets(height: 26, color: Color(0x40F6F5F2)),
+              ],
             ),
           ),
         ],
@@ -678,21 +742,20 @@ class _ServicesStripState extends State<ServicesStrip> {
   }
 }
 
-class _ServiceCard extends StatefulWidget {
-  const _ServiceCard({required this.service, required this.number});
+class _FilmFrame extends StatefulWidget {
+  const _FilmFrame({required this.service, required this.number});
   final ServiceItem service;
   final int number;
 
   @override
-  State<_ServiceCard> createState() => _ServiceCardState();
+  State<_FilmFrame> createState() => _FilmFrameState();
 }
 
-class _ServiceCardState extends State<_ServiceCard> {
+class _FilmFrameState extends State<_FilmFrame> {
   bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
     final s = widget.service;
     return Semantics(
       button: true,
@@ -703,13 +766,14 @@ class _ServiceCardState extends State<_ServiceCard> {
         onExit: (_) => setState(() => _hover = false),
         child: GestureDetector(
           onTap: () => context.go('/preventivo?s=${s.id}'),
-          child: ClipRect(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
             child: Stack(
               fit: StackFit.expand,
               children: [
                 AnimatedScale(
-                  scale: _hover ? 1.07 : 1,
-                  duration: const Duration(milliseconds: 900),
+                  scale: _hover ? 1.05 : 1,
+                  duration: const Duration(milliseconds: 800),
                   curve: Curves.easeOutCubic,
                   child: PhotoImage(s.image, dark: true),
                 ),
@@ -719,40 +783,48 @@ class _ServiceCardState extends State<_ServiceCard> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0x33000000),
+                        Color(0x40000000),
                         Color(0x00000000),
                         Color(0xD9000000),
                       ],
-                      stops: [0, 0.4, 1],
+                      stops: [0, 0.45, 1],
                     ),
                   ),
                 ),
+                FocusFrame(active: _hover, length: 14, inset: 12),
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(18),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            widget.number.toString().padLeft(2, '0'),
-                            style: label(11, color: Palette.paper),
-                          ),
-                        ],
+                      // Numerazione del fotogramma, come sul bordo pellicola.
+                      Text(
+                        '${widget.number.toString().padLeft(2, '0')}A',
+                        style: cameraText(10, color: const Color(0xFFE8C27A)),
                       ),
                       const Spacer(),
                       Text(
-                        s.name,
+                        s.name.toUpperCase(),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: display(
-                          context.fluid(28, 40),
+                          context.fluid(17, 21),
                           color: Palette.paper,
-                          height: 1.0,
+                          weight: FontWeight.w400,
+                          spacing: 0.08,
+                          height: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         s.category.toUpperCase(),
-                        style: label(10, color: _hover ? accent : Palette.ash),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: label(
+                          9.5,
+                          color: Palette.ash,
+                          weight: FontWeight.w400,
+                        ),
                       ),
                     ],
                   ),
@@ -766,8 +838,7 @@ class _ServiceCardState extends State<_ServiceCard> {
   }
 }
 
-/// Apertura a tutto schermo con un'immagine fissa e un titolo gigante
-/// (usata dalla biografia).
+/// Apertura a tutto schermo con immagine fissa, mirino e titolo (biografia).
 class PageHero extends StatelessWidget {
   const PageHero({
     super.key,
@@ -783,8 +854,9 @@ class PageHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    final h = context.screenH;
+    final h = math.min(context.screenH, context.w * 1.5);
+    final navH = context.fluid(66, 88);
+    final g = context.gutter;
     return SizedBox(
       height: h,
       child: ClipRect(
@@ -793,7 +865,7 @@ class PageHero extends StatelessWidget {
           children: [
             const ColoredBox(color: Palette.ink),
             TweenAnimationBuilder<double>(
-              tween: Tween(begin: 1.15, end: 1.0),
+              tween: Tween(begin: 1.12, end: 1.0),
               duration: const Duration(seconds: 3),
               curve: Curves.easeOutCubic,
               builder: (_, s, child) => Transform.scale(scale: s, child: child),
@@ -807,52 +879,54 @@ class PageHero extends StatelessWidget {
                   colors: [
                     Color(0x66000000),
                     Color(0x22000000),
-                    Color(0xE6000000),
+                    Color(0xD9000000),
                   ],
                   stops: [0, 0.4, 1],
                 ),
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                context.gutter,
-                0,
-                context.gutter,
-                context.fluid(36, 64),
+              padding: EdgeInsets.fromLTRB(g * 0.7, navH + 6, g * 0.7, g * 0.7),
+              child: const Viewfinder(
+                color: Color(0x99FFFFFF),
+                length: 28,
+                stroke: 1,
               ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(g + 8, 0, g + 8, g + 24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   MaskReveal(child: Tag(kicker, color: Palette.paper)),
-                  SizedBox(height: context.fluid(10, 18)),
+                  SizedBox(height: context.fluid(12, 18)),
                   MaskReveal(
                     delay: 120,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        style: display(
-                          math.min(context.w * 0.17, h * 0.26),
-                          color: Palette.paper,
-                          height: 0.95,
-                        ),
+                    child: Text(
+                      title.toUpperCase(),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: display(
+                        context.fluid(34, 62),
+                        color: Palette.paper,
+                        spacing: 0.1,
                       ),
                     ),
                   ),
                   if (subtitle.isNotEmpty) ...[
-                    SizedBox(height: context.fluid(16, 28)),
+                    SizedBox(height: context.fluid(12, 18)),
                     MaskReveal(
-                      delay: 300,
+                      delay: 260,
                       child: Text(
                         subtitle,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
                         style: display(
-                          context.fluid(24, 46),
-                          color: accent,
+                          context.fluid(18, 26),
+                          color: Palette.paper.withValues(alpha: 0.85),
                           italic: true,
-                          height: 1.1,
+                          height: 1.35,
                         ),
                       ),
                     ),

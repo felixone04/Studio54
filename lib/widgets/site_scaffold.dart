@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +7,7 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
+import 'photo_ui.dart';
 
 Future<void> openUrl(String url) async {
   final u = Uri.tryParse(url.trim());
@@ -31,6 +30,7 @@ class SiteScaffold extends StatefulWidget {
     required this.location,
     required this.children,
     this.darkHero = false,
+    this.logoHero = false,
     this.overlay,
   });
 
@@ -40,6 +40,9 @@ class SiteScaffold extends StatefulWidget {
   /// La prima sezione è un'immagine scura a tutto schermo: la barra resta
   /// trasparente con testo chiaro finché la si scorre.
   final bool darkHero;
+
+  /// La prima sezione mostra già il logo grande (home).
+  final bool logoHero;
 
   /// Elemento fisso sopra al contenuto (es. barra del preventivo).
   final Widget? overlay;
@@ -105,44 +108,38 @@ class _SiteScaffoldState extends State<SiteScaffold> {
             top: 0,
             left: 0,
             right: 0,
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(
-                  sigmaX: dark && !_scrolled ? 0 : 16,
-                  sigmaY: dark && !_scrolled ? 0 : 16,
-                ),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 350),
-                  height: navH,
-                  padding: EdgeInsets.symmetric(horizontal: context.gutter),
-                  decoration: BoxDecoration(
-                    gradient: dark && !_scrolled
-                        ? const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Color(0x66000000), Color(0x00000000)],
-                          )
-                        : null,
-                    color: dark
-                        ? (_scrolled
-                              ? Palette.ink.withValues(alpha: 0.6)
-                              : null)
-                        : Palette.paper.withValues(alpha: 0.86),
-                    border: Border(
-                      bottom: BorderSide(
-                        color: !dark && _scrolled
-                            ? Palette.lineLight
-                            : Colors.transparent,
-                      ),
-                    ),
-                  ),
-                  child: _NavBar(
-                    name: state.content.studioName,
-                    location: widget.location,
-                    fg: fg,
-                    onDark: dark,
+            // Niente sfocatura dello sfondo: è costosa da disegnare sul web e
+            // rende lo scorrimento meno fluido. Basta un fondo pieno.
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: navH,
+              padding: EdgeInsets.symmetric(horizontal: context.gutter),
+              decoration: BoxDecoration(
+                gradient: dark && !_scrolled
+                    ? const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0x80000000), Color(0x00000000)],
+                      )
+                    : null,
+                color: dark
+                    ? (_scrolled ? Palette.ink.withValues(alpha: 0.92) : null)
+                    : Palette.paper.withValues(alpha: 0.97),
+                border: Border(
+                  bottom: BorderSide(
+                    color: !dark && _scrolled
+                        ? Palette.lineLight
+                        : Colors.transparent,
                   ),
                 ),
+              ),
+              child: _NavBar(
+                name: state.content.studioName,
+                location: widget.location,
+                fg: fg,
+                onDark: dark,
+                // Sopra la foto d'apertura c'è già il logo grande: qui solo l'icona.
+                showName: !(widget.logoHero && !_scrolled),
               ),
             ),
           ),
@@ -159,11 +156,13 @@ class _NavBar extends StatelessWidget {
     required this.location,
     required this.fg,
     required this.onDark,
+    this.showName = true,
   });
   final String name;
   final String location;
   final Color fg;
   final bool onDark;
+  final bool showName;
 
   @override
   Widget build(BuildContext context) {
@@ -177,18 +176,11 @@ class _NavBar extends StatelessWidget {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () => context.go('/'),
-                child: AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 300),
-                  style: display(
-                    context.fluid(22, 28),
-                    color: fg,
-                    italic: true,
-                  ),
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                child: BrandWordmark(
+                  name: name,
+                  height: context.fluid(20, 24),
+                  onDark: onDark,
+                  showName: showName,
                 ),
               ),
             ),
@@ -296,12 +288,11 @@ class _FullMenu extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        content.studioName,
-                        style: display(
-                          context.fluid(22, 28),
-                          color: Palette.paper,
-                          italic: true,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: BrandWordmark(
+                          name: content.studioName,
+                          height: context.fluid(20, 24),
                         ),
                       ),
                     ),
@@ -331,10 +322,10 @@ class _FullMenu extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.only(top: 6, right: 14),
+                          padding: const EdgeInsets.only(top: 4, right: 16),
                           child: Text(
                             '0${i + 1}',
-                            style: label(11, color: accent),
+                            style: label(10.5, color: accent),
                           ),
                         ),
                         Flexible(
@@ -342,13 +333,13 @@ class _FullMenu extends StatelessWidget {
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              _navItems[i].$1,
+                              _navItems[i].$1.toUpperCase(),
                               style: display(
-                                40,
+                                30,
+                                spacing: 0.12,
                                 color: location == _navItems[i].$2
-                                    ? accent
-                                    : Palette.paper,
-                                italic: location == _navItems[i].$2,
+                                    ? Palette.paper
+                                    : Palette.paper.withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -471,22 +462,10 @@ class SiteFooter extends StatelessWidget {
               );
             },
           ),
-          SizedBox(height: context.fluid(56, 100)),
-          // Firma gigante a tutta larghezza.
-          FittedBox(
-            fit: BoxFit.fitWidth,
-            child: Text(
-              content.studioName,
-              maxLines: 1,
-              style: display(
-                200,
-                color: Palette.paper,
-                italic: true,
-                height: 1.05,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
+          SizedBox(height: context.fluid(56, 90)),
+          // Firma: il logo al centro.
+          Center(child: BrandLogo(width: context.fluid(220, 300))),
+          SizedBox(height: context.fluid(36, 56)),
           Container(height: 1, color: Palette.lineDark),
           const SizedBox(height: 18),
           Wrap(

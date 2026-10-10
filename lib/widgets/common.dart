@@ -10,10 +10,16 @@ import '../theme/app_theme.dart';
 
 final _dataCache = <String, Uint8List>{};
 
-Uint8List _decode(String url) => _dataCache.putIfAbsent(
-  url,
-  () => base64Decode(url.substring(url.indexOf(',') + 1)),
-);
+/// Decodifica una foto caricata; null se il dato è danneggiato.
+Uint8List? _decode(String url) {
+  final hit = _dataCache[url];
+  if (hit != null) return hit;
+  try {
+    return _dataCache[url] = base64Decode(url.substring(url.indexOf(',') + 1));
+  } on FormatException {
+    return null;
+  }
+}
 
 /// Mostra un'immagine da URL web oppure da un caricamento locale (data URL).
 class PhotoImage extends StatelessWidget {
@@ -41,40 +47,63 @@ class PhotoImage extends StatelessWidget {
     ),
   );
 
+  /// Larghezze a "gradini": evitano di riscaricare la foto a ogni piccolo
+  /// ridimensionamento della finestra.
+  static const _steps = [480, 800, 1200, 1600, 2000, 2600];
+
+  Widget _network(String src) => Image.network(
+    src,
+    fit: fit,
+    alignment: alignment,
+    gaplessPlayback: true,
+    filterQuality: FilterQuality.medium,
+    webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
+    frameBuilder: (context, child, frame, sync) {
+      if (sync) return child;
+      // Durante il caricamento: solo il colore di fondo, poi dissolvenza.
+      return ColoredBox(
+        color: dark ? Palette.ink2 : Palette.paper2,
+        child: AnimatedOpacity(
+          opacity: frame == null ? 0 : 1,
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeOut,
+          child: child,
+        ),
+      );
+    },
+    errorBuilder: (_, _, _) => _placeholder(),
+  );
+
   @override
   Widget build(BuildContext context) {
     if (url.trim().isEmpty) return _placeholder();
     if (url.startsWith('data:')) {
+      final bytes = _decode(url);
+      if (bytes == null) return _placeholder();
       return Image.memory(
-        _decode(url),
+        bytes,
         fit: fit,
         alignment: alignment,
         gaplessPlayback: true,
         errorBuilder: (_, _, _) => _placeholder(),
       );
     }
-    return Image.network(
-      url,
-      fit: fit,
-      alignment: alignment,
-      gaplessPlayback: true,
-      webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
-      frameBuilder: (context, child, frame, sync) {
-        if (sync) return child;
-        return Stack(
-          fit: StackFit.passthrough,
-          children: [
-            if (frame == null) _placeholder(),
-            AnimatedOpacity(
-              opacity: frame == null ? 0 : 1,
-              duration: const Duration(milliseconds: 800),
-              curve: Curves.easeOut,
-              child: child,
-            ),
-          ],
-        );
+    // Le foto di Unsplash si possono chiedere alla larghezza esatta che
+    // serve: molto più leggere per miniature e telefoni.
+    if (!url.contains('images.unsplash.com')) return _network(url);
+    return LayoutBuilder(
+      builder: (context, box) {
+        if (!box.maxWidth.isFinite) return _network(url);
+        final px = box.maxWidth * MediaQuery.devicePixelRatioOf(context);
+        final w = _steps.firstWhere((s) => s >= px, orElse: () => _steps.last);
+        final src = url.contains(RegExp(r'[?&]w=\d+'))
+            ? url.replaceFirstMapped(
+                RegExp(r'([?&])w=\d+'),
+                (m) => '${m[1]}w=$w',
+              )
+            : '$url${url.contains('?') ? '&' : '?'}w=$w';
+        return _network(src);
       },
-      errorBuilder: (_, _, _) => _placeholder(),
     );
   }
 }

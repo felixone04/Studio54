@@ -12,15 +12,18 @@ class AdminSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
-    final origin = Uri.base.origin;
+    final base = Uri.base;
+    // "origin" esiste solo per indirizzi http/https (non nei test o in locale da file).
+    final origin = base.isScheme('http') || base.isScheme('https')
+        ? base.origin
+        : base.toString();
     const gap = SizedBox(height: 20);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const AdminHeader(
           title: 'Impostazioni',
-          subtitle:
-              'Collegamento a Google Calendar, password e copie di sicurezza.',
+          subtitle: 'Google Calendar, password e backup.',
         ),
         Panel(
           title: 'Google Calendar',
@@ -226,90 +229,101 @@ class _GoogleSetupState extends State<_GoogleSetup> {
               ),
           ],
         ),
-        const SizedBox(height: 26),
-        const Text(
-          'Come ottenere il Client ID (una sola volta)',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        step(
-          1,
-          const Text(
-            'Apri console.cloud.google.com con il tuo account Google e crea un progetto (es. “Sito studio”).',
-          ),
-        ),
-        step(
-          2,
-          const Text(
-            'Da “API e servizi” → “Libreria” cerca “Google Calendar API” e premi Abilita.',
-          ),
-        ),
-        step(
-          3,
-          const Text(
-            'Da “Schermata consenso OAuth” scegli tipo Esterno, inserisci nome app e la tua email. '
-            'Tra gli “Utenti di prova” aggiungi il tuo indirizzo Gmail.',
-          ),
-        ),
-        step(
-          4,
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 14),
+        // Istruzioni nascoste finché non servono.
+        Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.only(bottom: 8),
+            expandedCrossAxisAlignment: CrossAxisAlignment.start,
+            title: const Text(
+              'Come ottenere il Client ID (una sola volta)',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             children: [
-              const Text(
-                'Da “Credenziali” → “Crea credenziali” → “ID client OAuth” scegli “Applicazione web”. '
-                'In “Origini JavaScript autorizzate” aggiungi esattamente questo indirizzo:',
+              step(
+                1,
+                const Text(
+                  'Apri console.cloud.google.com con il tuo account Google e crea un progetto (es. “Sito studio”).',
+                ),
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F2ED),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: SelectableText(
-                        widget.origin,
-                        style: const TextStyle(fontFamily: 'monospace'),
-                      ),
+              step(
+                2,
+                const Text(
+                  'Da “API e servizi” → “Libreria” cerca “Google Calendar API” e premi Abilita.',
+                ),
+              ),
+              step(
+                3,
+                const Text(
+                  'Da “Schermata consenso OAuth” scegli tipo Esterno, inserisci nome app e la tua email. '
+                  'Tra gli “Utenti di prova” aggiungi il tuo indirizzo Gmail.',
+                ),
+              ),
+              step(
+                4,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Da “Credenziali” → “Crea credenziali” → “ID client OAuth” scegli “Applicazione web”. '
+                      'In “Origini JavaScript autorizzate” aggiungi esattamente questo indirizzo:',
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'Copia',
-                    icon: const Icon(Icons.copy_rounded, size: 18),
-                    onPressed: () async {
-                      await Clipboard.setData(
-                        ClipboardData(text: widget.origin),
-                      );
-                      if (context.mounted) toast(context, 'Indirizzo copiato.');
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F2ED),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: SelectableText(
+                              widget.origin,
+                              style: const TextStyle(fontFamily: 'monospace'),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Copia',
+                          icon: const Icon(Icons.copy_rounded, size: 18),
+                          onPressed: () async {
+                            await Clipboard.setData(
+                              ClipboardData(text: widget.origin),
+                            );
+                            if (context.mounted)
+                              toast(context, 'Indirizzo copiato.');
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Quando pubblicherai il sito aggiungi anche il suo indirizzo definitivo (https://…).',
+                      style: TextStyle(color: Colors.black54, fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 6),
+              step(
+                5,
+                const Text(
+                  'Copia il Client ID (finisce con .apps.googleusercontent.com), incollalo qui sopra e premi “Salva e collega”.',
+                ),
+              ),
+              const SizedBox(height: 4),
               const Text(
-                'Quando pubblicherai il sito aggiungi anche il suo indirizzo definitivo (https://…).',
+                'Il collegamento dura circa un’ora: dopo, dal Calendario basta premere “Ricollega Google”. '
+                'Gli appuntamenti già sincronizzati restano su Google Calendar.',
                 style: TextStyle(color: Colors.black54, fontSize: 13),
               ),
             ],
           ),
-        ),
-        step(
-          5,
-          const Text(
-            'Copia il Client ID (finisce con .apps.googleusercontent.com), incollalo qui sopra e premi “Salva e collega”.',
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Il collegamento dura circa un’ora: dopo, dal Calendario basta premere “Ricollega Google”. '
-          'Gli appuntamenti già sincronizzati restano su Google Calendar.',
-          style: TextStyle(color: Colors.black54, fontSize: 13),
         ),
       ],
     );

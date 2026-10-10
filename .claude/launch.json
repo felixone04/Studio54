@@ -10,8 +10,8 @@
     {
       "name": "sito-live",
       "runtimeExecutable": "C:\\Users\\Utente\\flutter\\bin\\dart.bat",
-      "runtimeArgs": ["run", "tool/live_reload.dart", "5173", "0.0.0.0"],
-      "port": 5173
+      "runtimeArgs": ["run", "tool/live_reload.dart", "5180", "0.0.0.0"],
+      "port": 5180
     },
     {
       "name": "sito-flutter",

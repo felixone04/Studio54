@@ -135,45 +135,23 @@ class AdminHomeEditor extends StatelessWidget {
 
     return DraftEditor(
       title: 'Pagina Home',
-      subtitle:
-          'Pochi testi, grandi immagini. Le foto del carosello e della mostra '
-          'si gestiscono dalla Galleria.',
+      subtitle: 'Le foto si gestiscono dalla Galleria.',
       builder: (context, d, changed) => [
         Panel(
           title: 'Apertura',
-          subtitle:
-              'Il nome dello studio (da “Identità e contatti”) appare gigante; '
-              'qui la riga sopra e la frase sotto.',
-          child: Column(
-            children: [
-              field(
-                'Riga sopra il nome',
-                d.heroKicker,
-                (v) => d.heroKicker = v,
-                changed,
-              ),
-              _gap,
-              field(
-                'Frase sotto il nome',
-                d.heroTitle,
-                (v) => d.heroTitle = v,
-                changed,
-                maxLines: 2,
-                helper: 'Breve. Vai a capo per spezzarla su due righe.',
-              ),
-            ],
-          ),
+          subtitle: 'La frase sotto il logo.',
+          child: field('Frase', d.heroTitle, (v) => d.heroTitle = v, changed),
         ),
         Panel(
           title: 'Manifesto',
-          subtitle: 'Una frase sola, molto grande.',
+          subtitle: 'Una frase sola, al centro della pagina.',
           child: field(
             'Frase',
             d.manifestoTitle,
             (v) => d.manifestoTitle = v,
             changed,
             maxLines: 3,
-            helper: 'La seconda riga appare in corsivo colorato.',
+            helper: 'Vai a capo per la seconda riga, che appare in corsivo.',
           ),
         ),
         Panel(

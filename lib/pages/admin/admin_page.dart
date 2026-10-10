@@ -6,6 +6,7 @@ import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo_ui.dart';
 import 'admin_calendar.dart';
 import 'admin_catalog.dart';
 import 'admin_content.dart';
@@ -241,27 +242,27 @@ class _LoginState extends State<_Login> {
           ),
         ),
         Padding(
-          padding: EdgeInsets.all(wide ? 48 : 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  s.content.studioName,
-                  maxLines: 1,
-                  style: display(
-                    wide ? 88 : 46,
-                    color: Palette.paper,
-                    italic: true,
-                  ),
+          padding: EdgeInsets.all(wide ? 32 : 18),
+          child: const Viewfinder(
+            color: Color(0x99FFFFFF),
+            length: 24,
+            stroke: 1,
+          ),
+        ),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                BrandLogo(width: wide ? 340 : 200),
+                SizedBox(height: wide ? 22 : 12),
+                Text(
+                  'AREA RISERVATA',
+                  style: label(10.5, color: Palette.paper),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text('AREA RISERVATA', style: label(10.5, color: context.brand)),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -406,37 +407,28 @@ class _NavPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 20, 26),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    s.content.studioName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: display(27, color: Palette.paper, italic: true),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'AREA RISERVATA',
-                    style: label(9.5, color: context.brand),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(24, 30, 24, 26),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: BrandLogo(width: 168),
               ),
             ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 children: [
-                  for (final (title, items) in _groups) ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
-                      child: Text(
-                        title.toUpperCase(),
-                        style: label(9.5, color: const Color(0xFF6E6862)),
+                  for (var g = 0; g < _groups.length; g++) ...[
+                    // Gruppi separati da una linea sottile, senza titoli.
+                    if (g > 0)
+                      Container(
+                        height: 1,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        color: Palette.lineDark,
                       ),
-                    ),
-                    for (final sec in items)
+                    for (final sec in _groups[g].$2)
                       _NavItem(
                         section: sec,
                         selected: sec.id == current,

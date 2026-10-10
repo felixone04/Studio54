@@ -205,7 +205,9 @@ Map<String, Object?> hugeData({int seed = 42}) {
       'allDay': allDay,
       'location': i % 3 == 0 ? '' : 'Via ${_cut(longText, 20 + i % 80)}',
       'notes': i % 2 == 0 ? '' : longText,
-      'quoteId': i % 10 == 0 ? 'q-${i * 10}' : (i % 13 == 0 ? 'q-eliminata' : null),
+      'quoteId': i % 10 == 0
+          ? 'q-${i * 10}'
+          : (i % 13 == 0 ? 'q-eliminata' : null),
       'googleEventId': i % 11 == 0 ? 'gev-$i' : null,
     });
   }
@@ -221,13 +223,16 @@ Map<String, Object?> hugeData({int seed = 42}) {
       'servicesTitle': 'Cosa facciamo davvero, tutti i giorni',
       'bioTitle': 'Chi siamo $longWord',
       'bioIntro': '${_cut(longText, 140)}\n$unicode',
-      'bioStory': [for (var i = 0; i < 12; i++) longText * (1 + i % 3)].join('\n\n'),
+      'bioStory': [for (var i = 0; i < 12; i++) longText * (1 + i % 3)]
+          .join('\n\n'),
       'bioImage': tinyPng,
       'teamTitle': 'Il team $longWord',
       'timeline': [
         for (var i = 0; i < 60; i++)
           {
-            'year': i % 7 == 0 ? '' : (i % 7 == 1 ? 'Primavera ${1960 + i}' : '${1960 + i}'),
+            'year': i % 7 == 0
+                ? ''
+                : (i % 7 == 1 ? 'Primavera ${1960 + i}' : '${1960 + i}'),
             'title': i % 5 == 0 ? '' : 'Tappa $i ${_cut(longText, i * 3)}',
             'text': i % 2 == 0 ? '' : longText,
           },
@@ -236,10 +241,14 @@ Map<String, Object?> hugeData({int seed = 42}) {
         for (var i = 0; i < 45; i++)
           {
             'id': 't-$i',
-            'name': i % 4 == 0 ? '' : 'Persona $i ${i % 3 == 0 ? longWord : ''}',
+            'name': i % 4 == 0
+                ? ''
+                : 'Persona $i ${i % 3 == 0 ? longWord : ''}',
             'role': i % 5 == 0 ? '' : 'Ruolo $i ${_cut(longText, i * 2)}',
             'bio': i % 2 == 0 ? '' : longText,
-            'photo': i % 3 == 0 ? '' : (i % 3 == 1 ? tinyPng : 'https://a.b/$i.jpg'),
+            'photo': i % 3 == 0
+                ? ''
+                : (i % 3 == 1 ? tinyPng : 'https://a.b/$i.jpg'),
           },
       ],
       'contacts': {

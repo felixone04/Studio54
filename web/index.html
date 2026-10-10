@@ -6,90 +6,65 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Studio fotografico: matrimoni, cerimonie, ritratti ed eventi. Richiedi un preventivo personalizzato.">
-  <meta name="theme-color" content="#0D0C0B">
+  <meta name="description" content="Liso Fotografi · Wedding & Events. Fotografia di matrimoni ed eventi. Richiedi un preventivo personalizzato.">
+  <meta name="theme-color" content="#0B0B0B">
 
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Studio Fotografico">
+  <meta name="apple-mobile-web-app-title" content="Liso Fotografi">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>Studio Fotografico</title>
+  <title>Liso Fotografi · Wedding & Events</title>
   <link rel="manifest" href="manifest.json">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital@0;1&family=Manrope:wght@600&display=swap" rel="stylesheet">
-
   <style>
-    html, body { margin: 0; height: 100%; background: #0A0A0A; }
+    html, body { margin: 0; height: 100%; background: #0B0B0B; }
     /* Logo d'apertura: copre il sito per almeno 2 secondi, poi sfuma. */
     #splash {
       position: fixed; inset: 0; z-index: 9999;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: #0A0A0A; color: #F4F0E8; padding: 0 24px; text-align: center;
+      background: #0B0B0B; padding: 0 32px;
       transition: opacity .8s ease, visibility .8s ease;
     }
     #splash.hide { opacity: 0; visibility: hidden; }
-    #splash .name {
-      font-family: 'Bodoni Moda', Georgia, 'Times New Roman', serif;
-      font-size: clamp(44px, 10vw, 112px); line-height: 1; letter-spacing: -0.02em;
-      opacity: 0; transform: translateY(18px);
-      animation: rise 1s cubic-bezier(.2,.7,.2,1) .15s forwards;
+    #splash img {
+      width: min(420px, 66vw); height: auto;
+      opacity: 0; transform: scale(.96);
+      animation: show 1.1s cubic-bezier(.2,.7,.2,1) .1s forwards;
     }
-    #splash .name em { font-style: italic; color: #D4A85A; }
-    #splash .bar {
-      width: min(220px, 50vw); height: 1px; margin: 34px 0 20px;
-      background: rgba(244,240,232,.18); overflow: hidden;
+    /* Mirino attorno al logo, come la messa a fuoco di una fotocamera. */
+    #splash .frame { position: relative; padding: clamp(18px, 5vw, 34px) clamp(20px, 6vw, 40px); }
+    #splash .frame i {
+      position: absolute; width: 18px; height: 18px; border: 0 solid rgba(255,255,255,.55);
+      opacity: 0; animation: focus .9s ease .5s forwards;
     }
-    #splash .bar i {
-      display: block; height: 100%; width: 100%; background: #D4A85A;
-      transform-origin: left; transform: scaleX(0); animation: fill 2s ease-in-out forwards;
-    }
-    #splash .tag {
-      font-family: 'Manrope', Arial, sans-serif; font-weight: 600; font-size: 11px;
-      letter-spacing: .32em; text-transform: uppercase; color: #A19A90;
-      opacity: 0; animation: fade .8s ease .6s forwards;
-    }
-    @keyframes rise { to { opacity: 1; transform: none; } }
+    #splash .frame i:nth-child(1) { top: 0; left: 0; border-top-width: 1px; border-left-width: 1px; }
+    #splash .frame i:nth-child(2) { top: 0; right: 0; border-top-width: 1px; border-right-width: 1px; }
+    #splash .frame i:nth-child(3) { bottom: 0; left: 0; border-bottom-width: 1px; border-left-width: 1px; }
+    #splash .frame i:nth-child(4) { bottom: 0; right: 0; border-bottom-width: 1px; border-right-width: 1px; }
+    #splash .bar { width: min(160px, 40vw); height: 1px; margin-top: 30px; background: rgba(255,255,255,.15); overflow: hidden; }
+    #splash .bar b { display: block; height: 100%; background: #fff; transform-origin: left; transform: scaleX(0); animation: fill 2s ease-in-out forwards; }
+    @keyframes show { to { opacity: 1; transform: none; } }
+    @keyframes focus { from { opacity: 0; transform: scale(1.6); } to { opacity: 1; transform: none; } }
     @keyframes fill { to { transform: scaleX(1); } }
-    @keyframes fade { to { opacity: 1; } }
   </style>
 
   <!-- Google Identity Services: serve per collegare Google Calendar dall'area admin -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <div id="splash" aria-label="Caricamento">
-    <div class="name" id="splash-name">Studio <em>Lumen</em></div>
-    <div class="bar"><i></i></div>
-    <div class="tag" id="splash-tag">Fotografia d'autore</div>
+  <div id="splash" aria-label="Liso Fotografi, caricamento">
+    <div class="frame">
+      <i></i><i></i><i></i><i></i>
+      <img src="assets/assets/brand/logo_white.png" alt="Liso Fotografi · Wedding & Events">
+    </div>
+    <div class="bar"><b></b></div>
   </div>
   <script>
     (function () {
       var start = Date.now();
       var MIN_MS = 2000; // durata minima del logo d'apertura
-
-      // Usa nome e slogan salvati dall'area riservata, se presenti.
-      try {
-        var raw = localStorage.getItem('flutter.studio.v2.content');
-        if (raw) {
-          var c = JSON.parse(JSON.parse(raw));
-          var words = String(c.studioName || '').trim().split(/\s+/);
-          if (words[0]) {
-            var el = document.getElementById('splash-name');
-            el.textContent = words[0] + (words.length > 1 ? ' ' : '');
-            if (words.length > 1) {
-              var em = document.createElement('em');
-              em.textContent = words.slice(1).join(' ');
-              el.appendChild(em);
-            }
-          }
-          if (c.tagline) document.getElementById('splash-tag').textContent = c.tagline;
-        }
-      } catch (e) {}
-
       window.addEventListener('flutter-first-frame', function () {
         var wait = Math.max(0, MIN_MS - (Date.now() - start));
         setTimeout(function () {

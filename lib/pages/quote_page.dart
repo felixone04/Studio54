@@ -8,7 +8,11 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo_ui.dart';
 import '../widgets/site_scaffold.dart';
+
+/// Larghezza massima del contenuto: la pagina resta raccolta e leggibile.
+const _maxW = 1120.0;
 
 class QuotePage extends StatefulWidget {
   const QuotePage({super.key, this.preService, this.prePackage});
@@ -84,6 +88,7 @@ class _QuotePageState extends State<QuotePage> {
     _selectionError = null;
   });
 
+  /// Togliendo un servizio di un pacchetto, il pacchetto diventa "su misura".
   void _dissolvePackage(AppState s) {
     final p = s.packageById(_packageId);
     if (p == null) return;
@@ -107,8 +112,10 @@ class _QuotePageState extends State<QuotePage> {
     if (ctx != null) {
       Scrollable.ensureVisible(
         ctx,
-        duration: const Duration(milliseconds: 800),
+        duration: const Duration(milliseconds: 700),
         curve: Curves.easeInOutCubic,
+        // Lascia spazio alla barra di navigazione in alto.
+        alignment: 0.13,
       );
     }
   }
@@ -165,7 +172,7 @@ class _QuotePageState extends State<QuotePage> {
         right: 0,
         bottom: 0,
         child: AnimatedSlide(
-          duration: const Duration(milliseconds: 400),
+          duration: const Duration(milliseconds: 350),
           curve: Curves.easeOutCubic,
           offset: showBar ? Offset.zero : const Offset(0, 1.3),
           child: _SelectionBar(
@@ -177,97 +184,84 @@ class _QuotePageState extends State<QuotePage> {
       ),
       children: [
         SizedBox(key: _topAnchor, height: 0),
-        if (_sent != null)
-          _Success(
-            quote: _sent!,
-            onNew: () => setState(() {
-              _sent = null;
-              _packageId = null;
-              _extra.clear();
-            }),
-          )
-        else ...[
-          const _Header(),
-          Section(
-            top: 0,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const _StepTitle('01', 'Scegli'),
-                SizedBox(height: context.fluid(22, 36)),
-                if (s.activePackages.isNotEmpty) ...[
-                  _Segmented(
-                    custom: _custom,
-                    onChanged: (v) => setState(() => _custom = v),
-                  ),
-                  SizedBox(height: context.fluid(28, 48)),
-                ],
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  child: _custom || s.activePackages.isEmpty
-                      ? _ServiceGrid(
-                          key: const ValueKey('custom'),
-                          state: s,
-                          selected: ids.toSet(),
-                          onTap: (id) => _toggle(s, id),
-                        )
-                      : _PackageGrid(
-                          key: const ValueKey('packages'),
-                          state: s,
-                          selectedId: _packageId,
-                          onTap: _choosePackage,
-                          onCustom: () => setState(() => _custom = true),
-                        ),
+        _Page(
+          child: _sent != null
+              ? _Success(
+                  quote: _sent!,
+                  onNew: () => setState(() {
+                    _sent = null;
+                    _packageId = null;
+                    _extra.clear();
+                  }),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Header(step: _formVisible ? 2 : 1),
+                    SizedBox(height: context.fluid(28, 44)),
+                    _Card(
+                      number: '1',
+                      title: 'Cosa ti serve',
+                      trailing: s.activePackages.isEmpty
+                          ? null
+                          : _Segmented(
+                              custom: _custom,
+                              onChanged: (v) => setState(() => _custom = v),
+                            ),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: _custom || s.activePackages.isEmpty
+                            ? _ServiceGrid(
+                                key: const ValueKey('custom'),
+                                state: s,
+                                selected: ids.toSet(),
+                                onTap: (id) => _toggle(s, id),
+                              )
+                            : _PackageGrid(
+                                key: const ValueKey('packages'),
+                                state: s,
+                                selectedId: _packageId,
+                                onTap: _choosePackage,
+                                onCustom: () => setState(() => _custom = true),
+                              ),
+                      ),
+                    ),
+                    SizedBox(height: context.fluid(20, 28)),
+                    VisibilityDetector(
+                      key: const Key('quote-form'),
+                      onVisibilityChanged: (i) {
+                        final v = i.visibleFraction > 0.2;
+                        if (v != _formVisible && mounted) {
+                          setState(() => _formVisible = v);
+                        }
+                      },
+                      child: _Card(
+                        key: _formAnchor,
+                        number: '2',
+                        title: 'I tuoi contatti',
+                        child: _buildContacts(s, ids),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          Container(
-            key: _formAnchor,
-            color: Palette.paper2,
-            child: VisibilityDetector(
-              key: const Key('quote-form'),
-              onVisibilityChanged: (i) {
-                final v = i.visibleFraction > 0.25;
-                if (v != _formVisible && mounted) {
-                  setState(() => _formVisible = v);
-                }
-              },
-              child: Section(child: _buildContacts(s, ids)),
-            ),
-          ),
-        ],
+        ),
       ],
     );
   }
 
   Widget _buildContacts(AppState s, List<String> ids) {
-    final summary = _Summary(
-      state: s,
-      ids: ids,
-      package: s.packageById(_packageId),
-      error: _selectionError,
-      onRemove: (id) => _toggle(s, id),
-    );
-    final form = _buildForm(s);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _StepTitle('02', 'Contatti'),
-        SizedBox(height: context.fluid(28, 56)),
-        if (context.isTablet) ...[
-          summary,
-          SizedBox(height: context.fluid(32, 48)),
-          form,
-        ] else
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 6, child: form),
-              SizedBox(width: context.fluid(40, 100)),
-              Expanded(flex: 4, child: summary),
-            ],
-          ),
+        _Summary(
+          state: s,
+          ids: ids,
+          package: s.packageById(_packageId),
+          error: _selectionError,
+          onRemove: (id) => _toggle(s, id),
+        ),
+        const SizedBox(height: 28),
+        _buildForm(s),
       ],
     );
   }
@@ -286,9 +280,9 @@ class _QuotePageState extends State<QuotePage> {
               Expanded(child: b),
             ],
           )
-        : Column(children: [a, const SizedBox(height: 18), b]);
+        : Column(children: [a, const SizedBox(height: 16), b]);
 
-    const gap = SizedBox(height: 22);
+    const gap = SizedBox(height: 18);
     return Form(
       key: _formKey,
       child: Column(
@@ -341,8 +335,8 @@ class _QuotePageState extends State<QuotePage> {
             DropdownButtonFormField<String>(
               initialValue: _eventType,
               isExpanded: true,
-              dropdownColor: Palette.paper,
-              decoration: const InputDecoration(labelText: 'Tipo di festa'),
+              dropdownColor: Colors.white,
+              decoration: const InputDecoration(labelText: 'Tipo di evento'),
               items: [
                 for (final t in s.content.eventTypes)
                   DropdownMenuItem(value: t, child: Text(t)),
@@ -369,9 +363,11 @@ class _QuotePageState extends State<QuotePage> {
             controller: _message,
             minLines: 1,
             maxLines: 5,
-            decoration: const InputDecoration(labelText: 'Note (facoltativo)'),
+            decoration: const InputDecoration(
+              labelText: 'Note (luogo, numero di invitati…)',
+            ),
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 24),
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () => setState(() {
@@ -413,12 +409,23 @@ class _QuotePageState extends State<QuotePage> {
                 style: body(13, color: const Color(0xFFB3261E)),
               ),
             ),
-          SizedBox(height: context.fluid(30, 44)),
-          PillButton(
-            'Invia la richiesta',
-            big: true,
-            loading: _sending,
-            onTap: () => _submit(s),
+          const SizedBox(height: 28),
+          Wrap(
+            spacing: 18,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              PillButton(
+                'Invia la richiesta',
+                loading: _sending,
+                icon: Icons.arrow_forward_rounded,
+                onTap: () => _submit(s),
+              ),
+              Text(
+                'Gratuito e senza impegno.',
+                style: body(13.5, color: Palette.stone),
+              ),
+            ],
           ),
         ],
       ),
@@ -426,91 +433,188 @@ class _QuotePageState extends State<QuotePage> {
   }
 }
 
-// ---------------------------------------------------------------- blocchi
+// ---------------------------------------------------------------- struttura
+
+/// Contenuto centrato e raccolto, su fondo chiaro.
+class _Page extends StatelessWidget {
+  const _Page({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.fromLTRB(
+      context.gutter,
+      context.fluid(32, 64),
+      context.gutter,
+      context.fluid(70, 120),
+    ),
+    child: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxW),
+        child: SizedBox(width: double.infinity, child: child),
+      ),
+    ),
+  );
+}
 
 class _Header extends StatelessWidget {
-  const _Header();
+  const _Header({required this.step});
+  final int step;
 
   @override
   Widget build(BuildContext context) {
-    return Section(
-      top: context.fluid(40, 90),
-      bottom: context.fluid(48, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Tag('Preventivo gratuito'),
-          SizedBox(height: context.fluid(16, 28)),
-          MaskRevealText(
-            lines: const ['Il tuo', 'preventivo.'],
-            size: context.fluid(60, 190),
-          ),
-          SizedBox(height: context.fluid(20, 32)),
-          Text(
-            'Scegli cosa ti serve. Ti richiamiamo noi.',
-            style: body(context.fluid(16, 20), color: Palette.stone),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Titolo su più righe, le dispari in corsivo colorato.
-class MaskRevealText extends StatelessWidget {
-  const MaskRevealText({super.key, required this.lines, required this.size});
-  final List<String> lines;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final steps = Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        for (var i = 0; i < lines.length; i++)
-          Reveal(
-            delay: Duration(milliseconds: 120 * i),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                lines[i],
-                maxLines: 1,
-                style: display(
-                  size,
-                  italic: i.isOdd,
-                  color: i.isOdd ? context.accentInk : Palette.ink,
-                  height: 0.95,
-                ),
-              ),
-            ),
-          ),
+        _StepDot(n: 1, text: 'Scegli', active: step >= 1),
+        Container(
+          width: 36,
+          height: 1,
+          margin: const EdgeInsets.symmetric(horizontal: 12),
+          color: Palette.lineLight,
+        ),
+        _StepDot(n: 2, text: 'Contatti', active: step >= 2),
       ],
     );
-  }
-}
-
-class _StepTitle extends StatelessWidget {
-  const _StepTitle(this.number, this.title);
-  final String number;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
+    final text = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Tag('Preventivo gratuito'),
+        const SizedBox(height: 16),
+        Text('Raccontaci il tuo evento', style: display(context.fluid(30, 44))),
+        const SizedBox(height: 10),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Text(
+            'Scegli cosa ti serve e lasciaci i tuoi contatti: ti richiamiamo '
+            'noi con una proposta su misura.',
+            style: body(context.fluid(15, 16.5), color: Palette.stone),
+          ),
+        ),
+      ],
+    );
+    if (context.isTablet) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [text, const SizedBox(height: 22), steps],
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
-          number,
-          style: display(
-            context.fluid(40, 84),
-            italic: true,
-            color: context.accentInk,
+        Expanded(child: text),
+        steps,
+      ],
+    );
+  }
+}
+
+class _StepDot extends StatelessWidget {
+  const _StepDot({required this.n, required this.text, required this.active});
+  final int n;
+  final String text;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        width: 26,
+        height: 26,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: active ? Palette.ink : Colors.transparent,
+          border: Border.all(color: active ? Palette.ink : Palette.lineLight),
+        ),
+        child: Text(
+          '$n',
+          style: body(
+            12,
+            color: active ? Palette.paper : Palette.stone,
+            weight: FontWeight.w500,
+            height: 1,
           ),
         ),
-        const SizedBox(width: 16),
-        Flexible(child: Text(title, style: display(context.fluid(40, 84)))),
+      ),
+      const SizedBox(width: 8),
+      Text(
+        text.toUpperCase(),
+        style: label(10.5, color: active ? Palette.ink : Palette.stone),
+      ),
+    ],
+  );
+}
+
+/// Scheda bianca con numero di passaggio e titolo.
+class _Card extends StatelessWidget {
+  const _Card({
+    super.key,
+    required this.number,
+    required this.title,
+    required this.child,
+    this.trailing,
+  });
+  final String number;
+  final String title;
+  final Widget child;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final pad = context.fluid(18, 36);
+    final heading = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          number,
+          style: display(context.fluid(22, 28), color: Palette.stone),
+        ),
+        Container(
+          width: 1,
+          height: 22,
+          margin: const EdgeInsets.symmetric(horizontal: 14),
+          color: Palette.lineLight,
+        ),
+        Flexible(
+          child: Text(
+            title.toUpperCase(),
+            style: display(
+              context.fluid(17, 21),
+              weight: FontWeight.w400,
+              spacing: 0.1,
+            ),
+          ),
+        ),
       ],
+    );
+    return Container(
+      padding: EdgeInsets.all(pad),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Palette.lineLight),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (trailing == null || context.isPhone) ...[
+            heading,
+            if (trailing != null) ...[const SizedBox(height: 16), trailing!],
+          ] else
+            Row(
+              children: [
+                Expanded(child: heading),
+                trailing!,
+              ],
+            ),
+          SizedBox(height: context.fluid(20, 30)),
+          child,
+        ],
+      ),
     );
   }
 }
@@ -532,8 +636,8 @@ class _Segmented extends StatelessWidget {
           child: GestureDetector(
             onTap: onTap,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 280),
-              height: 48,
+              duration: const Duration(milliseconds: 220),
+              height: 38,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: active ? Palette.ink : Colors.transparent,
@@ -541,7 +645,7 @@ class _Segmented extends StatelessWidget {
               ),
               child: Text(
                 text.toUpperCase(),
-                style: label(11.5, color: active ? Palette.paper : Palette.ink),
+                style: label(10.5, color: active ? Palette.paper : Palette.ink),
               ),
             ),
           ),
@@ -549,10 +653,10 @@ class _Segmented extends StatelessWidget {
       ),
     );
     return Container(
-      constraints: const BoxConstraints(maxWidth: 460),
-      padding: const EdgeInsets.all(4),
+      width: 300,
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        border: Border.all(color: Palette.ink),
+        border: Border.all(color: Palette.lineLight),
         borderRadius: BorderRadius.circular(40),
       ),
       child: Row(
@@ -565,32 +669,27 @@ class _Segmented extends StatelessWidget {
   }
 }
 
+/// Spunta circolare di selezione.
 class _Check extends StatelessWidget {
   const _Check({required this.selected});
   final bool selected;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: selected ? context.accent : Colors.black.withValues(alpha: 0.25),
-        border: Border.all(
-          color: selected ? context.accent : Palette.paper,
-          width: 1.4,
-        ),
-      ),
-      child: AnimatedScale(
-        scale: selected ? 1 : 0,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutBack,
-        child: const Icon(Icons.check_rounded, size: 20, color: Palette.ink),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AnimatedContainer(
+    duration: const Duration(milliseconds: 200),
+    width: 26,
+    height: 26,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: selected ? Palette.ink : Colors.white.withValues(alpha: 0.85),
+      border: Border.all(color: selected ? Palette.ink : Palette.lineLight),
+    ),
+    child: AnimatedOpacity(
+      opacity: selected ? 1 : 0,
+      duration: const Duration(milliseconds: 200),
+      child: const Icon(Icons.check_rounded, size: 16, color: Colors.white),
+    ),
+  );
 }
 
 int _cols(
@@ -599,6 +698,26 @@ int _cols(
   required int tablet,
   required int desk,
 }) => c.isPhone ? phone : (c.isTablet ? tablet : desk);
+
+/// Griglia di schede di uguale larghezza.
+class _Grid extends StatelessWidget {
+  const _Grid({required this.cols, required this.children, this.gap = 16});
+  final int cols;
+  final double gap;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final w = (box.maxWidth - gap * (cols - 1)) / cols;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [for (final c in children) SizedBox(width: w, child: c)],
+      );
+    },
+  );
+}
 
 class _PackageGrid extends StatelessWidget {
   const _PackageGrid({
@@ -616,41 +735,31 @@ class _PackageGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pkgs = state.activePackages;
-    final cols = _cols(
-      context,
-      phone: 1,
-      tablet: 2,
-      desk: pkgs.length < 4 ? pkgs.length : 4,
-    );
-    final gap = context.fluid(16, 28);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        LayoutBuilder(
-          builder: (context, box) {
-            final w = (box.maxWidth - gap * (cols - 1)) / cols;
-            return Wrap(
-              spacing: gap,
-              runSpacing: gap * 1.6,
-              children: [
-                for (final p in pkgs)
-                  SizedBox(
-                    width: w,
-                    child: _PackageCard(
-                      state: state,
-                      pkg: p,
-                      selected: p.id == selectedId,
-                      onTap: () => onTap(p),
-                    ),
-                  ),
-              ],
-            );
-          },
+        _Grid(
+          cols: _cols(
+            context,
+            phone: 1,
+            tablet: 2,
+            desk: pkgs.length < 4 ? pkgs.length : 4,
+          ),
+          gap: context.fluid(12, 18),
+          children: [
+            for (final p in pkgs)
+              _PackageCard(
+                state: state,
+                pkg: p,
+                selected: p.id == selectedId,
+                onTap: () => onTap(p),
+              ),
+          ],
         ),
-        SizedBox(height: context.fluid(24, 40)),
+        const SizedBox(height: 18),
         HoverLink(
-          'Preferisci scegliere tu? Crea il tuo →',
-          style: body(15, color: Palette.ink, weight: FontWeight.w600),
+          'Preferisci scegliere voce per voce? Componi su misura →',
+          style: body(14, color: Palette.stone, weight: FontWeight.w500),
           onTap: onCustom,
         ),
       ],
@@ -680,6 +789,7 @@ class _PackageCardState extends State<_PackageCard> {
   @override
   Widget build(BuildContext context) {
     final p = widget.pkg;
+    final sel = widget.selected;
     final names = [
       for (final id in p.serviceIds)
         if (widget.state.serviceById(id)?.active ?? false)
@@ -687,7 +797,7 @@ class _PackageCardState extends State<_PackageCard> {
     ];
     return Semantics(
       button: true,
-      selected: widget.selected,
+      selected: sel,
       label: 'Pacchetto ${p.name}',
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -695,102 +805,107 @@ class _PackageCardState extends State<_PackageCard> {
         onExit: (_) => setState(() => _hover = false),
         child: GestureDetector(
           onTap: widget.onTap,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                padding: EdgeInsets.all(widget.selected ? 6 : 0),
-                color: widget.selected ? Palette.ink : Colors.transparent,
-                child: AspectRatio(
-                  aspectRatio: context.isPhone ? 4 / 3.4 : 3 / 4,
-                  child: ClipRect(
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        AnimatedScale(
-                          scale: _hover ? 1.05 : 1,
-                          duration: const Duration(milliseconds: 800),
-                          curve: Curves.easeOutCubic,
-                          child: PhotoImage(p.image, dark: true),
-                        ),
-                        const DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Color(0x33000000),
-                                Color(0x00000000),
-                                Color(0xE0000000),
-                              ],
-                              stops: [0, 0.35, 1],
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: sel
+                    ? Palette.ink
+                    : (_hover ? Palette.stone : Palette.lineLight),
+                width: sel ? 1.5 : 1,
+              ),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AspectRatio(
+                  aspectRatio: 3 / 2,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      PhotoImage(p.image),
+                      // Selezionare = "mettere a fuoco".
+                      FocusFrame(
+                        active: sel || _hover,
+                        length: 16,
+                        inset: 12,
+                        focusPoint: sel,
+                      ),
+                      if (p.featured)
+                        Positioned(
+                          left: 12,
+                          top: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            color: Palette.ink,
+                            child: Text(
+                              'PIÙ SCELTO',
+                              style: label(9, color: Palette.paper),
                             ),
                           ),
                         ),
+                      Positioned(
+                        right: 12,
+                        top: 12,
+                        child: _Check(selected: sel),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p.name.toUpperCase(),
+                        style: display(
+                          19,
+                          weight: FontWeight.w400,
+                          spacing: 0.1,
+                        ),
+                      ),
+                      if (p.tagline.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          p.tagline,
+                          style: body(13.5, color: Palette.stone, height: 1.4),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Container(height: 1, color: Palette.lineLight),
+                      const SizedBox(height: 12),
+                      for (final n in names)
                         Padding(
-                          padding: const EdgeInsets.all(18),
-                          child: Column(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  if (p.featured)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: context.accent,
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      child: Text(
-                                        'PIÙ SCELTO',
-                                        style: label(9.5, color: Palette.ink),
-                                      ),
-                                    ),
-                                  const Spacer(),
-                                  _Check(selected: widget.selected),
-                                ],
-                              ),
-                              const Spacer(),
-                              Text(
-                                p.name,
-                                style: display(
-                                  context.fluid(36, 52),
-                                  color: Palette.paper,
+                              const Padding(
+                                padding: EdgeInsets.only(top: 3),
+                                child: Icon(
+                                  Icons.check_rounded,
+                                  size: 14,
+                                  color: Palette.stone,
                                 ),
                               ),
-                              if (p.tagline.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Text(
-                                  p.tagline,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: display(
-                                    17,
-                                    color: context.accent,
-                                    italic: true,
-                                    height: 1.15,
-                                  ),
-                                ),
-                              ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(n, style: body(13.5, height: 1.4)),
+                              ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              for (final n in names)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text('— $n', style: body(14, color: Palette.stone)),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -816,34 +931,30 @@ class _ServiceGrid extends StatelessWidget {
     for (final s in services) {
       if (!cats.contains(s.category)) cats.add(s.category);
     }
-    final cols = _cols(context, phone: 2, tablet: 3, desk: 4);
-    final gap = context.fluid(10, 22);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final cat in cats) ...[
-          Padding(padding: const EdgeInsets.only(bottom: 16), child: Tag(cat)),
-          LayoutBuilder(
-            builder: (context, box) {
-              final w = (box.maxWidth - gap * (cols - 1)) / cols;
-              return Wrap(
-                spacing: gap,
-                runSpacing: gap,
-                children: [
-                  for (final s in services.where((e) => e.category == cat))
-                    SizedBox(
-                      width: w,
-                      child: _ServiceTile(
-                        service: s,
-                        selected: selected.contains(s.id),
-                        onTap: () => onTap(s.id),
-                      ),
-                    ),
-                ],
-              );
-            },
+        for (var c = 0; c < cats.length; c++) ...[
+          if (c > 0) const SizedBox(height: 26),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Text(
+              cats[c].toUpperCase(),
+              style: label(10.5, color: Palette.stone),
+            ),
           ),
-          SizedBox(height: context.fluid(32, 52)),
+          _Grid(
+            cols: _cols(context, phone: 2, tablet: 3, desk: 4),
+            gap: context.fluid(10, 16),
+            children: [
+              for (final s in services.where((e) => e.category == cats[c]))
+                _ServiceTile(
+                  service: s,
+                  selected: selected.contains(s.id),
+                  onTap: () => onTap(s.id),
+                ),
+            ],
+          ),
         ],
       ],
     );
@@ -881,59 +992,52 @@ class _ServiceTileState extends State<_ServiceTile> {
         onExit: (_) => setState(() => _hover = false),
         child: GestureDetector(
           onTap: widget.onTap,
-          child: AspectRatio(
-            aspectRatio: 4 / 5,
-            child: ClipRect(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  AnimatedScale(
-                    scale: _hover ? 1.06 : 1,
-                    duration: const Duration(milliseconds: 800),
-                    curve: Curves.easeOutCubic,
-                    child: PhotoImage(s.image, dark: true),
-                  ),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: sel
-                            ? const [Color(0x99000000), Color(0xE6000000)]
-                            : const [Color(0x00000000), Color(0xD0000000)],
-                      ),
-                      border: Border.all(
-                        color: sel ? context.accent : Colors.transparent,
-                        width: 4,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(context.isPhone ? 12 : 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: _Check(selected: sel),
-                        ),
-                        const Spacer(),
-                        Text(
-                          s.name,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: display(
-                            context.isPhone ? 19 : context.fluid(20, 28),
-                            color: Palette.paper,
-                            height: 1.05,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: sel
+                    ? Palette.ink
+                    : (_hover ? Palette.stone : Palette.lineLight),
+                width: sel ? 1.5 : 1,
               ),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AspectRatio(
+                  aspectRatio: 4 / 3,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      PhotoImage(s.image),
+                      FocusFrame(
+                        active: sel,
+                        length: 12,
+                        inset: 8,
+                        focusPoint: true,
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: _Check(selected: sel),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
+                  child: Text(
+                    s.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: body(13.5, weight: FontWeight.w500, height: 1.35),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -942,6 +1046,7 @@ class _ServiceTileState extends State<_ServiceTile> {
   }
 }
 
+/// Riepilogo della selezione, in cima al modulo.
 class _Summary extends StatelessWidget {
   const _Summary({
     required this.state,
@@ -959,66 +1064,77 @@ class _Summary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(context.fluid(22, 34)),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Palette.ink,
-        border: error != null
-            ? Border.all(color: const Color(0xFFE5735F), width: 2)
-            : null,
+        color: Palette.paper,
+        border: Border.all(
+          color: error != null ? const Color(0xFFB3261E) : Palette.lineLight,
+        ),
+        borderRadius: BorderRadius.circular(3),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('LA TUA SELEZIONE', style: label(10.5, color: Palette.ash)),
-          const SizedBox(height: 16),
+          Text(
+            ids.isEmpty
+                ? 'LA TUA SELEZIONE'
+                : (package != null
+                      ? 'PACCHETTO ${package!.name.toUpperCase()}'
+                      : 'SU MISURA · ${ids.length} VOCI'),
+            style: label(10.5, color: Palette.stone),
+          ),
+          const SizedBox(height: 10),
           if (ids.isEmpty)
             Text(
-              'Ancora nulla.',
-              style: display(30, color: Palette.paper, italic: true),
+              'Non hai ancora scelto nulla: seleziona un pacchetto o dei servizi qui sopra.',
+              style: body(14, color: Palette.stone),
             )
-          else ...[
-            Text(
-              package?.name ?? 'Su misura',
-              style: display(
-                context.fluid(30, 44),
-                color: Palette.paper,
-                italic: true,
-              ),
-            ),
-            const SizedBox(height: 14),
-            for (final id in ids)
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Palette.lineDark)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        state.serviceById(id)?.name ?? '—',
-                        style: body(14.5, color: Palette.paper),
-                      ),
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final id in ids)
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: Palette.lineLight),
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                    InkResponse(
-                      onTap: () => onRemove(id),
-                      radius: 18,
-                      child: const Padding(
-                        padding: EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 16,
-                          color: Palette.ash,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            state.serviceById(id)?.name ?? '—',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: body(13, height: 1.2),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        InkResponse(
+                          onTap: () => onRemove(id),
+                          radius: 14,
+                          child: const Padding(
+                            padding: EdgeInsets.all(2),
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 15,
+                              color: Palette.stone,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-          ],
+                  ),
+              ],
+            ),
           if (error != null) ...[
-            const SizedBox(height: 14),
-            Text(error!, style: body(14, color: const Color(0xFFF0A08F))),
+            const SizedBox(height: 10),
+            Text(error!, style: body(13.5, color: const Color(0xFFB3261E))),
           ],
         ],
       ),
@@ -1044,33 +1160,22 @@ class _SelectionBar extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           context.gutter,
-          12,
+          10,
           context.gutter,
-          12 + bottom,
+          10 + bottom,
         ),
         child: Row(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: context.accent,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '$count',
-                style: label(13, color: Palette.ink, spacing: 0),
-              ),
-            ),
+            const BrandMark(height: 16),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                packageName ??
-                    (count == 1 ? 'servizio scelto' : 'servizi scelti'),
+                packageName != null
+                    ? 'Pacchetto $packageName'
+                    : '$count ${count == 1 ? 'servizio scelto' : 'servizi scelti'}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: display(22, color: Palette.paper, italic: true),
+                style: body(14.5, color: Palette.paper),
               ),
             ),
             PillButton(
@@ -1115,6 +1220,7 @@ class _DateField extends StatelessWidget {
           suffixIcon: value == null
               ? const Icon(Icons.calendar_today_outlined, size: 18)
               : IconButton(
+                  tooltip: 'Rimuovi data',
                   icon: const Icon(Icons.close_rounded, size: 18),
                   onPressed: () => onChanged(null),
                 ),
@@ -1132,42 +1238,61 @@ class _Success extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Section(
-      top: context.fluid(60, 120),
-      bottom: context.fluid(90, 160),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Tag('Richiesta inviata'),
-          SizedBox(height: context.fluid(18, 30)),
-          MaskRevealText(
-            lines: ['Grazie,', '${quote.firstName}.'],
-            size: context.fluid(64, 200),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: Container(
+          padding: EdgeInsets.all(context.fluid(26, 48)),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Palette.lineLight),
+            borderRadius: BorderRadius.circular(4),
           ),
-          SizedBox(height: context.fluid(22, 34)),
-          Text(
-            'Ti richiamiamo al ${quote.phone}.',
-            style: body(context.fluid(17, 22), color: Palette.stone),
-          ),
-          SizedBox(height: context.fluid(34, 54)),
-          Wrap(
-            spacing: 20,
-            runSpacing: 16,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          child: Stack(
             children: [
-              PillButton(
-                'Torna alla home',
-                big: true,
-                onTap: () => context.go('/'),
+              const Positioned.fill(
+                child: Viewfinder(color: Palette.ink, length: 18, stroke: 1),
               ),
-              HoverLink(
-                'Nuova richiesta',
-                style: body(15, weight: FontWeight.w600),
-                onTap: onNew,
+              Column(
+                children: [
+                  const BrandMark(height: 30, onDark: false),
+                  const SizedBox(height: 22),
+                  const Tag('Richiesta inviata'),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Grazie, ${quote.firstName}',
+                    textAlign: TextAlign.center,
+                    style: display(context.fluid(28, 38)),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Ti richiameremo al ${quote.phone} per parlarne insieme.',
+                    textAlign: TextAlign.center,
+                    style: body(15.5, color: Palette.stone),
+                  ),
+                  const SizedBox(height: 28),
+                  Wrap(
+                    spacing: 18,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      PillButton(
+                        'Torna alla home',
+                        onTap: () => context.go('/'),
+                      ),
+                      HoverLink(
+                        'Nuova richiesta',
+                        style: body(14.5, weight: FontWeight.w500),
+                        onTap: onNew,
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

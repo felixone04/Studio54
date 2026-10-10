@@ -5,6 +5,7 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo_ui.dart';
 import '../widgets/sections.dart';
 import '../widgets/site_scaffold.dart';
 
@@ -47,7 +48,7 @@ class _Story extends StatelessWidget {
     final lead = Reveal(
       child: Text(
         paragraphs.first,
-        style: display(context.fluid(30, 64), height: 1.08),
+        style: display(context.fluid(22, 32), height: 1.4),
       ),
     );
     final rest = Column(
@@ -106,14 +107,13 @@ class _Timeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
     final cols = context.isPhone ? 2 : (items.length >= 4 ? 4 : items.length);
     return Section(
       color: Palette.ink,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Tag('Il percorso', number: '02', color: Palette.paper),
+          const Tag('Il metodo', number: '02', color: Palette.paper),
           SizedBox(height: context.fluid(36, 70)),
           LayoutBuilder(
             builder: (context, box) {
@@ -144,9 +144,8 @@ class _Timeline extends StatelessWidget {
                                 child: Text(
                                   items[i].year,
                                   style: display(
-                                    context.fluid(56, 130),
-                                    color: i.isOdd ? accent : Palette.paper,
-                                    italic: i.isOdd,
+                                    context.fluid(34, 56),
+                                    color: Palette.paper,
                                   ),
                                 ),
                               ),
@@ -191,12 +190,7 @@ class _Team extends StatelessWidget {
         children: [
           const Tag('Le persone', number: '03'),
           SizedBox(height: context.fluid(14, 22)),
-          Reveal(
-            child: Text(
-              title,
-              style: display(context.fluid(56, 160), height: 0.92),
-            ),
-          ),
+          Reveal(child: Text(title, style: display(context.fluid(32, 54)))),
           SizedBox(height: context.fluid(36, 80)),
           LayoutBuilder(
             builder: (context, box) {
@@ -274,31 +268,54 @@ class _MemberState extends State<_Member> {
             AspectRatio(
               aspectRatio: 3 / 4,
               child: ClipRect(
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 1, end: _hover ? 0 : 1),
-                  duration: const Duration(milliseconds: 600),
-                  builder: (_, t, child) => ColorFiltered(
-                    colorFilter: _filter(t),
-                    child: Transform.scale(
-                      scale: 1 + (1 - t) * 0.05,
-                      child: child,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 1, end: _hover ? 0 : 1),
+                      duration: const Duration(milliseconds: 600),
+                      builder: (_, t, child) => ColorFiltered(
+                        colorFilter: _filter(t),
+                        child: Transform.scale(
+                          scale: 1 + (1 - t) * 0.05,
+                          child: child,
+                        ),
+                      ),
+                      child: SizedBox.expand(
+                        child: PhotoImage(
+                          m.photo,
+                          alignment: Alignment.topCenter,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: SizedBox.expand(
-                    child: PhotoImage(m.photo, alignment: Alignment.topCenter),
-                  ),
+                    // Messa a fuoco sul ritratto.
+                    FocusFrame(
+                      active: _hover,
+                      length: 16,
+                      inset: 12,
+                      focusPoint: true,
+                    ),
+                  ],
                 ),
               ),
             ),
-            SizedBox(height: small ? 10 : 18),
+            SizedBox(height: small ? 10 : 16),
             Text(
-              m.name,
-              style: display(small ? 20 : context.fluid(24, 38), height: 1.05),
+              m.name.toUpperCase(),
+              style: display(
+                small ? 15 : context.fluid(17, 21),
+                weight: FontWeight.w400,
+                spacing: 0.08,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
               m.role.toUpperCase(),
-              style: label(small ? 9 : 10.5, color: context.accentInk),
+              style: label(
+                small ? 9 : 10,
+                color: Palette.stone,
+                weight: FontWeight.w400,
+              ),
             ),
             if (m.bio.isNotEmpty) ...[
               const SizedBox(height: 10),

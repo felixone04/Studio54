@@ -6,19 +6,19 @@ String unsplash(String id, {int w = 1800}) =>
     'https://images.unsplash.com/photo-$id?auto=format&fit=crop&w=$w&q=80';
 
 class Seed {
-  static const accentGold = 0xFFD4A85A;
+  static const accentSilver = 0xFFC9C5BC;
 
   static SiteContent content() => SiteContent(
-    studioName: 'Studio Lumen',
-    tagline: 'Fotografia d\'autore',
-    heroKicker: 'Matrimoni · Ritratti · Eventi',
-    heroTitle: 'Ogni scatto,\nun\'opera.',
+    studioName: 'Liso Fotografi',
+    tagline: 'Wedding & Events',
+    heroKicker: 'Matrimoni · Eventi · Ritratti',
+    heroTitle: 'Ogni scatto, un\'opera.',
     heroSubtitle: '',
     marquee: 'Matrimoni, Ritratti, Cerimonie, Eventi, Famiglie, Fine Art',
     manifestoTitle: 'Non fotografiamo momenti.\nFotografiamo emozioni.',
     manifestoText: '',
     highlights: [],
-    galleryKicker: 'La mostra',
+    galleryKicker: 'Portfolio',
     galleryTitle: 'Opere',
     galleryIntro: '',
     servicesTitle: 'Cosa facciamo',
@@ -28,34 +28,50 @@ class Seed {
     bannerButton: 'Richiedi un preventivo',
     bannerImage: unsplash('1519741497674-611481863552', w: 2400),
     bioTitle: 'Chi siamo',
-    bioIntro: 'Tre sguardi.\nUna sola ossessione: la luce.',
+    bioIntro: 'Uno sguardo discreto.\nUna sola ossessione: la luce.',
     bioStory:
-        'Dal 2014 raccontiamo matrimoni, famiglie e persone come se ogni '
-        'giornata fosse una mostra da allestire.\n\n'
+        'Raccontiamo matrimoni ed eventi come se ogni giornata fosse una '
+        'mostra da allestire: con calma, attenzione e rispetto.\n\n'
         'Prima ascoltiamo. Poi cerchiamo la luce. Infine stampiamo: perché '
         'una foto vera si tocca.',
     bioImage: unsplash('1554048612-b6a482bc67e5', w: 1800),
     timeline: [
-      Milestone(year: '2010', title: 'Il primo rullino', text: ''),
-      Milestone(year: '2014', title: 'Nasce lo studio', text: ''),
-      Milestone(year: '2018', title: 'Arriva il video', text: ''),
-      Milestone(year: '2024', title: '500 storie', text: ''),
+      Milestone(
+        year: '01',
+        title: 'Ascoltiamo',
+        text: 'Ci raccontate chi siete e come immaginate la giornata.',
+      ),
+      Milestone(
+        year: '02',
+        title: 'Progettiamo',
+        text: 'Sopralluogo, luce, tempi: niente lasciato al caso.',
+      ),
+      Milestone(
+        year: '03',
+        title: 'Scattiamo',
+        text: 'Discreti e presenti, senza mettere in posa le emozioni.',
+      ),
+      Milestone(
+        year: '04',
+        title: 'Consegniamo',
+        text: 'Galleria online, album e stampe fine art.',
+      ),
     ],
     team: [
       TeamMember(
-        name: 'Marco Ferri',
+        name: 'Nome Cognome',
         role: 'Fondatore · Fotografo',
         bio: '',
         photo: unsplash('1507003211169-0a1dd7228f2d', w: 1000),
       ),
       TeamMember(
-        name: 'Giulia Serra',
-        role: 'Ritratti',
+        name: 'Nome Cognome',
+        role: 'Fotografa',
         bio: '',
         photo: unsplash('1544005313-94ddf0286df2', w: 1000),
       ),
       TeamMember(
-        name: 'Sara Conti',
+        name: 'Nome Cognome',
         role: 'Album · Stampa',
         bio: '',
         photo: unsplash('1531746020798-e6953c6e8e04', w: 1000),
@@ -65,7 +81,7 @@ class Seed {
     contacts: Contacts(
       phone: '+39 06 1234 5678',
       whatsapp: '+39 333 123 4567',
-      email: 'info@studiolumen.example',
+      email: 'info@lisofotografi.example',
       address: 'Via Roma 12, 00100 Roma',
       hours: 'Lun–Ven 10–19 · Sabato su appuntamento',
       instagram: 'https://instagram.com/',
@@ -73,7 +89,7 @@ class Seed {
       vat: 'P.IVA 00000000000',
     ),
     footerNote: '',
-    accent: accentGold,
+    accent: accentSilver,
     eventTypes: [
       'Matrimonio',
       'Battesimo',

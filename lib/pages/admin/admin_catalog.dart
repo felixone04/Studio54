@@ -55,8 +55,7 @@ class AdminServices extends StatelessWidget {
         AdminHeader(
           title: 'Servizi e prodotti',
           subtitle:
-              'Sono le voci tra cui i clienti scelgono nel preventivo. Il prezzo non viene mai mostrato '
-              'sul sito: se lo indichi resta visibile solo a te, per farti una stima.',
+              'Le voci del preventivo. Il prezzo resta visibile solo a te.',
           actions: [
             FilledButton.icon(
               onPressed: () => _editService(context, null),
@@ -304,9 +303,7 @@ class AdminPackages extends StatelessWidget {
       children: [
         AdminHeader(
           title: 'Pacchetti',
-          subtitle:
-              'Combinazioni pronte di servizi che il cliente può scegliere con un clic. '
-              'Può comunque personalizzarli o crearne uno da sé.',
+          subtitle: 'Combinazioni pronte di servizi.',
           actions: [
             FilledButton.icon(
               onPressed: () => showDialog(
@@ -591,8 +588,7 @@ class _AdminGalleryState extends State<AdminGallery> {
         AdminHeader(
           title: 'Galleria',
           subtitle:
-              'Le foto della mostra sulla home. Quelle contrassegnate dalla stella compaiono anche nel '
-              'carosello della prima schermata. Trascina per cambiare l\'ordine.',
+              'La stella mette la foto in apertura. Trascina per riordinare.',
           actions: [
             OutlinedButton.icon(
               onPressed: _busy ? null : _addMany,

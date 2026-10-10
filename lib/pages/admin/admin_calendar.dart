@@ -204,7 +204,7 @@ class _AdminCalendarState extends State<AdminCalendar> {
       children: [
         AdminHeader(
           title: 'Calendario',
-          subtitle: 'Gli appuntamenti presi dai preventivi, sincronizzati con il tuo Google Calendar.',
+          subtitle: 'Appuntamenti e Google Calendar.',
           actions: [
             FilledButton.icon(
               onPressed: _newAppointment,
@@ -405,7 +405,14 @@ class _MonthGrid extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      Text(title, style: display(mobile ? 26 : 32)),
+                      Flexible(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: display(mobile ? 26 : 32),
+                        ),
+                      ),
                       if (loading)
                         const Padding(
                           padding: EdgeInsets.only(left: 12),
@@ -504,6 +511,8 @@ class _DayCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final today = _sameDay(date, DateTime.now());
     final h = mobile ? 54.0 : 104.0;
+    // Nella cella ci stanno due appuntamenti; se sono di più, uno + "altri".
+    final shown = events.length > 2 ? 1 : events.length;
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -549,7 +558,7 @@ class _DayCell extends StatelessWidget {
                   spacing: 3,
                   runSpacing: 3,
                   children: [
-                    for (final e in events.take(4))
+                    for (final e in events.take(3))
                       Container(
                         width: 6,
                         height: 6,
@@ -563,7 +572,7 @@ class _DayCell extends StatelessWidget {
               )
             else ...[
               const SizedBox(height: 3),
-              for (final e in events.take(2))
+              for (final e in events.take(shown))
                 Container(
                   margin: const EdgeInsets.only(bottom: 2),
                   padding: const EdgeInsets.symmetric(
@@ -583,13 +592,17 @@ class _DayCell extends StatelessWidget {
                     '${e.allDay ? '' : '${DateFormat.Hm().format(e.start)} '}${e.title}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 11),
+                    style: const TextStyle(fontSize: 11, height: 1.2),
                   ),
                 ),
-              if (events.length > 2)
+              if (events.length > shown)
                 Text(
-                  '+${events.length - 2} altri',
-                  style: const TextStyle(fontSize: 11, color: Colors.black54),
+                  '+${events.length - shown} altri',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    height: 1.2,
+                    color: Colors.black54,
+                  ),
                 ),
             ],
           ],

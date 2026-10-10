@@ -3,33 +3,33 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Palette "galleria": nero inchiostro e carta avorio, alternati per
-/// creare contrasto; l'accento è scelto dal titolare.
+/// Palette del marchio Liso Fotografi: bianco e nero come il logo, con un
+/// accento discreto scelto dal titolare.
 class Palette {
-  static const ink = Color(0xFF0A0A0A);
-  static const ink2 = Color(0xFF161616);
-  static const paper = Color(0xFFF4F0E8);
-  static const paper2 = Color(0xFFE9E3D8);
-  static const stone = Color(0xFF6F6962); // testo secondario su carta
-  static const ash = Color(0xFFA19A90); // testo secondario su nero
+  static const ink = Color(0xFF0B0B0B);
+  static const ink2 = Color(0xFF171717);
+  static const paper = Color(0xFFF6F5F2);
+  static const paper2 = Color(0xFFEAE8E3);
+  static const stone = Color(0xFF66645F); // testo secondario su chiaro
+  static const ash = Color(0xFF9E9C97); // testo secondario su nero
   static const lineDark = Color(0x29FFFFFF);
-  static const lineLight = Color(0x24000000);
+  static const lineLight = Color(0x1F000000);
 }
 
 /// Colori tra cui il titolare può scegliere l'accento del sito.
 const accentChoices = <String, int>{
+  'Argento': 0xFFC9C5BC,
+  'Bianco': 0xFFFFFFFF,
   'Oro': 0xFFD4A85A,
-  'Terracotta': 0xFFD0603F,
   'Rosa cipria': 0xFFE2A7A0,
   'Salvia': 0xFF93AB8C,
   'Blu notte': 0xFF6E8CC8,
-  'Avorio': 0xFFE9E1D3,
 };
 
-/// Variante dell'accento abbastanza scura da leggersi bene su carta.
+/// Variante dell'accento abbastanza scura da leggersi bene su chiaro.
 Color accentOnPaper(Color accent) {
   final hsl = HSLColor.fromColor(accent);
-  return hsl.lightness > 0.42 ? hsl.withLightness(0.40).toColor() : accent;
+  return hsl.lightness > 0.42 ? hsl.withLightness(0.36).toColor() : accent;
 }
 
 extension AccentX on BuildContext {
@@ -40,29 +40,30 @@ extension AccentX on BuildContext {
   Color get brand => Theme.of(this).colorScheme.tertiary;
 }
 
-/// Titoli: Bodoni Moda, alto contrasto, da manifesto d'arte.
+/// Titoli: Josefin Sans leggero, geometrico come il logo.
 TextStyle display(
   double size, {
   Color color = Palette.ink,
   bool italic = false,
-  FontWeight weight = FontWeight.w400,
-  double height = 0.98,
-}) => GoogleFonts.bodoniModa(
+  FontWeight weight = FontWeight.w300,
+  double height = 1.12,
+  double spacing = 0.01,
+}) => GoogleFonts.josefinSans(
   fontSize: size,
   fontWeight: weight,
   color: color,
   fontStyle: italic ? FontStyle.italic : FontStyle.normal,
   height: height,
-  letterSpacing: -size * 0.02,
+  letterSpacing: size * spacing,
 );
 
-/// Etichette maiuscole spaziate.
+/// Etichette maiuscole spaziate (come "WEDDING & EVENTS" nel logo).
 TextStyle label(
   double size, {
   Color color = Palette.ink,
   FontWeight weight = FontWeight.w600,
-  double spacing = 0.22,
-}) => GoogleFonts.manrope(
+  double spacing = 0.24,
+}) => GoogleFonts.josefinSans(
   fontSize: size,
   fontWeight: weight,
   color: color,
@@ -76,7 +77,7 @@ TextStyle body(
   Color color = Palette.ink,
   FontWeight weight = FontWeight.w400,
   double height = 1.6,
-}) => GoogleFonts.manrope(
+}) => GoogleFonts.jost(
   fontSize: size,
   fontWeight: weight,
   color: color,
@@ -104,7 +105,7 @@ class AppTheme {
       borderSide: BorderSide(color: c, width: w),
     );
     return base.copyWith(
-      textTheme: GoogleFonts.manropeTextTheme(base.textTheme)
+      textTheme: GoogleFonts.jostTextTheme(base.textTheme)
           .apply(bodyColor: Palette.ink, displayColor: Palette.ink),
       inputDecorationTheme: InputDecorationTheme(
         border: u(Palette.lineLight),
@@ -151,6 +152,9 @@ class AppTheme {
         onPrimary: Palette.paper,
         secondary: accentOnPaper(accent),
         tertiary: accent,
+        // Filtri selezionati in nero, come il logo.
+        secondaryContainer: strong,
+        onSecondaryContainer: Palette.paper,
         surface: Colors.white,
         onSurface: Palette.ink,
       ),
@@ -161,7 +165,7 @@ class AppTheme {
       borderSide: BorderSide(color: c, width: w),
     );
     return base.copyWith(
-      textTheme: GoogleFonts.manropeTextTheme(base.textTheme),
+      textTheme: GoogleFonts.jostTextTheme(base.textTheme),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
@@ -170,12 +174,17 @@ class AppTheme {
         focusedBorder: b(strong, 1.4),
         errorBorder: b(const Color(0xFFB3261E)),
         focusedErrorBorder: b(const Color(0xFFB3261E), 1.4),
-        labelStyle: GoogleFonts.manrope(color: const Color(0xFF6E675D)),
-        floatingLabelStyle: GoogleFonts.manrope(color: strong),
+        labelStyle: GoogleFonts.jost(color: const Color(0xFF6E675D)),
+        floatingLabelStyle: GoogleFonts.jost(color: strong),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 18,
         ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: Colors.white,
+        side: const BorderSide(color: Color(0xFFD8D2C8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
       ),
       cardTheme: CardThemeData(
         color: Colors.white,
@@ -197,13 +206,13 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-          textStyle: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.jost(fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-          textStyle: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.jost(fontWeight: FontWeight.w600),
         ),
       ),
     );
