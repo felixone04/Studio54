@@ -108,22 +108,26 @@ class _SiteScaffoldState extends State<SiteScaffold> {
             child: ClipRect(
               child: BackdropFilter(
                 filter: ImageFilter.blur(
-                  sigmaX: dark ? 0 : 16,
-                  sigmaY: dark ? 0 : 16,
+                  sigmaX: dark && !_scrolled ? 0 : 16,
+                  sigmaY: dark && !_scrolled ? 0 : 16,
                 ),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 350),
                   height: navH,
                   padding: EdgeInsets.symmetric(horizontal: context.gutter),
                   decoration: BoxDecoration(
-                    gradient: dark
+                    gradient: dark && !_scrolled
                         ? const LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [Color(0x66000000), Color(0x00000000)],
                           )
                         : null,
-                    color: dark ? null : Palette.paper.withValues(alpha: 0.86),
+                    color: dark
+                        ? (_scrolled
+                              ? Palette.ink.withValues(alpha: 0.6)
+                              : null)
+                        : Palette.paper.withValues(alpha: 0.86),
                     border: Border(
                       bottom: BorderSide(
                         color: !dark && _scrolled
@@ -166,15 +170,26 @@ class _NavBar extends StatelessWidget {
     final compact = context.w < 900;
     return Row(
       children: [
-        Flexible(
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: () => context.go('/'),
-              child: AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 300),
-                style: display(context.fluid(22, 28), color: fg, italic: true),
-                child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () => context.go('/'),
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 300),
+                  style: display(
+                    context.fluid(22, 28),
+                    color: fg,
+                    italic: true,
+                  ),
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
             ),
           ),
