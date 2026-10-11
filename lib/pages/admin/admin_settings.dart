@@ -50,11 +50,12 @@ class AdminSettingsPage extends StatelessWidget {
                       await Clipboard.setData(
                         ClipboardData(text: s.exportBackup()),
                       );
-                      if (context.mounted)
+                      if (context.mounted) {
                         toast(
                           context,
                           'Copia di sicurezza negli appunti: incollala in un file di testo e conservala.',
                         );
+                      }
                     },
                     icon: const Icon(Icons.copy_all_rounded, size: 18),
                     label: const Text('Copia i dati (backup)'),
@@ -77,8 +78,9 @@ class AdminSettingsPage extends StatelessWidget {
                         title: 'Contenuti di esempio',
                       )) {
                         await s.resetAll();
-                        if (context.mounted)
+                        if (context.mounted) {
                           toast(context, 'Contenuti di esempio ripristinati.');
+                        }
                       }
                     },
                     style: OutlinedButton.styleFrom(
@@ -129,11 +131,12 @@ class _GoogleSetupState extends State<_GoogleSetup> {
     setState(() => _busy = true);
     try {
       await s.connectGoogle();
-      if (mounted)
+      if (mounted) {
         toast(
           context,
           'Collegato${s.calendar.calendarName != null ? ' a ${s.calendar.calendarName}' : ''}.',
         );
+      }
     } on GoogleAuthException catch (e) {
       if (mounted) toast(context, e.message, error: true);
     } catch (e) {
@@ -296,8 +299,9 @@ class _GoogleSetupState extends State<_GoogleSetup> {
                             await Clipboard.setData(
                               ClipboardData(text: widget.origin),
                             );
-                            if (context.mounted)
+                            if (context.mounted) {
                               toast(context, 'Indirizzo copiato.');
+                            }
                           },
                         ),
                       ],
@@ -399,7 +403,11 @@ class _PasswordFormState extends State<_PasswordForm> {
           FilledButton(
             onPressed: () async {
               if (!_form.currentState!.validate()) return;
-              await s.setAdminPassword(_new.text);
+              // Mantiene la scelta "Ricordami" fatta all'accesso.
+              await s.setAdminPassword(
+                _new.text,
+                remember: s.settings.sessionUntil != null,
+              );
               _old.clear();
               _new.clear();
               _again.clear();
@@ -483,6 +491,7 @@ class _RestoreDialogState extends State<_RestoreDialog> {
                     Navigator.pop(context);
                     toast(context, 'Dati ripristinati.');
                   } catch (e) {
+                    if (!mounted) return;
                     setState(() {
                       _busy = false;
                       _error = e is FormatException

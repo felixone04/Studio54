@@ -566,11 +566,12 @@ class _AdminGalleryState extends State<AdminGallery> {
       }
       if (added.isNotEmpty) {
         await s.setGallery([...s.gallery, ...added]);
-        if (mounted)
+        if (mounted) {
           toast(
             context,
             '${added.length} foto aggiunte. Dai un titolo a ciascuna con “Modifica”.',
           );
+        }
       }
     } catch (e) {
       if (mounted) toast(context, 'Caricamento non riuscito: $e', error: true);

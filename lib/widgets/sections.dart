@@ -141,6 +141,18 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
   }
 
   @override
+  void didUpdateWidget(HeroSlideshow old) {
+    super.didUpdateWidget(old);
+    // Le foto possono cambiare (galleria modificata): indice nei limiti e
+    // timer avviato o fermato secondo il nuovo numero di foto.
+    if (old.photos.length != widget.photos.length) {
+      final n = widget.photos.length;
+      _i = n == 0 ? 0 : _i % n;
+      _restart();
+    }
+  }
+
+  @override
   void dispose() {
     _t?.cancel();
     super.dispose();

@@ -164,6 +164,7 @@ class _LightboxState extends State<_Lightbox> {
                 child: Center(
                   child: IconButton(
                     onPressed: () => _go(-1),
+                    tooltip: 'Foto precedente',
                     iconSize: 40,
                     color: Palette.paper,
                     icon: const Icon(Icons.chevron_left_rounded),
@@ -177,6 +178,7 @@ class _LightboxState extends State<_Lightbox> {
                 child: Center(
                   child: IconButton(
                     onPressed: () => _go(1),
+                    tooltip: 'Foto successiva',
                     iconSize: 40,
                     color: Palette.paper,
                     icon: const Icon(Icons.chevron_right_rounded),

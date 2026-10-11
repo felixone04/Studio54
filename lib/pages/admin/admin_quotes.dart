@@ -67,14 +67,16 @@ class _AdminQuotesState extends State<AdminQuotes> {
             ),
           )
         else
-          for (final q in list) _QuoteCard(quote: q),
+          // La chiave lega stato aperto/chiuso e menu "Stato" alla richiesta
+          // giusta quando si filtra, si elimina o cambia lo stato.
+          for (final q in list) _QuoteCard(key: ValueKey(q.id), quote: q),
       ],
     );
   }
 }
 
 class _QuoteCard extends StatelessWidget {
-  const _QuoteCard({required this.quote});
+  const _QuoteCard({super.key, required this.quote});
   final QuoteRequest quote;
 
   @override

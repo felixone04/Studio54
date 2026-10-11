@@ -14,6 +14,12 @@ const _googleBlue = Color(0xFF4A78C2);
 const _weekdays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
 DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
+
+/// Somma giorni di calendario. Con `add(Duration(days: n))` al cambio
+/// dell'ora legale si finisce alle 23:00 del giorno prima (giorni doppi o
+/// mancanti nella griglia).
+DateTime _addDays(DateTime d, int n) => DateTime(d.year, d.month, d.day + n);
+
 bool _sameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -33,8 +39,12 @@ class _AdminCalendarState extends State<AdminCalendar> {
 
   DateTime get _gridStart {
     final first = DateTime(_month.year, _month.month, 1);
-    return first.subtract(Duration(days: first.weekday - 1));
+    return _addDays(first, -(first.weekday - 1));
   }
+
+  /// Numero della richiesta a Google più recente: le risposte arrivate in
+  /// ritardo (es. cambiando mese velocemente) vengono ignorate.
+  int _request = 0;
 
   @override
   void initState() {
@@ -43,29 +53,37 @@ class _AdminCalendarState extends State<AdminCalendar> {
   }
 
   Future<void> _loadGoogle() async {
+    // Può essere chiamata dopo un'attesa (dialoghi, rete): la pagina potrebbe
+    // non esserci più.
+    if (!mounted) return;
     final s = context.read<AppState>();
+    final request = ++_request;
     if (!s.calendar.connected) {
-      if (_google.isNotEmpty) setState(() => _google = []);
+      if (_google.isNotEmpty || _loading) {
+        setState(() {
+          _google = [];
+          _loading = false;
+        });
+      }
       return;
     }
     setState(() {
       _loading = true;
       _error = null;
     });
+    bool current() => mounted && request == _request;
     try {
       final start = _gridStart;
-      final list = await s.calendar.listEvents(
-        start,
-        start.add(const Duration(days: 42)),
-      );
-      if (mounted) setState(() => _google = list);
+      final list = await s.calendar.listEvents(start, _addDays(start, 42));
+      if (current()) setState(() => _google = list);
     } on GoogleAuthException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (current()) setState(() => _error = e.message);
     } catch (e) {
-      if (mounted)
+      if (current()) {
         setState(() => _error = 'Impossibile leggere Google Calendar: $e');
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (current()) setState(() => _loading = false);
     }
   }
 
@@ -151,13 +169,14 @@ class _AdminCalendarState extends State<AdminCalendar> {
     final s = context.read<AppState>();
     try {
       final n = await s.pushUnsyncedToGoogle();
-      if (mounted)
+      if (mounted) {
         toast(
           context,
           n == 0
               ? 'Era già tutto sincronizzato.'
               : '$n appuntamenti inviati a Google Calendar.',
         );
+      }
     } catch (e) {
       if (mounted) toast(context, '$e', error: true);
     }
@@ -222,6 +241,7 @@ class _AdminCalendarState extends State<AdminCalendar> {
           onPush: _push,
           onDisconnect: () async {
             await s.disconnectGoogle();
+            if (!mounted) return;
             setState(() {
               _google = [];
               _error = null;
@@ -394,6 +414,7 @@ class _MonthGrid extends StatelessWidget {
     final title = toBeginningOfSentenceCase(
       DateFormat('MMMM y', 'it_IT').format(month),
     );
+    final days = [for (var i = 0; i < 42; i++) _addDays(start, i)];
 
     return Card(
       child: Padding(
@@ -428,10 +449,12 @@ class _MonthGrid extends StatelessWidget {
                 TextButton(onPressed: onToday, child: const Text('Oggi')),
                 IconButton(
                   onPressed: onPrev,
+                  tooltip: 'Mese precedente',
                   icon: const Icon(Icons.chevron_left_rounded),
                 ),
                 IconButton(
                   onPressed: onNext,
+                  tooltip: 'Mese successivo',
                   icon: const Icon(Icons.chevron_right_rounded),
                 ),
               ],
@@ -458,23 +481,16 @@ class _MonthGrid extends StatelessWidget {
             for (var r = 0; r < 6; r++)
               Row(
                 children: [
-                  for (var c = 0; c < 7; c++)
+                  for (final date in days.skip(r * 7).take(7))
                     Expanded(
                       child: _DayCell(
-                        date: start.add(Duration(days: r * 7 + c)),
-                        inMonth:
-                            start.add(Duration(days: r * 7 + c)).month ==
-                            month.month,
-                        selected: _sameDay(
-                          start.add(Duration(days: r * 7 + c)),
-                          selected,
-                        ),
-                        events: eventsOn(start.add(Duration(days: r * 7 + c))),
+                        date: date,
+                        inMonth: date.month == month.month,
+                        selected: _sameDay(date, selected),
+                        events: eventsOn(date),
                         primary: primary,
                         mobile: mobile,
-                        onTap: () => onSelect(
-                          _day(start.add(Duration(days: r * 7 + c))),
-                        ),
+                        onTap: () => onSelect(date),
                       ),
                     ),
                 ],

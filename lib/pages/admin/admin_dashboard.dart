@@ -15,8 +15,19 @@ class AdminDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
     final now = DateTime.now();
-    final upcoming = s.appointments.where((a) => a.end.isAfter(now)).toList()
-      ..sort((a, b) => a.start.compareTo(b.start));
+    // Gli appuntamenti "tutto il giorno" finiscono a mezzanotte del giorno
+    // stesso: restano "prossimi" fino alla fine della giornata.
+    final upcoming =
+        s.appointments
+            .where(
+              (a) =>
+                  (a.allDay
+                          ? DateTime(a.end.year, a.end.month, a.end.day + 1)
+                          : a.end)
+                      .isAfter(now),
+            )
+            .toList()
+          ..sort((a, b) => a.start.compareTo(b.start));
     final newQuotes = s.quotes
         .where((q) => q.status == QuoteStatus.nuova)
         .length;

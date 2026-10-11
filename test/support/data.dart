@@ -79,11 +79,11 @@ Map<String, Object?> hugeData({int seed = 42}) {
   // ------------------------------------------------------------ pacchetti
   final packages = <Map<String, Object?>>[];
   for (var i = 0; i < 40; i++) {
-    final ids = <String>[
+    final ids = <String>{
       if (i % 5 != 0)
         for (var k = 0; k < 1 + r.nextInt(12); k++) 'svc-${r.nextInt(80)}',
       if (i % 7 == 0) 'svc-eliminato-$i',
-    ].toSet().toList();
+    }.toList();
     packages.add({
       'id': 'pkg-$i',
       'name': switch (i % 4) {

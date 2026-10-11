@@ -55,8 +55,14 @@ class _AppointmentDialogState extends State<_AppointmentDialog> {
       _location = TextEditingController(text: e.location);
       _notes = TextEditingController(text: e.notes);
       _date = DateTime(e.start.year, e.start.month, e.start.day);
-      _start = TimeOfDay.fromDateTime(e.start);
-      _end = TimeOfDay.fromDateTime(e.end);
+      // Un appuntamento "tutto il giorno" ha orari 00:00–00:00: togliendo
+      // l'opzione si parte dagli orari predefiniti invece che da un errore.
+      _start = e.allDay
+          ? const TimeOfDay(hour: 10, minute: 0)
+          : TimeOfDay.fromDateTime(e.start);
+      _end = e.allDay
+          ? const TimeOfDay(hour: 11, minute: 0)
+          : TimeOfDay.fromDateTime(e.end);
       _allDay = e.allDay;
     } else {
       final d =
@@ -101,7 +107,9 @@ class _AppointmentDialogState extends State<_AppointmentDialog> {
     final d = await showDatePicker(
       context: context,
       initialDate: _date,
-      firstDate: DateTime(2020),
+      // Un evento importato da Google può essere più vecchio del 2020: il
+      // calendario non deve fallire (initialDate prima di firstDate).
+      firstDate: _date.isBefore(DateTime(2020)) ? _date : DateTime(2020),
       lastDate: DateTime(2100),
       locale: const Locale('it', 'IT'),
     );
@@ -133,8 +141,9 @@ class _AppointmentDialogState extends State<_AppointmentDialog> {
       ..end = _allDay ? DateTime(_date.year, _date.month, _date.day) : _at(_end)
       ..location = _location.text.trim()
       ..notes = _notes.text.trim();
-    if (widget.existing == null && widget.quote != null)
+    if (widget.existing == null && widget.quote != null) {
       a.quoteId = widget.quote!.id;
+    }
 
     final warning = await s.saveAppointment(a);
 

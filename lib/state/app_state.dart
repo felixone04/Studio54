@@ -207,11 +207,16 @@ class AppState extends ChangeNotifier {
   /// Invia a Google gli appuntamenti locali non ancora sincronizzati.
   Future<int> pushUnsyncedToGoogle() async {
     var n = 0;
-    for (final a in appointments.where((e) => e.googleEventId == null)) {
-      a.googleEventId = await calendar.insert(a);
-      n++;
+    try {
+      for (final a in appointments.where((e) => e.googleEventId == null)) {
+        a.googleEventId = await calendar.insert(a);
+        n++;
+      }
+    } finally {
+      // Anche se uno degli invii fallisce, quelli già riusciti vanno salvati:
+      // altrimenti al prossimo tentativo finirebbero doppi su Google.
+      if (n > 0) await _persistAppointments();
     }
-    if (n > 0) await _persistAppointments();
     return n;
   }
 
@@ -322,11 +327,40 @@ class AppState extends ChangeNotifier {
   });
 
   Future<void> importBackup(String raw) async {
-    final j = jsonDecode(raw);
-    if (j is! Map || j['content'] is! Map) {
-      throw const FormatException(
-        'Il testo incollato non è una copia di sicurezza valida.',
+    const invalid = FormatException(
+      'Il testo incollato non è una copia di sicurezza valida.',
+    );
+    final Object? j;
+    try {
+      j = jsonDecode(raw);
+    } on FormatException {
+      throw invalid;
+    }
+    if (j is! Map || j['content'] is! Map) throw invalid;
+    // Prima di sovrascrivere i dati attuali verifica che ogni sezione si possa
+    // leggere: un backup rovinato renderebbe il sito inutilizzabile anche
+    // dopo aver ricaricato la pagina.
+    final parsers = <String, Object Function(Map<String, dynamic>)>{
+      'services': ServiceItem.fromJson,
+      'packages': ServicePackage.fromJson,
+      'gallery': GalleryPhoto.fromJson,
+      'quotes': QuoteRequest.fromJson,
+      'appointments': Appointment.fromJson,
+    };
+    try {
+      SiteContent.fromJson(
+        Map<String, dynamic>.from(j['content'] as Map),
+        Seed.content(),
       );
+      for (final MapEntry(key: k, value: parse) in parsers.entries) {
+        final v = j[k];
+        if (v == null) continue;
+        for (final e in v as List) {
+          parse(Map<String, dynamic>.from(e as Map));
+        }
+      }
+    } catch (_) {
+      throw invalid;
     }
     for (final k in [
       'content',

@@ -28,7 +28,7 @@ CustomTransitionPage<void> _fade(GoRouterState s, Widget child) =>
       key: s.pageKey,
       child: child,
       transitionDuration: const Duration(milliseconds: 350),
-      transitionsBuilder: (_, a, __, c) => FadeTransition(
+      transitionsBuilder: (_, a, _, c) => FadeTransition(
         opacity: CurvedAnimation(parent: a, curve: Curves.easeOut),
         child: c,
       ),

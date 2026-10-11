@@ -329,8 +329,9 @@ class _ImageFieldState extends State<ImageField> {
         _set('data:$mime;base64,${base64Encode(bytes)}');
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         toast(context, 'Impossibile caricare l\'immagine: $e', error: true);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

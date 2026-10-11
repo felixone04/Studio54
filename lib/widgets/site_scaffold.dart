@@ -10,7 +10,12 @@ import 'common.dart';
 import 'photo_ui.dart';
 
 Future<void> openUrl(String url) async {
-  final u = Uri.tryParse(url.trim());
+  final t = url.trim();
+  var u = Uri.tryParse(t);
+  if (u == null || t.isEmpty) return;
+  // Link social inseriti senza "https://" (es. instagram.com/studio): senza
+  // schema il browser li tratterebbe come percorsi interni al sito.
+  if (!u.hasScheme) u = Uri.tryParse('https://$t');
   if (u == null) return;
   await launchUrl(u, webOnlyWindowName: '_blank');
 }

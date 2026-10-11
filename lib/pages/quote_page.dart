@@ -35,6 +35,11 @@ class _QuotePageState extends State<QuotePage> {
   final _formAnchor = GlobalKey();
   final _topAnchor = GlobalKey();
 
+  /// Chiave unica per pagina: durante la dissolvenza tra due preventivi
+  /// (es. da `?p=` a `?s=`) ci sono due moduli insieme, e VisibilityDetector
+  /// vuole chiavi diverse.
+  final _formDetectorKey = UniqueKey();
+
   // Selezione
   String? _packageId;
   final Set<String> _extra = {};
@@ -54,16 +59,19 @@ class _QuotePageState extends State<QuotePage> {
   bool _sending = false;
   bool _formVisible = false;
   String? _selectionError;
+  String? _sendError;
   QuoteRequest? _sent;
 
   @override
   void initState() {
     super.initState();
     final s = context.read<AppState>();
-    if (widget.prePackage != null && s.packageById(widget.prePackage) != null) {
+    // Si preselezionano solo voci visibili sul sito: un pacchetto nascosto
+    // resterebbe selezionato senza comparire tra le schede.
+    if (s.packageById(widget.prePackage)?.active ?? false) {
       _packageId = widget.prePackage;
     } else if (widget.preService != null &&
-        s.serviceById(widget.preService!) != null) {
+        (s.serviceById(widget.preService!)?.active ?? false)) {
       _extra.add(widget.preService!);
       _custom = true;
     } else {
@@ -140,10 +148,13 @@ class _QuotePageState extends State<QuotePage> {
     });
     if (ids.isEmpty || !okForm || !_privacy) return;
 
-    setState(() => _sending = true);
+    setState(() {
+      _sending = true;
+      _sendError = null;
+    });
     final type = _eventType == 'Altro' && _other.text.trim().isNotEmpty
         ? 'Altro: ${_other.text.trim()}'
-        : _eventType!;
+        : (_eventType ?? '');
     final q = QuoteRequest(
       firstName: _first.text.trim(),
       lastName: _last.text.trim(),
@@ -155,7 +166,18 @@ class _QuotePageState extends State<QuotePage> {
       serviceIds: ids,
       packageId: _packageId,
     );
-    await s.addQuote(q);
+    try {
+      await s.addQuote(q);
+    } catch (_) {
+      // Es. archivio del browser pieno: il pulsante non resta in attesa.
+      if (mounted) {
+        setState(() {
+          _sending = false;
+          _sendError = 'Invio non riuscito. Riprova tra qualche istante.';
+        });
+      }
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _sending = false;
@@ -206,6 +228,8 @@ class _QuotePageState extends State<QuotePage> {
                     _sent = null;
                     _packageId = null;
                     _extra.clear();
+                    // Il consenso va dato di nuovo per ogni richiesta.
+                    _privacy = false;
                   }),
                 )
               : Column(
@@ -240,7 +264,7 @@ class _QuotePageState extends State<QuotePage> {
                     ),
                     SizedBox(height: context.fluid(20, 28)),
                     VisibilityDetector(
-                      key: const Key('quote-form'),
+                      key: _formDetectorKey,
                       onVisibilityChanged: (i) {
                         final v = i.visibleFraction > 0.2;
                         if (v != _formVisible && mounted) {
@@ -296,6 +320,9 @@ class _QuotePageState extends State<QuotePage> {
 
     const gap = SizedBox(height: 18);
     final light = Theme.of(context);
+    // Se il titolare ha tolto tutti i tipi di evento il campo non è
+    // obbligatorio (altrimenti il modulo non si potrebbe più inviare).
+    final types = s.content.eventTypes;
     return Theme(
       data: _darkFormTheme(light),
       child: Form(
@@ -348,16 +375,20 @@ class _QuotePageState extends State<QuotePage> {
             gap,
             pair(
               DropdownButtonFormField<String>(
-                initialValue: _eventType,
+                initialValue: types.contains(_eventType) ? _eventType : null,
                 isExpanded: true,
                 dropdownColor: _card,
+                // La freccia di default è grigio scuro: illeggibile sul nero.
+                iconEnabledColor: _muted,
                 decoration: const InputDecoration(labelText: 'Tipo di evento'),
                 items: [
-                  for (final t in s.content.eventTypes)
+                  for (final t in types.toSet())
                     DropdownMenuItem(value: t, child: Text(t)),
                 ],
                 onChanged: (v) => setState(() => _eventType = v),
-                validator: (v) => v == null ? 'Scegli il tipo di evento' : null,
+                validator: (v) => v == null && types.isNotEmpty
+                    ? 'Scegli il tipo di evento'
+                    : null,
               ),
               _DateField(
                 pickerTheme: light,
@@ -444,6 +475,11 @@ class _QuotePageState extends State<QuotePage> {
                 ),
               ],
             ),
+            if (_sendError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(_sendError!, style: body(13.5, color: _error)),
+              ),
           ],
         ),
       ),
@@ -1286,15 +1322,21 @@ class _Summary extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        InkResponse(
-                          onTap: () => onRemove(id),
-                          radius: 14,
-                          child: const Padding(
-                            padding: EdgeInsets.all(2),
-                            child: Icon(
-                              Icons.close_rounded,
-                              size: 15,
-                              color: _muted,
+                        Semantics(
+                          container: true,
+                          button: true,
+                          label: 'Rimuovi ${state.serviceById(id)?.name ?? ''}',
+                          excludeSemantics: true,
+                          child: InkResponse(
+                            onTap: () => onRemove(id),
+                            radius: 14,
+                            child: const Padding(
+                              padding: EdgeInsets.all(2),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 15,
+                                color: _muted,
+                              ),
                             ),
                           ),
                         ),

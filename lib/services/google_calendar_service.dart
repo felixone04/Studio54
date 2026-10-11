@@ -102,8 +102,15 @@ class GoogleCalendarService {
       'start': allDay
           ? {'date': _date(startDay)}
           : {'dateTime': a.start.toUtc().toIso8601String()},
+      // Giorno dopo (fine esclusiva) calcolato sul calendario: con
+      // `add(Duration(days: 1))` il giorno del cambio d'ora resterebbe uguale
+      // all'inizio e Google rifiuterebbe l'evento.
       'end': allDay
-          ? {'date': _date(startDay.add(const Duration(days: 1)))}
+          ? {
+              'date': _date(
+                DateTime(startDay.year, startDay.month, startDay.day + 1),
+              ),
+            }
           : {'dateTime': a.end.toUtc().toIso8601String()},
     };
   }
@@ -118,7 +125,7 @@ class GoogleCalendarService {
         'singleEvents': 'true',
         'orderBy': 'startTime',
         'maxResults': '250',
-        if (pageToken != null) 'pageToken': pageToken,
+        'pageToken': ?pageToken,
       });
       calendarName ??= res['summary'] as String?;
       for (final e in (res['items'] as List? ?? const [])) {
@@ -131,8 +138,10 @@ class GoogleCalendarService {
         final start = allDay
             ? DateTime.parse(s['date'])
             : DateTime.parse(s['dateTime']).toLocal();
-        var end = allDay
-            ? DateTime.parse(en['date']).subtract(const Duration(days: 1))
+        final endDay = allDay ? DateTime.parse(en['date']) : null;
+        var end = endDay != null
+            // Fine esclusiva → ultimo giorno incluso (sicuro con l'ora legale).
+            ? DateTime(endDay.year, endDay.month, endDay.day - 1)
             : DateTime.parse(en['dateTime']).toLocal();
         if (end.isBefore(start)) end = start;
         out.add(

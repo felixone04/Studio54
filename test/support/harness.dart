@@ -87,7 +87,8 @@ Future<void> setUpTestEnv() async {
   final italic = File('$fontDir/roboto-italic.ttf').readAsBytesSync();
 
   final paths = <String>[];
-  for (final family in ['Manrope', 'BodoniModa']) {
+  // Le famiglie usate davvero dal tema (vedi lib/theme/app_theme.dart).
+  for (final family in ['JosefinSans', 'Jost']) {
     for (final w in FontWeight.values) {
       for (final st in FontStyle.values) {
         final prefix = GoogleFontsFamilyWithVariant(
@@ -117,8 +118,8 @@ Future<void> setUpTestEnv() async {
 
   for (final w in FontWeight.values) {
     for (final st in FontStyle.values) {
-      GoogleFonts.manrope(fontWeight: w, fontStyle: st);
-      GoogleFonts.bodoniModa(fontWeight: w, fontStyle: st);
+      GoogleFonts.josefinSans(fontWeight: w, fontStyle: st);
+      GoogleFonts.jost(fontWeight: w, fontStyle: st);
     }
   }
   await GoogleFonts.pendingFonts();
