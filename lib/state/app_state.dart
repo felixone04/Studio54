@@ -22,6 +22,7 @@ class AppState extends ChangeNotifier {
   List<ServiceItem> services = [];
   List<ServicePackage> packages = [];
   List<GalleryPhoto> gallery = [];
+  List<Work> works = [];
   List<QuoteRequest> quotes = [];
   List<Appointment> appointments = [];
   AdminSettings settings = AdminSettings();
@@ -41,6 +42,7 @@ class AppState extends ChangeNotifier {
     packages =
         await _list('packages', ServicePackage.fromJson) ?? Seed.packages();
     gallery = await _list('gallery', GalleryPhoto.fromJson) ?? Seed.gallery();
+    works = await _list('works', Work.fromJson) ?? Seed.works();
     quotes = await _list('quotes', QuoteRequest.fromJson) ?? [];
     appointments = await _list('appointments', Appointment.fromJson) ?? [];
 
@@ -78,6 +80,15 @@ class AppState extends ChangeNotifier {
   List<GalleryPhoto> get heroPhotos {
     final h = gallery.where((p) => p.inHero).toList();
     return h.isEmpty ? gallery : h;
+  }
+
+  List<Work> get publishedWorks => works.where((w) => w.published).toList();
+
+  Work? workById(String? id) {
+    for (final w in works) {
+      if (w.id == id) return w;
+    }
+    return null;
   }
 
   ServiceItem? serviceById(String id) {
@@ -131,6 +142,11 @@ class AppState extends ChangeNotifier {
   Future<void> setGallery(List<GalleryPhoto> list) {
     gallery = list;
     return _persist('gallery', list.map((e) => e.toJson()).toList());
+  }
+
+  Future<void> setWorks(List<Work> list) {
+    works = list;
+    return _persist('works', list.map((e) => e.toJson()).toList());
   }
 
   Future<void> addQuote(QuoteRequest q) {
@@ -310,6 +326,12 @@ class AppState extends ChangeNotifier {
     for (final t in content.team) {
       add(t.photo);
     }
+    for (final w in works) {
+      add(w.cover);
+      for (final p in w.photos) {
+        add(p.url);
+      }
+    }
     add(content.bioImage);
     add(content.bannerImage);
     return n;
@@ -322,6 +344,7 @@ class AppState extends ChangeNotifier {
     'services': services.map((e) => e.toJson()).toList(),
     'packages': packages.map((e) => e.toJson()).toList(),
     'gallery': gallery.map((e) => e.toJson()).toList(),
+    'works': works.map((e) => e.toJson()).toList(),
     'quotes': quotes.map((e) => e.toJson()).toList(),
     'appointments': appointments.map((e) => e.toJson()).toList(),
   });
@@ -344,6 +367,7 @@ class AppState extends ChangeNotifier {
       'services': ServiceItem.fromJson,
       'packages': ServicePackage.fromJson,
       'gallery': GalleryPhoto.fromJson,
+      'works': Work.fromJson,
       'quotes': QuoteRequest.fromJson,
       'appointments': Appointment.fromJson,
     };
@@ -367,6 +391,7 @@ class AppState extends ChangeNotifier {
       'services',
       'packages',
       'gallery',
+      'works',
       'quotes',
       'appointments',
     ]) {
@@ -386,6 +411,7 @@ class AppState extends ChangeNotifier {
       Seed.packages().map((e) => e.toJson()).toList(),
     );
     await repo.write('gallery', Seed.gallery().map((e) => e.toJson()).toList());
+    await repo.write('works', Seed.works().map((e) => e.toJson()).toList());
     await load();
   }
 }

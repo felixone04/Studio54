@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -301,6 +304,85 @@ class _SprocketPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SprocketPainter o) => o.color != color;
+}
+
+/// Grana della pellicola, leggerissima, da appoggiare sopra a una sezione.
+/// La trama si genera una sola volta e poi si ripete: costa pochissimo.
+class FilmGrain extends StatelessWidget {
+  const FilmGrain({super.key, this.intensity = 1});
+
+  /// 1 = grana normale (già molto discreta); 0 = assente.
+  final double intensity;
+
+  static ui.Image? _tile;
+  static bool _failed = false;
+
+  static ui.Image? _texture() {
+    if (_tile != null || _failed) return _tile;
+    try {
+      const size = 160;
+      final r = math.Random(7);
+      final rec = ui.PictureRecorder();
+      final c = Canvas(rec);
+      final p = Paint();
+      for (var i = 0; i < 2600; i++) {
+        final light = r.nextBool();
+        final a = 0.04 + r.nextDouble() * 0.09;
+        p.color = (light ? Colors.white : Colors.black).withValues(alpha: a);
+        c.drawRect(
+          Rect.fromLTWH(
+            r.nextInt(size).toDouble(),
+            r.nextInt(size).toDouble(),
+            r.nextDouble() < 0.2 ? 1.6 : 1,
+            r.nextDouble() < 0.2 ? 1.6 : 1,
+          ),
+          p,
+        );
+      }
+      _tile = rec.endRecording().toImageSync(size, size);
+    } catch (_) {
+      // Se il motore grafico non lo permette, semplicemente niente grana.
+      _failed = true;
+    }
+    return _tile;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tile = intensity <= 0 ? null : _texture();
+    if (tile == null) return const SizedBox.shrink();
+    return IgnorePointer(
+      child: RepaintBoundary(
+        child: CustomPaint(
+          size: Size.infinite,
+          painter: _GrainPainter(tile, intensity.clamp(0.0, 1.0)),
+        ),
+      ),
+    );
+  }
+}
+
+class _GrainPainter extends CustomPainter {
+  _GrainPainter(this.tile, this.intensity);
+  final ui.Image tile;
+  final double intensity;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..shader = ImageShader(
+        tile,
+        TileMode.repeated,
+        TileMode.repeated,
+        Matrix4.identity().storage,
+      )
+      ..color = Colors.white.withValues(alpha: intensity);
+    canvas.drawRect(Offset.zero & size, p);
+  }
+
+  @override
+  bool shouldRepaint(_GrainPainter o) =>
+      o.tile != tile || o.intensity != intensity;
 }
 
 /// Riga di testo stile display della fotocamera ("RAW · AF-S · 03/08").

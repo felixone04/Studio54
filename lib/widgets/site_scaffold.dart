@@ -24,6 +24,7 @@ String digitsOf(String s) => s.replaceAll(RegExp(r'[^0-9+]'), '');
 
 const _navItems = <(String, String)>[
   ('Home', '/'),
+  ('Lavori', '/lavori'),
   ('Biografia', '/biografia'),
   ('Preventivo', '/preventivo'),
 ];
@@ -37,6 +38,7 @@ class SiteScaffold extends StatefulWidget {
     this.darkHero = false,
     this.logoHero = false,
     this.darkPage = false,
+    this.grain = false,
     this.overlay,
   });
 
@@ -52,6 +54,9 @@ class SiteScaffold extends StatefulWidget {
 
   /// Tutta la pagina è su fondo scuro: la barra resta scura anche scorrendo.
   final bool darkPage;
+
+  /// Grana della pellicola, leggera e fissa sopra la pagina.
+  final bool grain;
 
   /// Elemento fisso sopra al contenuto (es. barra del preventivo).
   final Widget? overlay;
@@ -115,6 +120,8 @@ class _SiteScaffoldState extends State<SiteScaffold> {
               ],
             ),
           ),
+          if (widget.grain)
+            const Positioned.fill(child: FilmGrain(intensity: 0.75)),
           Positioned(
             top: 0,
             left: 0,

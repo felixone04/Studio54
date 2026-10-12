@@ -9,6 +9,7 @@ import 'pages/admin/admin_page.dart';
 import 'pages/bio_page.dart';
 import 'pages/home_page.dart';
 import 'pages/quote_page.dart';
+import 'pages/works_page.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 
@@ -55,6 +56,22 @@ class _StudioAppState extends State<StudioApp> {
             prePackage: s.uri.queryParameters['p'],
           ),
         ),
+      ),
+      GoRoute(
+        path: '/lavori',
+        pageBuilder: (c, s) => _fade(s, const WorksPage()),
+        routes: [
+          GoRoute(
+            path: ':id',
+            pageBuilder: (c, s) => _fade(
+              s,
+              WorkPage(
+                key: ValueKey(s.pathParameters['id']),
+                id: s.pathParameters['id']!,
+              ),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/biografia',

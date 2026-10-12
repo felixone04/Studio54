@@ -129,6 +129,7 @@ Future<void> setUpTestEnv() async {
 // ---------------------------------------------------------------- schermi
 
 const screenSizes = <Size>[
+  Size(320, 568),
   Size(360, 640),
   Size(390, 844),
   Size(820, 1180),

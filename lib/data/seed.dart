@@ -301,6 +301,132 @@ class Seed {
     ),
   ];
 
+  static List<Work> works() => [
+    Work(
+      id: 'w-giulia-marco',
+      title: 'Giulia & Marco',
+      category: 'Matrimonio',
+      location: 'Costa tirrenica',
+      date: 'Giugno 2024',
+      story:
+          'Una giornata di vento e di sale. Dai preparativi in una casa '
+          'affacciata sul mare fino all\'ultimo ballo sulla spiaggia, '
+          'abbiamo seguito la luce senza mai interrompere la festa.',
+      credits: 'Reportage · Secondo fotografo · Album fine art',
+      photos: [
+        WorkPhoto(
+          url: unsplash('1537633552985-df8429e8048b', w: 2200),
+          caption: 'Il velo e il mare',
+        ),
+        WorkPhoto(
+          url: unsplash('1465495976277-4387d4b0b4c6', w: 2200),
+          caption: 'Le fedi, poco prima della cerimonia',
+        ),
+        WorkPhoto(
+          url: unsplash('1583939003579-730e3918a45a', w: 2200),
+          caption: 'Pioggia di petali all\'uscita',
+        ),
+        WorkPhoto(
+          url: unsplash('1460978812857-470ed1c77af0', w: 2200),
+          caption: 'Un istante di silenzio',
+        ),
+        WorkPhoto(
+          url: unsplash('1522673607200-164d1b6ce486', w: 2200),
+          caption: 'Gli sposi tra gli invitati',
+        ),
+        WorkPhoto(
+          url: unsplash('1519741497674-611481863552', w: 2200),
+          caption: 'L\'ultima luce del giorno',
+        ),
+      ],
+    ),
+    Work(
+      id: 'w-sofia-luca',
+      title: 'Sofia & Luca',
+      category: 'Matrimonio',
+      location: 'Toscana',
+      date: 'Settembre 2023',
+      story:
+          'Un casale tra le colline, cento palloncini e una promessa '
+          'detta sottovoce. Un racconto tenero, fatto di sguardi e di '
+          'piccoli gesti.',
+      credits: 'Reportage · Film dell\'evento · Galleria online',
+      photos: [
+        WorkPhoto(
+          url: unsplash('1511285560929-80b456fea0bc', w: 2200),
+          caption: 'Il volo dei desideri',
+        ),
+        WorkPhoto(
+          url: unsplash('1516589178581-6cd7833ae3b2', w: 2200),
+          caption: 'Un cuore al tramonto',
+        ),
+        WorkPhoto(
+          url: unsplash('1511795409834-ef04bbd61622', w: 2200),
+          caption: 'La tavola apparecchiata',
+        ),
+        WorkPhoto(
+          url: unsplash('1544005313-94ddf0286df2', w: 2200),
+          caption: 'Luce d\'oro',
+        ),
+      ],
+    ),
+    Work(
+      id: 'w-battesimo-leo',
+      title: 'Il battesimo di Leo',
+      category: 'Cerimonia',
+      location: 'Roma',
+      date: 'Aprile 2024',
+      story:
+          'Una mattina di primavera in famiglia: la chiesa piena di luce, '
+          'i nonni emozionati e un piccolo protagonista che non ha mai '
+          'smesso di sorridere.',
+      credits: 'Reportage · Stampe e cornici',
+      photos: [
+        WorkPhoto(
+          url: unsplash('1515488042361-ee00e0ddd4e4', w: 2200),
+          caption: 'Primi giochi',
+        ),
+        WorkPhoto(
+          url: unsplash('1469371670807-013ccf25f16a', w: 2200),
+          caption: 'In famiglia',
+        ),
+        WorkPhoto(
+          url: unsplash('1452587925148-ce544e77e70d', w: 2200),
+          caption: 'L\'album, cucito a mano',
+        ),
+      ],
+    ),
+    Work(
+      id: 'w-notte-estate',
+      title: 'Notte d\'estate',
+      category: 'Evento',
+      location: 'Milano',
+      date: 'Luglio 2023',
+      story:
+          'Una serata aziendale diventata concerto: luci, musica e mani '
+          'al cielo. Foto consegnate la mattina dopo, pronte per i social.',
+      credits: 'Eventi e concerti · Photo booth con stampa',
+      photos: [
+        WorkPhoto(
+          url: unsplash('1470229722913-7c0e2dbbafd3', w: 2200),
+          caption: 'La notte è nostra',
+        ),
+        WorkPhoto(
+          url: unsplash('1492684223066-81342ee5ff30', w: 2200),
+          caption: 'Il photo booth',
+        ),
+        WorkPhoto(
+          url: unsplash('1530103862676-de8c9debad1d', w: 2200),
+          caption: 'Colori di festa',
+        ),
+        WorkPhoto(
+          url: unsplash('1492691527719-9d1e07e534b4', w: 2200),
+          caption: 'Dietro le quinte',
+        ),
+      ],
+    ),
+  ];
+
   static List<GalleryPhoto> gallery() => [
     GalleryPhoto(
       id: 'g1',

@@ -212,6 +212,86 @@ Map<String, Object?> hugeData({int seed = 42}) {
     });
   }
 
+  // ----------------------------------------------------------------- lavori
+  final works = <Map<String, Object?>>[
+    // Tutto lungo e moltissime foto (stesso id di un lavoro d'esempio, così
+    // la stessa rotta vale per entrambi gli archivi).
+    {
+      'id': 'w-giulia-marco',
+      'title': 'Giulia & Marco ${_cut(longText, 180)} $longWord',
+      'category': 'Matrimonio ${_cut(longText, 90)}',
+      'location': 'Luogo ${_cut(longText, 160)} $unicode',
+      'date': 'Giugno 2024 · ${_cut(longText, 70)}',
+      'story': '${longText * 8}\n\n$unicode\n$longWord',
+      'credits': '${_cut(longText, 200)} · $longWord',
+      'cover': tinyPng,
+      'photos': [
+        for (var k = 0; k < 61; k++)
+          {
+            'id': 'wp-$k',
+            'url': switch (k % 4) {
+              0 => tinyPng,
+              1 => 'https://example.com/work/$k.jpg',
+              2 => '',
+              _ => 'data:image/png;base64,@@@non-valido@@@',
+            },
+            'caption': switch (k % 4) {
+              0 => '',
+              1 => longText * 2,
+              2 => '$unicode$k',
+              _ => '$longWord$k',
+            },
+          },
+      ],
+      'published': true,
+    },
+    // Nessuna foto e nessuna copertina.
+    {
+      'id': 'work-nofoto',
+      'title': longWord,
+      'category': '',
+      'location': '',
+      'date': '',
+      'story': '',
+      'credits': '',
+      'cover': '',
+      'photos': [],
+      'published': true,
+    },
+    // Campi mancanti e foto nulle: deve leggersi lo stesso.
+    {'id': 'work-minimo', 'title': 'Minimo', 'photos': null},
+    for (var i = 0; i < 40; i++)
+      {
+        'id': 'work-$i',
+        'title': switch (i % 5) {
+          0 => 'Lavoro $i',
+          1 => 'Lavoro $i ${_cut(longText, 120)}',
+          2 => '$unicode$i',
+          3 => '$longWord$i',
+          _ => '',
+        },
+        'category': i % 4 == 0
+            ? ''
+            : pick(['Matrimonio', 'Evento', unicode.trim(), 'Tipo $longWord']),
+        'location': i % 3 == 0 ? '' : 'Luogo $i',
+        'date': i % 2 == 0 ? '' : '${1990 + i}',
+        'story': i % 3 == 1 ? longText * 3 : '',
+        'credits': i % 2 == 1 ? longText : '',
+        'cover': i % 3 == 0
+            ? ''
+            : (i % 3 == 1 ? tinyPng : 'https://x.y/$i.jpg'),
+        'photos': [
+          for (var k = 0; k < i % 6; k++)
+            {
+              'id': 'w$i-p$k',
+              'url': k.isEven ? tinyPng : '',
+              'caption': k == 1 ? longText : '',
+            },
+        ],
+        'published': i % 4 != 3,
+      },
+  ];
+
   // --------------------------------------------------------------- contenuti
   final content = Seed.content().toJson()
     ..addAll({
@@ -275,6 +355,7 @@ Map<String, Object?> hugeData({int seed = 42}) {
     'services': services,
     'packages': packages,
     'gallery': gallery,
+    'works': works,
     'quotes': quotes,
     'appointments': appointments,
   };
@@ -297,6 +378,7 @@ Map<String, Object?> emptyData() {
     'services': [],
     'packages': [],
     'gallery': [],
+    'works': [],
     'quotes': [],
     'appointments': [],
   };

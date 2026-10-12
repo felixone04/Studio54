@@ -570,9 +570,11 @@ class _DayCell extends StatelessWidget {
             if (mobile)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
+                // Su 320 px la cella è larga ~22 px: con spaziatura 2 i tre
+                // pallini stanno su una riga sola e non escono dalla cella.
                 child: Wrap(
-                  spacing: 3,
-                  runSpacing: 3,
+                  spacing: 2,
+                  runSpacing: 2,
                   children: [
                     for (final e in events.take(3))
                       Container(

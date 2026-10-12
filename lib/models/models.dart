@@ -385,6 +385,80 @@ class GalleryPhoto {
   };
 }
 
+/// Una foto all'interno di un lavoro, con la sua didascalia.
+class WorkPhoto {
+  String id;
+  String url;
+  String caption;
+  WorkPhoto({String? id, required this.url, this.caption = ''})
+    : id = id ?? newId();
+
+  factory WorkPhoto.fromJson(Map<String, dynamic> j) =>
+      WorkPhoto(id: j['id'], url: j['url'] ?? '', caption: j['caption'] ?? '');
+  Map<String, dynamic> toJson() => {'id': id, 'url': url, 'caption': caption};
+}
+
+/// Un lavoro realizzato (un matrimonio, un evento…), raccontato come una
+/// piccola mostra: copertina, scheda, testo e sequenza di foto.
+class Work {
+  String id;
+  String title;
+  String category;
+  String location;
+  String date; // testo libero, es. "Giugno 2024"
+  String story;
+  String credits; // cosa è stato realizzato, es. "Reportage · Album fine art"
+  String cover;
+  List<WorkPhoto> photos;
+  bool published;
+  Work({
+    String? id,
+    required this.title,
+    this.category = '',
+    this.location = '',
+    this.date = '',
+    this.story = '',
+    this.credits = '',
+    this.cover = '',
+    List<WorkPhoto>? photos,
+    this.published = true,
+  }) : id = id ?? newId(),
+       photos = photos ?? [];
+
+  /// Copertina: quella scelta, altrimenti la prima foto.
+  String get coverUrl => cover.trim().isNotEmpty
+      ? cover
+      : (photos.isEmpty ? '' : photos.first.url);
+
+  factory Work.fromJson(Map<String, dynamic> j) => Work(
+    id: j['id'],
+    title: j['title'] ?? '',
+    category: j['category'] ?? '',
+    location: j['location'] ?? '',
+    date: j['date'] ?? '',
+    story: j['story'] ?? '',
+    credits: j['credits'] ?? '',
+    cover: j['cover'] ?? '',
+    photos: [
+      for (final p in (j['photos'] as List? ?? const []))
+        WorkPhoto.fromJson(Map<String, dynamic>.from(p as Map)),
+    ],
+    published: j['published'] ?? true,
+  );
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'category': category,
+    'location': location,
+    'date': date,
+    'story': story,
+    'credits': credits,
+    'cover': cover,
+    'photos': photos.map((e) => e.toJson()).toList(),
+    'published': published,
+  };
+}
+
 enum QuoteStatus { nuova, contattata, confermata, archiviata }
 
 extension QuoteStatusLabel on QuoteStatus {

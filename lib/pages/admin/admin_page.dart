@@ -14,6 +14,7 @@ import 'admin_dashboard.dart';
 import 'admin_quotes.dart';
 import 'admin_settings.dart';
 import 'admin_widgets.dart';
+import 'admin_works.dart';
 
 class _Section {
   const _Section(this.id, this.label, this.icon);
@@ -37,6 +38,7 @@ const _groups = <(String, List<_Section>)>[
     [
       _Section('servizi', 'Servizi e prodotti', Icons.design_services_outlined),
       _Section('pacchetti', 'Pacchetti', Icons.card_giftcard_rounded),
+      _Section('lavori', 'Lavori', Icons.auto_stories_outlined),
       _Section('galleria', 'Galleria', Icons.photo_library_outlined),
     ],
   ),
@@ -326,6 +328,7 @@ class _ShellState extends State<_Shell> {
       'calendario' => const AdminPageScroll(child: AdminCalendar()),
       'servizi' => const AdminPageScroll(child: AdminServices()),
       'pacchetti' => const AdminPageScroll(child: AdminPackages()),
+      'lavori' => const AdminPageScroll(child: AdminWorks()),
       'galleria' => const AdminPageScroll(child: AdminGallery()),
       'home' => const AdminHomeEditor(),
       'biografia' => const AdminBioEditor(),
