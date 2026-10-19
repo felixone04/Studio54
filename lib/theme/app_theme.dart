@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Palette del marchio Liso Fotografi: bianco e nero come il logo, con un
+/// Palette del marchio Studio Lumen: bianco e nero come il logo, con un
 /// accento discreto scelto dal titolare.
 class Palette {
   static const ink = Color(0xFF0B0B0B);

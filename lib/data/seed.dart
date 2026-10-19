@@ -9,7 +9,7 @@ class Seed {
   static const accentSilver = 0xFFC9C5BC;
 
   static SiteContent content() => SiteContent(
-    studioName: 'Liso Fotografi',
+    studioName: 'Studio Lumen',
     tagline: 'Wedding & Events',
     heroKicker: 'Matrimoni · Eventi · Ritratti',
     heroTitle: 'Ogni scatto, un\'opera.',
@@ -81,7 +81,7 @@ class Seed {
     contacts: Contacts(
       phone: '+39 06 1234 5678',
       whatsapp: '+39 333 123 4567',
-      email: 'info@lisofotografi.example',
+      email: 'info@studiolumen.example',
       address: 'Via Roma 12, 00100 Roma',
       hours: 'Lun–Ven 10–19 · Sabato su appuntamento',
       instagram: 'https://instagram.com/',

@@ -10,9 +10,9 @@ import '../theme/app_theme.dart';
 
 // ------------------------------------------------------------------- marchio
 
-const _brandLabel = 'Liso Fotografi · Wedding & Events';
+const _brandLabel = 'Studio Lumen · Wedding & Events';
 
-/// Logo completo (fotocamera, nome e "Wedding & Events").
+/// Logo completo (diaframma, nome e "Wedding & Events").
 /// [onDark] = logo bianco per sfondi scuri, altrimenti nero.
 class BrandLogo extends StatelessWidget {
   const BrandLogo({super.key, this.width, this.height, this.onDark = true});
@@ -31,7 +31,7 @@ class BrandLogo extends StatelessWidget {
   );
 }
 
-/// Solo la fotocamera del logo.
+/// Solo il diaframma del logo.
 class BrandMark extends StatelessWidget {
   const BrandMark({super.key, this.height = 24, this.onDark = true});
   final double height;
@@ -47,7 +47,7 @@ class BrandMark extends StatelessWidget {
   );
 }
 
-/// Fotocamera + nome, per la barra di navigazione.
+/// Diaframma + nome, per la barra di navigazione.
 class BrandWordmark extends StatelessWidget {
   const BrandWordmark({
     super.key,
