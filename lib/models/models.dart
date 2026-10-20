@@ -1,9 +1,13 @@
 import 'dart:math';
 
-/// Genera un id univoco leggero (niente dipendenze extra).
+int _idSeq = 0;
+
+/// Genera un id univoco leggero (niente dipendenze extra). Il contatore
+/// evita doppioni anche quando se ne creano molti nello stesso istante.
 String newId() {
   final r = Random();
   return '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}'
+      '${(_idSeq++).toRadixString(36)}'
       '${r.nextInt(1 << 20).toRadixString(36)}';
 }
 

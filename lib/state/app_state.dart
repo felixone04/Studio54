@@ -53,8 +53,54 @@ class AppState extends ChangeNotifier {
     final until = settings.sessionUntil;
     adminAuthenticated = until != null && DateTime.now().isBefore(until);
 
+    await _migrate(seed);
+
     loaded = true;
     notifyListeners();
+  }
+
+  /// Aggiorna i dati salvati con il marchio precedente (Studio Lumen): nome,
+  /// slogan, email e colore d'esempio diventano quelli di Studio 54, e i
+  /// lavori d'esempio ricevono il tipo di location per i filtri. I testi
+  /// scritti dal titolare restano com'erano.
+  Future<void> _migrate(SiteContent seed) async {
+    var contentChanged = false;
+    String swap(String v, String old, String now) {
+      if (v != old) return v;
+      contentChanged = true;
+      return now;
+    }
+
+    final c = content;
+    c.studioName = swap(c.studioName, 'Studio Lumen', seed.studioName);
+    c.tagline = swap(c.tagline, 'Wedding & Events', seed.tagline);
+    c.contacts.email = swap(
+      c.contacts.email,
+      'info@studiolumen.example',
+      seed.contacts.email,
+    );
+    if (c.accent == 0xFFC9C5BC) {
+      c.accent = seed.accent;
+      contentChanged = true;
+    }
+    if (c.team.isNotEmpty && c.team.every((t) => t.name == 'Nome Cognome')) {
+      c.team = [];
+      contentChanged = true;
+    }
+    if (contentChanged) await repo.write('content', c.toJson());
+
+    var worksChanged = false;
+    final examples = {for (final w in Seed.works()) w.id: w};
+    for (final w in works) {
+      final ex = examples[w.id];
+      if (ex != null && w.setting.trim().isEmpty && ex.setting.isNotEmpty) {
+        w.setting = ex.setting;
+        worksChanged = true;
+      }
+    }
+    if (worksChanged) {
+      await repo.write('works', works.map((e) => e.toJson()).toList());
+    }
   }
 
   Future<List<T>?> _list<T>(

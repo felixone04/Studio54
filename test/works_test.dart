@@ -195,6 +195,41 @@ void main() {
       expect(s.works.map((w) => w.id), Seed.works().map((w) => w.id));
     });
 
+    test('i dati salvati col vecchio marchio si aggiornano', () async {
+      final old = Seed.content()
+        ..studioName = 'Studio Lumen'
+        ..tagline = 'Wedding & Events'
+        ..accent = 0xFFC9C5BC
+        ..manifestoTitle = 'Testo scritto dal titolare'
+        ..team = [
+          TeamMember(
+            name: 'Nome Cognome',
+            role: 'Fotografo',
+            bio: '',
+            photo: '',
+          ),
+        ];
+      final oldWork = Work.fromJson(Seed.works().first.toJson())..setting = '';
+      final s = await loadState({
+        'content': old.toJson(),
+        'works': [oldWork.toJson(), _work('mio', 'Mio').toJson()],
+      });
+      expect(s.content.studioName, 'Studio 54');
+      expect(s.content.tagline, Seed.content().tagline);
+      expect(s.content.accent, Seed.content().accent);
+      expect(s.content.team, isEmpty);
+      // I testi del titolare restano.
+      expect(s.content.manifestoTitle, 'Testo scritto dal titolare');
+      expect(s.works.first.setting, 'Mare');
+      expect(s.works.last.setting, '');
+      // E l'aggiornamento è salvato.
+      expect(
+        (s.repo as MemoryRepository).raw['content'],
+        contains('Studio 54'),
+      );
+      expect(storedWorks(s).first['setting'], 'Mare');
+    });
+
     test('un elenco salvato vuoto resta vuoto', () async {
       final s = await loadState({'works': []});
       expect(s.works, isEmpty);
