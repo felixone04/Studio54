@@ -331,21 +331,22 @@ class _FilterMenuState extends State<_FilterMenu> {
     PopupMenuItem<String> item(String value, String text, bool active) =>
         PopupMenuItem(
           value: value,
-          height: 42,
+          height: 32,
           child: Row(
             children: [
               Expanded(
                 child: Text(
                   text,
+                  // Il 30% più piccole della prima versione (16).
                   style: display(
-                    16,
+                    11.2,
                     italic: active,
                     color: active ? Palette.ink : Palette.stone,
                   ),
                 ),
               ),
               if (active)
-                const Icon(Icons.check_rounded, size: 16, color: Palette.ink),
+                const Icon(Icons.check_rounded, size: 12, color: Palette.ink),
             ],
           ),
         );
@@ -373,7 +374,7 @@ class _FilterMenuState extends State<_FilterMenu> {
             surfaceTintColor: Colors.transparent,
             elevation: 3,
             shadowColor: const Color(0x331E1B17),
-            constraints: const BoxConstraints(minWidth: 190),
+            constraints: const BoxConstraints(minWidth: 140),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
               side: const BorderSide(color: Palette.line),

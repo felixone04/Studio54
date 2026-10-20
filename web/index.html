@@ -63,6 +63,15 @@
       });
     })();
   </script>
-  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // L'avvio si scarica sempre nuovo (è piccolo): GitHub Pages lo farebbe
+    // tenere in memoria per 10 minuti, mostrando la versione precedente.
+    (function () {
+      var s = document.createElement('script');
+      s.src = 'flutter_bootstrap.js?t=' + Date.now();
+      s.async = true;
+      document.body.appendChild(s);
+    })();
+  </script>
 </body>
 </html>
