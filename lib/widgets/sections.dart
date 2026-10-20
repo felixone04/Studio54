@@ -90,10 +90,19 @@ class SectionTitle extends StatelessWidget {
 
 /// Bottone tondo con icona (frecce del carosello).
 class RoundIconButton extends StatefulWidget {
-  const RoundIconButton(this.icon, this.onTap, this.tooltip, {super.key});
+  const RoundIconButton(
+    this.icon,
+    this.onTap,
+    this.tooltip, {
+    super.key,
+    this.light = false,
+  });
   final IconData icon;
   final VoidCallback onTap;
   final String tooltip;
+
+  /// Chiaro, per stare sopra una foto.
+  final bool light;
 
   @override
   State<RoundIconButton> createState() => _RoundIconButtonState();
@@ -119,13 +128,20 @@ class _RoundIconButtonState extends State<RoundIconButton> {
             height: 38,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _hover ? Palette.ink : Colors.transparent,
-              border: Border.all(color: Palette.lineStrong),
+              color: _hover
+                  ? (widget.light ? Palette.paper : Palette.ink)
+                  : Colors.transparent,
+              border: Border.all(
+                color: widget.light
+                    ? const Color(0x99FFFAF0)
+                    : Palette.lineStrong,
+              ),
             ),
             child: Icon(
               widget.icon,
               size: 20,
-              color: _hover ? Palette.paper : Palette.ink,
+              // Chiaro su foto, scuro su carta; al passaggio si invertono.
+              color: _hover != widget.light ? Palette.paper : Palette.ink,
             ),
           ),
         ),
@@ -136,8 +152,8 @@ class _RoundIconButtonState extends State<RoundIconButton> {
 
 // ================================================================= HERO
 
-/// Apertura: carosello delle foto orizzontali, mostrate per intero (mai
-/// tagliate) sul fondo chiaro, con una riga di comandi sotto.
+/// Apertura: carosello delle sole foto orizzontali, a tutto schermo e
+/// racchiuse dagli angoli del mirino.
 class HeroSlideshow extends StatefulWidget {
   const HeroSlideshow({super.key, required this.content, required this.photos});
   final SiteContent content;
@@ -224,7 +240,13 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
 
   /// La foto corrente con dissolvenza, e la successiva caricata in anticipo
   /// (invisibile): al cambio è già pronta e non si vede il fondo vuoto.
-  Widget _photoStack(GalleryPhoto? photo, GalleryPhoto? next) => Stack(
+  /// Con [zoom] la foto si avvicina piano mentre resta in mostra.
+  Widget _photoStack(
+    GalleryPhoto? photo,
+    GalleryPhoto? next, {
+    BoxFit fit = BoxFit.contain,
+    bool zoom = false,
+  }) => Stack(
     fit: StackFit.expand,
     children: [
       if (next != null)
@@ -234,7 +256,7 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
             child: PhotoImage(
               next.url,
               key: ValueKey('next-${next.id}'),
-              fit: BoxFit.contain,
+              fit: fit,
             ),
           ),
         ),
@@ -248,17 +270,42 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
             ? const SizedBox.shrink()
             : Semantics(
                 key: ValueKey(photo.id),
+                container: true,
                 image: true,
                 label: photo.title,
-                child: PhotoImage(photo.url, fit: BoxFit.contain),
+                child: !zoom
+                    ? PhotoImage(photo.url, fit: fit)
+                    : TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 1.0, end: 1.05),
+                        duration:
+                            HeroSlideshow.interval +
+                            const Duration(milliseconds: 900),
+                        builder: (_, s, child) =>
+                            Transform.scale(scale: s, child: child),
+                        child: SizedBox.expand(
+                          child: PhotoImage(photo.url, fit: fit),
+                        ),
+                      ),
               ),
       ),
     ],
   );
 
-  /// In verticale: barra in alto, la foto al centro come una stampa con il
-  /// suo passe-partout e, subito sotto, la descrizione e i comandi. Tutto
-  /// insieme riempie lo schermo e si legge come un'unica composizione.
+  /// Sfoglia col dito (telefono, tablet) o trascinando con il mouse.
+  Widget _swipe(Widget child) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onHorizontalDragEnd: (d) {
+      final v = d.primaryVelocity ?? 0;
+      if (v.abs() < 120) return;
+      _go(_i + (v < 0 ? 1 : -1));
+    },
+    child: child,
+  );
+
+  /// In verticale: barra in alto, la foto al centro, grande quanto lo
+  /// schermo permette e racchiusa dagli angoli del mirino, e subito sotto
+  /// la descrizione e i comandi. Tutto insieme riempie lo schermo e si legge
+  /// come un'unica composizione.
   Widget _portrait(
     List<GalleryPhoto> photos,
     GalleryPhoto? photo,
@@ -266,9 +313,11 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
   ) {
     final g = context.gutter;
     final w = context.w;
-    final printW = math.min(w - g * 2, 720.0);
-    const mat = 10.0; // bordo chiaro della stampa
-    final photoH = (printW - mat * 2) / 1.5;
+    // Gli angoli stanno appena fuori dalla foto: le lasciano tutta la
+    // larghezza possibile.
+    const corner = 9.0;
+    final photoW = math.min(w - (corner + 6) * 2, 760.0);
+    final photoH = photoW / 1.5;
     final total = photos.length;
     final phrase = widget.content.heroTitle.replaceAll('\n', ' ').trim();
     final meta = photo == null
@@ -279,29 +328,23 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
             photo.year,
           ].where((e) => e.trim().isNotEmpty).join(' · ');
 
-    final print = GestureDetector(
-      // Su telefono si sfoglia anche col dito.
-      onHorizontalDragEnd: (d) {
-        final v = d.primaryVelocity ?? 0;
-        if (v.abs() < 120) return;
-        _go(_i + (v < 0 ? 1 : -1));
-      },
-      child: Container(
-        width: printW,
-        padding: const EdgeInsets.all(mat),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(3),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x1F1E1B17),
-              blurRadius: 30,
-              offset: Offset(0, 14),
+    final framed = _swipe(
+      SizedBox(
+        width: photoW + corner * 2,
+        height: photoH + corner * 2,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.all(corner),
+                child: ClipRect(child: _photoStack(photo, next)),
+              ),
             ),
-            BoxShadow(color: Color(0x0F1E1B17), blurRadius: 4),
+            const Positioned.fill(
+              child: Viewfinder(color: Palette.ink, length: 22, stroke: 1.2),
+            ),
           ],
         ),
-        child: SizedBox(height: photoH, child: _photoStack(photo, next)),
       ),
     );
 
@@ -354,24 +397,27 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
 
     final group = SizedBox(
       width: w,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: g),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (phrase.isNotEmpty) ...[
-              Text(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (phrase.isNotEmpty) ...[
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: g),
+              child: Text(
                 phrase.toUpperCase(),
                 textAlign: TextAlign.center,
                 style: label(10.5, color: Palette.stone),
               ),
-              const SizedBox(height: 22),
-            ],
-            print,
-            const SizedBox(height: 26),
-            description,
+            ),
+            const SizedBox(height: 20),
           ],
-        ),
+          framed,
+          const SizedBox(height: 24),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: g),
+            child: description,
+          ),
+        ],
       ),
     );
 
@@ -382,44 +428,7 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Un segmento per foto, come i capitoli di un racconto (con
-                // moltissime foto, una sola linea che avanza).
-                if (total > 12)
-                  Container(
-                    height: 2,
-                    color: Palette.line,
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: (_i + 1) / total,
-                      child: Container(color: Palette.ink),
-                    ),
-                  )
-                else
-                  Row(
-                    children: [
-                      for (var k = 0; k < total; k++) ...[
-                        if (k > 0) const SizedBox(width: 4),
-                        Expanded(
-                          child: Container(
-                            height: 2,
-                            color: k < _i ? Palette.ink : Palette.line,
-                            alignment: Alignment.centerLeft,
-                            child: k != _i
-                                ? null
-                                : TweenAnimationBuilder<double>(
-                                    key: ValueKey('seg$_i'),
-                                    tween: Tween(begin: 0, end: 1),
-                                    duration: HeroSlideshow.interval,
-                                    builder: (_, v, _) => FractionallySizedBox(
-                                      widthFactor: v,
-                                      child: Container(color: Palette.ink),
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                _Progress(index: _i, total: total),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -470,45 +479,122 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
     final photo = photos.isEmpty ? null : photos[_i % photos.length];
     final next = photos.length < 2 ? null : photos[(_i + 1) % photos.length];
     // Schermo in verticale (telefono, tablet in verticale): composizione a
-    // tutta pagina con la foto come una stampa e la descrizione sotto.
+    // tutta pagina con la foto al centro e la descrizione sotto.
     if (context.h > context.w) return _portrait(photos, photo, next);
-    final g = context.gutter;
-    final barH = context.isPhone ? 66.0 : 78.0;
-    final side = context.isPhone ? 0.0 : g * 0.5;
-    // L'apertura riempie lo schermo sotto la barra; su schermi stretti si
-    // ferma all'altezza di una foto 3:2 a tutta larghezza.
-    final maxH = context.screenH - context.navH - barH;
-    final photoH = math.min(maxH, (context.w - side * 2) / 1.5);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(
-          height: photoH,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: side),
-            child: _photoStack(photo, next),
+    // In orizzontale la foto riempie tutto lo schermo sotto la barra, con
+    // gli angoli del mirino che la racchiudono e la descrizione in basso.
+    final g = context.gutter;
+    final inset = g * 0.6;
+    return SizedBox(
+      height: context.screenH - context.navH,
+      child: _swipe(
+        ClipRect(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const ColoredBox(color: Palette.linen),
+              _photoStack(photo, next, fit: BoxFit.cover, zoom: true),
+              // Solo in basso una velatura leggera, per leggere le scritte.
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0x00000000),
+                      Color(0x00000000),
+                      Color(0x8C000000),
+                    ],
+                    stops: [0, 0.62, 1],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(inset),
+                child: const Viewfinder(
+                  color: Color(0xCCFFFAF0),
+                  length: 30,
+                  stroke: 1.2,
+                ),
+              ),
+              Positioned(
+                left: inset + 26,
+                right: inset + 26,
+                bottom: inset + 20,
+                child: _HeroBar(
+                  index: _i,
+                  total: photos.length,
+                  photo: photo,
+                  phrase: widget.content.heroTitle,
+                  onPrev: () => _go(_i - 1),
+                  onNext: () => _go(_i + 1),
+                ),
+              ),
+            ],
           ),
         ),
-        SizedBox(
-          height: barH,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: g),
-            child: _HeroBar(
-              index: _i,
-              total: photos.length,
-              photo: photo,
-              phrase: widget.content.heroTitle,
-              onPrev: () => _go(_i - 1),
-              onNext: () => _go(_i + 1),
+      ),
+    );
+  }
+}
+
+/// Avanzamento: un segmento per foto, come i capitoli di un racconto (con
+/// moltissime foto, una sola linea che avanza).
+class _Progress extends StatelessWidget {
+  const _Progress({
+    required this.index,
+    required this.total,
+    this.color = Palette.ink,
+    this.track = Palette.line,
+  });
+  final int index;
+  final int total;
+  final Color color;
+  final Color track;
+
+  @override
+  Widget build(BuildContext context) {
+    if (total > 12) {
+      return Container(
+        height: 2,
+        color: track,
+        alignment: Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: (index + 1) / total,
+          child: Container(color: color),
+        ),
+      );
+    }
+    return Row(
+      children: [
+        for (var k = 0; k < total; k++) ...[
+          if (k > 0) const SizedBox(width: 4),
+          Expanded(
+            child: Container(
+              height: 2,
+              color: k < index ? color : track,
+              alignment: Alignment.centerLeft,
+              child: k != index
+                  ? null
+                  : TweenAnimationBuilder<double>(
+                      key: ValueKey('seg$index'),
+                      tween: Tween(begin: 0, end: 1),
+                      duration: HeroSlideshow.interval,
+                      builder: (_, v, _) => FractionallySizedBox(
+                        widthFactor: v,
+                        child: Container(color: color),
+                      ),
+                    ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
 }
 
+/// Descrizione e comandi sopra la foto a tutto schermo, in chiaro.
 class _HeroBar extends StatelessWidget {
   const _HeroBar({
     required this.index,
@@ -525,79 +611,101 @@ class _HeroBar extends StatelessWidget {
   final VoidCallback onPrev;
   final VoidCallback onNext;
 
+  static const _light = Palette.paper;
+  static const _soft = Color(0xD9FFFAF0);
+
   @override
   Widget build(BuildContext context) {
-    final phone = context.isPhone;
     final counter =
         '${(index + 1).toString().padLeft(2, '0')} / ${total.toString().padLeft(2, '0')}';
-    final title = AnimatedSwitcher(
+    final meta = photo == null
+        ? ''
+        : [
+            photo!.category,
+            photo!.location,
+            photo!.year,
+          ].where((e) => e.trim().isNotEmpty).join(' · ');
+    final text = AnimatedSwitcher(
       duration: const Duration(milliseconds: 700),
       switchInCurve: const Interval(0.5, 1, curve: Curves.easeOut),
       switchOutCurve: const Interval(0.5, 1, curve: Curves.easeIn),
-      child: Text(
-        photo?.title ?? '',
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.bottomLeft,
+        children: [...previous, ?current],
+      ),
+      child: Column(
         key: ValueKey(photo?.id),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: phone ? TextAlign.start : TextAlign.center,
-        style: display(phone ? 15 : 17, italic: true, color: Palette.stone),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            photo?.title ?? '',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: display(
+              context.fluid(22, 30),
+              italic: true,
+              color: _light,
+              height: 1.2,
+            ),
+          ),
+          if (meta.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              meta.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: label(10, color: _soft),
+            ),
+          ],
+        ],
       ),
     );
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Avanzamento della foto corrente.
-        Container(
-          height: 1,
-          color: Palette.line,
-          alignment: Alignment.centerLeft,
-          child: total < 2
-              ? null
-              : TweenAnimationBuilder<double>(
-                  key: ValueKey('bar$index'),
-                  tween: Tween(begin: 0, end: 1),
-                  duration: HeroSlideshow.interval,
-                  builder: (_, v, _) => FractionallySizedBox(
-                    widthFactor: v,
-                    child: Container(color: Palette.ink),
-                  ),
-                ),
-        ),
-        const SizedBox(height: 12),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            if (!phone && phrase.trim().isNotEmpty) ...[
-              Flexible(
-                flex: 2,
-                child: Text(
-                  phrase.replaceAll('\n', ' ').toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: label(10.5, color: Palette.stone),
-                ),
-              ),
-              const SizedBox(width: 24),
-            ],
-            Expanded(flex: 3, child: title),
+            Expanded(child: text),
             if (total > 1) ...[
               const SizedBox(width: 16),
-              Text(counter, style: cameraText(10.5)),
+              Text(counter, style: cameraText(10.5, color: _soft)),
               const SizedBox(width: 12),
               RoundIconButton(
                 Icons.chevron_left_rounded,
                 onPrev,
                 'Foto precedente',
+                light: true,
               ),
               const SizedBox(width: 6),
               RoundIconButton(
                 Icons.chevron_right_rounded,
                 onNext,
                 'Foto successiva',
+                light: true,
               ),
             ],
           ],
         ),
+        const SizedBox(height: 14),
+        if (total > 1)
+          _Progress(
+            index: index,
+            total: total,
+            color: _light,
+            track: const Color(0x4DFFFAF0),
+          ),
+        if (phrase.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            phrase.replaceAll('\n', ' ').toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: label(10, color: _soft),
+          ),
+        ],
       ],
     );
   }

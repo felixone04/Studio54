@@ -234,7 +234,8 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// Filtri: per ogni criterio una fila di pulsanti a pillola.
+/// Filtri discreti, come la didascalia di una mostra: una riga sola di
+/// voci ("Evento · Tutti"), ognuna con il suo piccolo menu.
 class _Filters extends StatelessWidget {
   const _Filters({
     required this.groups,
@@ -253,56 +254,55 @@ class _Filters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rows = <Widget>[
-      for (final (id, title, values, sel) in groups)
-        _FilterRow(
-          title: title,
-          values: values,
-          selected: sel,
-          onSelect: (v) => onSelect(id, v),
-        ),
-    ];
-    return Container(
-      padding: EdgeInsets.all(context.fluid(16, 26)),
-      decoration: BoxDecoration(
-        color: Palette.linen,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < rows.length; i++) ...[
-            if (i > 0) SizedBox(height: context.fluid(14, 18)),
-            rows[i],
-          ],
-          SizedBox(height: context.fluid(14, 18)),
-          Container(height: 1, color: Palette.line),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${_two(shown)} ${shown == 1 ? 'LAVORO' : 'LAVORI'}'
-                  '${filtering ? (shown == 1 ? ' TROVATO' : ' TROVATI') : ''}',
-                  style: cameraText(10.5),
-                ),
-              ),
-              if (filtering)
-                HoverLink(
-                  'AZZERA FILTRI',
-                  style: label(10.5),
-                  onTap: onClear,
-                ),
-            ],
+    final menus = Wrap(
+      spacing: context.fluid(22, 44),
+      runSpacing: 12,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final (id, title, values, sel) in groups)
+          _FilterMenu(
+            title: title,
+            values: values,
+            selected: sel,
+            onSelect: (v) => onSelect(id, v),
           ),
+      ],
+    );
+    final result = filtering
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${_two(shown)} ${shown == 1 ? 'TROVATO' : 'TROVATI'}',
+                style: cameraText(10.5),
+              ),
+              const SizedBox(width: 16),
+              HoverLink('AZZERA', style: label(10.5), onTap: onClear),
+            ],
+          )
+        : null;
+    if (context.isPhone) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          menus,
+          if (result != null) ...[const SizedBox(height: 10), result],
         ],
-      ),
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: menus),
+        ?result,
+      ],
     );
   }
 }
 
-class _FilterRow extends StatelessWidget {
-  const _FilterRow({
+/// Una voce del filtro: il nome piccolo e il valore scelto in corsivo, che
+/// apre l'elenco delle scelte.
+class _FilterMenu extends StatefulWidget {
+  const _FilterMenu({
     required this.title,
     required this.values,
     required this.selected,
@@ -314,85 +314,118 @@ class _FilterRow extends StatelessWidget {
   final ValueChanged<String?> onSelect;
 
   @override
-  Widget build(BuildContext context) {
-    final chips = Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _Pill('Tutti', active: selected == null, onTap: () => onSelect(null)),
-        for (final v in values)
-          _Pill(
-            v,
-            active: selected != null && _key(selected!) == _key(v),
-            // Un secondo tocco sul valore scelto lo toglie.
-            onTap: () => onSelect(
-              selected != null && _key(selected!) == _key(v) ? null : v,
-            ),
-          ),
-      ],
-    );
-    final head = Text(title.toUpperCase(), style: label(10.5));
-    if (context.isPhone) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [head, const SizedBox(height: 10), chips],
-      );
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 110,
-          child: Padding(padding: const EdgeInsets.only(top: 9), child: head),
-        ),
-        Expanded(child: chips),
-      ],
-    );
-  }
+  State<_FilterMenu> createState() => _FilterMenuState();
 }
 
-class _Pill extends StatefulWidget {
-  const _Pill(this.text, {required this.active, required this.onTap});
-  final String text;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  State<_Pill> createState() => _PillState();
-}
-
-class _PillState extends State<_Pill> {
+class _FilterMenuState extends State<_FilterMenu> {
   bool _hover = false;
 
+  /// "Tutti" nel menu (un valore nullo chiuderebbe il menu senza scelta).
+  static const _all = '\u0000';
+
   @override
   Widget build(BuildContext context) {
-    final on = widget.active;
-    return Semantics(
-      button: true,
-      selected: on,
-      label: widget.text,
-      excludeSemantics: true,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-            decoration: BoxDecoration(
-              color: on
-                  ? Palette.ink
-                  : (_hover ? Palette.ivory : Palette.paper),
-              borderRadius: BorderRadius.circular(40),
-              border: Border.all(
-                color: on || _hover ? Palette.ink : Palette.lineStrong,
+    final sel = widget.selected;
+    final on = sel != null;
+    bool isSel(String v) => sel != null && _key(sel) == _key(v);
+    PopupMenuItem<String> item(String value, String text, bool active) =>
+        PopupMenuItem(
+          value: value,
+          height: 42,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  style: display(
+                    16,
+                    italic: active,
+                    color: active ? Palette.ink : Palette.stone,
+                  ),
+                ),
               ),
+              if (active)
+                const Icon(Icons.check_rounded, size: 16, color: Palette.ink),
+            ],
+          ),
+        );
+
+    final plain = Theme.of(context).copyWith(
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      splashFactory: NoSplash.splashFactory,
+    );
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      // Niente riquadri al tocco né fumetti: basta la sottolineatura.
+      child: Theme(
+        data: plain,
+        child: TooltipVisibility(
+          visible: false,
+          child: PopupMenuButton<String>(
+            key: ValueKey('filtro-${widget.title.toLowerCase()}'),
+            tooltip: 'Filtra per ${widget.title.toLowerCase()}',
+            position: PopupMenuPosition.under,
+            offset: const Offset(0, 6),
+            color: Palette.ivory,
+            surfaceTintColor: Colors.transparent,
+            elevation: 3,
+            shadowColor: const Color(0x331E1B17),
+            constraints: const BoxConstraints(minWidth: 190),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+              side: const BorderSide(color: Palette.line),
             ),
-            child: Text(
-              widget.text.toUpperCase(),
-              style: label(10.5, color: on ? Palette.paper : Palette.ink),
+            onSelected: (v) => widget.onSelect(v == _all ? null : v),
+            itemBuilder: (_) => [
+              item(_all, 'Tutti', !on),
+              for (final v in widget.values) item(v, v, isSel(v)),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        widget.title.toUpperCase(),
+                        style: label(10, color: Palette.stone),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        on ? sel : 'Tutti',
+                        style: display(
+                          17,
+                          italic: true,
+                          color: on ? Palette.ink : Palette.stone,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.expand_more_rounded,
+                        size: 18,
+                        color: on ? Palette.ink : Palette.ash,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  // Sottolineatura sottile: piena se il filtro è attivo.
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 280),
+                    curve: Curves.easeOut,
+                    height: 1,
+                    width: on || _hover ? 40 : 0,
+                    color: Palette.ink,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -864,10 +897,7 @@ class _CollageState extends State<_Collage> {
                 rows.add(Center(child: tile(i, h * ratios[i], h)));
               case _Side(:final ids):
                 final sum = ids.fold<double>(0, (s, i) => s + ratios[i]);
-                final h = math.min(
-                  (full - gap * (ids.length - 1)) / sum,
-                  maxH,
-                );
+                final h = math.min((full - gap * (ids.length - 1)) / sum, maxH);
                 rows.add(
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -880,7 +910,12 @@ class _CollageState extends State<_Collage> {
                     ],
                   ),
                 );
-              case _Stack(:final tall, :final top, :final bottom, :final tallLeft):
+              case _Stack(
+                :final tall,
+                :final top,
+                :final bottom,
+                :final tallLeft,
+              ):
                 // Larghezza della colonna delle due orizzontali, in modo che
                 // la verticale e la colonna finiscano alla stessa altezza.
                 final av = ratios[tall];

@@ -27,6 +27,13 @@ Future<void> tapShown(WidgetTester tester, Finder f) async {
   await settle(tester, 800);
 }
 
+/// Sceglie [value] dal menu del filtro [group] ("evento", "stagione"...).
+Future<void> pick(WidgetTester tester, String group, String value) async {
+  await tapShown(tester, find.byKey(ValueKey('filtro-$group')));
+  await tester.tap(find.text(value).last);
+  await settle(tester, 800);
+}
+
 /// I lavori salvati nell'archivio, letti come farebbe il browser.
 List<Map<String, dynamic>> storedWorks(AppState s) => [
   for (final e
@@ -450,7 +457,7 @@ void main() {
       await pumpApp(tester, s, location: '/lavori');
       expect(find.text('Presto qui i nostri lavori.'), findsOneWidget);
       expect(find.text('00 LAVORI'), findsOneWidget);
-      expect(find.text('TUTTI'), findsNothing);
+      expect(find.byKey(const ValueKey('filtro-evento')), findsNothing);
       await disposeApp(tester);
     });
 
@@ -460,7 +467,7 @@ void main() {
       final s = await _withWorks([_work('a', 'Alfa')]);
       await pumpApp(tester, s, location: '/lavori');
       expect(find.text('01 LAVORO'), findsOneWidget);
-      expect(find.text('TUTTI'), findsNothing);
+      expect(find.byKey(const ValueKey('filtro-evento')), findsNothing);
       await disposeApp(tester);
     });
 
@@ -473,24 +480,28 @@ void main() {
         for (final t in all) {
           expect(find.text(t), findsOneWidget, reason: t);
         }
+        // Una riga sola e discreta: tre voci con "Tutti".
+        expect(find.text('Tutti'), findsNWidgets(3));
 
-        await tapShown(tester, find.text('CERIMONIA').first);
+        await pick(tester, 'evento', 'Cerimonia');
         expect(find.text('IL BATTESIMO DI LEO'), findsOneWidget);
         expect(find.text('GIULIA & MARCO'), findsNothing);
         expect(find.text('SOFIA & LUCA'), findsNothing);
         expect(find.text('NOTTE D\'ESTATE'), findsNothing);
-        expect(find.text('01 LAVORO TROVATO'), findsOneWidget);
+        expect(find.text('01 TROVATO'), findsOneWidget);
+        // La voce mostra la scelta.
+        expect(find.text('Cerimonia'), findsOneWidget);
 
-        await tapShown(tester, find.text('MATRIMONIO').first);
+        await pick(tester, 'evento', 'Matrimonio');
         expect(find.text('GIULIA & MARCO'), findsOneWidget);
         expect(find.text('SOFIA & LUCA'), findsOneWidget);
         expect(find.text('IL BATTESIMO DI LEO'), findsNothing);
 
-        // "Tutti" del primo gruppo (Evento).
-        await tapShown(tester, find.text('TUTTI').first);
+        await pick(tester, 'evento', 'Tutti');
         for (final t in [...all, 'NOTTE D\'ESTATE']) {
           expect(find.text(t), findsOneWidget, reason: t);
         }
+        expect(find.textContaining('TROVAT'), findsNothing);
         await disposeApp(tester);
       },
     );
@@ -500,34 +511,34 @@ void main() {
     ) async {
       final s = await loadState();
       await pumpApp(tester, s, location: '/lavori');
+      // ("EVENTO" è anche il tipo di uno dei lavori.)
+      expect(find.text('EVENTO'), findsWidgets);
       for (final g in ['STAGIONE', 'LOCATION']) {
         expect(find.text(g), findsOneWidget, reason: g);
       }
-      // "EVENTO" è sia il titolo del gruppo sia un tipo di lavoro.
-      expect(find.text('EVENTO'), findsWidgets);
       // La stagione si ricava dal mese ("Dicembre 2023" → Inverno).
-      await tapShown(tester, find.text('INVERNO').first);
+      await pick(tester, 'stagione', 'Inverno');
       expect(find.text('ELENA & DAVIDE'), findsOneWidget);
       expect(find.text('ANNA & PAOLO'), findsNothing);
 
       // Primavera: il battesimo (aprile) e la masseria (maggio).
-      await tapShown(tester, find.text('PRIMAVERA').first);
+      await pick(tester, 'stagione', 'Primavera');
       expect(find.text('IL BATTESIMO DI LEO'), findsOneWidget);
       expect(find.text('ANNA & PAOLO'), findsOneWidget);
       // + Masseria: resta solo quello in masseria.
-      await tapShown(tester, find.text('MASSERIA').first);
+      await pick(tester, 'location', 'Masseria');
       expect(find.text('ANNA & PAOLO'), findsOneWidget);
       expect(find.text('IL BATTESIMO DI LEO'), findsNothing);
-      // Un secondo tocco toglie la scelta.
-      await tapShown(tester, find.text('MASSERIA').first);
+      await pick(tester, 'location', 'Tutti');
       expect(find.text('IL BATTESIMO DI LEO'), findsOneWidget);
 
-      // Nessun risultato, poi "Azzera filtri".
-      await tapShown(tester, find.text('MONTAGNA').first);
+      // Nessun risultato, poi "Azzera".
+      await pick(tester, 'location', 'Montagna');
       expect(find.text('Nessun lavoro con questi filtri.'), findsOneWidget);
-      await tapShown(tester, find.text('AZZERA FILTRI'));
-      expect(find.text('AZZERA FILTRI'), findsNothing);
-      expect(find.text('06 LAVORI'), findsNWidgets(2));
+      await tapShown(tester, find.text('AZZERA'));
+      expect(find.text('AZZERA'), findsNothing);
+      expect(find.text('Tutti'), findsNWidgets(3));
+      expect(find.text('06 LAVORI'), findsOneWidget);
       await disposeApp(tester);
     });
 
@@ -540,12 +551,11 @@ void main() {
         _work('c', 'Gamma', category: 'Evento'),
       ]);
       await pumpApp(tester, s, location: '/lavori');
-      final filter = find.descendant(
-        of: find.byType(Wrap),
-        matching: find.text('MATRIMONIO'),
-      );
-      expect(filter, findsOneWidget);
-      await tapShown(tester, filter);
+      await tapShown(tester, find.byKey(const ValueKey('filtro-evento')));
+      expect(find.text('Matrimonio'), findsOneWidget);
+      expect(find.text('matrimonio'), findsNothing);
+      await tester.tap(find.text('Matrimonio'));
+      await settle(tester, 800);
       expect(find.text('ALFA'), findsOneWidget);
       expect(find.text('BETA'), findsOneWidget);
       expect(find.text('GAMMA'), findsNothing);
@@ -557,7 +567,7 @@ void main() {
     ) async {
       final s = await loadState();
       await pumpApp(tester, s, location: '/lavori');
-      await tapShown(tester, find.text('CERIMONIA').first);
+      await pick(tester, 'evento', 'Cerimonia');
       expect(find.text('SOFIA & LUCA'), findsNothing);
 
       // Il battesimo viene nascosto dall'area riservata.
@@ -566,6 +576,7 @@ void main() {
       await settle(tester);
       expect(find.text('SOFIA & LUCA'), findsOneWidget);
       expect(find.text('CERIMONIA'), findsNothing);
+      expect(find.text('Tutti'), findsNWidgets(3));
       await disposeApp(tester);
     });
 
