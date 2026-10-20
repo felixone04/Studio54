@@ -282,15 +282,15 @@ class _FullMenu extends StatelessWidget {
                     context.go(_navItems[i].$2);
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.only(top: 4, right: 16),
+                          padding: const EdgeInsets.only(top: 3, right: 12),
                           child: Text(
                             '0${i + 1}',
-                            style: label(10.5, color: context.accentInk),
+                            style: label(7.5, color: context.accentInk),
                           ),
                         ),
                         Flexible(
@@ -299,8 +299,9 @@ class _FullMenu extends StatelessWidget {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               _navItems[i].$1.toUpperCase(),
+                              // Il 30% più piccole della prima versione (30).
                               style: display(
-                                30,
+                                21,
                                 spacing: 0.12,
                                 color: location == _navItems[i].$2
                                     ? Palette.ink
