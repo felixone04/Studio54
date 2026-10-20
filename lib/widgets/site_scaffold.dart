@@ -29,36 +29,20 @@ const _navItems = <(String, String)>[
   ('Preventivo', '/preventivo'),
 ];
 
-/// Struttura comune delle pagine pubbliche.
+/// Struttura comune delle pagine pubbliche: barra chiara con il logo in alto
+/// a sinistra, contenuto e footer.
 class SiteScaffold extends StatefulWidget {
   const SiteScaffold({
     super.key,
     required this.location,
     required this.children,
-    this.darkHero = false,
-    this.logoHero = false,
-    this.darkPage = false,
-    this.grain = false,
     this.overlay,
   });
 
   final String location;
   final List<Widget> children;
 
-  /// La prima sezione è un'immagine scura a tutto schermo: la barra resta
-  /// trasparente con testo chiaro finché la si scorre.
-  final bool darkHero;
-
-  /// La prima sezione mostra già il logo grande (home).
-  final bool logoHero;
-
-  /// Tutta la pagina è su fondo scuro: la barra resta scura anche scorrendo.
-  final bool darkPage;
-
-  /// Grana della pellicola, leggera e fissa sopra la pagina.
-  final bool grain;
-
-  /// Elemento fisso sopra al contenuto (es. barra del preventivo).
+  /// Elemento fisso sopra al contenuto.
   final Widget? overlay;
 
   @override
@@ -67,28 +51,17 @@ class SiteScaffold extends StatefulWidget {
 
 class _SiteScaffoldState extends State<SiteScaffold> {
   final _scroll = ScrollController();
-  bool _onDark = true;
   bool _scrolled = false;
 
   @override
   void initState() {
     super.initState();
-    _onDark = widget.darkHero || widget.darkPage;
     _scroll.addListener(_update);
   }
 
   void _update() {
-    final o = _scroll.offset;
-    final onDark =
-        widget.darkPage ||
-        (widget.darkHero && o < context.screenH - _navH(context));
-    final scrolled = o > 10;
-    if (onDark != _onDark || scrolled != _scrolled) {
-      setState(() {
-        _onDark = onDark;
-        _scrolled = scrolled;
-      });
-    }
+    final scrolled = _scroll.offset > 10;
+    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
   }
 
   @override
@@ -97,16 +70,12 @@ class _SiteScaffoldState extends State<SiteScaffold> {
     super.dispose();
   }
 
-  static double _navH(BuildContext c) => c.fluid(66, 88);
-
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final navH = _navH(context);
-    final dark = _onDark;
-    final fg = dark ? Palette.paper : Palette.ink;
+    final navH = context.navH;
     return Scaffold(
-      backgroundColor: widget.darkPage ? Palette.ink : Palette.paper,
+      backgroundColor: Palette.paper,
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -114,14 +83,12 @@ class _SiteScaffoldState extends State<SiteScaffold> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (!widget.darkHero) SizedBox(height: navH),
+                SizedBox(height: navH),
                 ...widget.children,
                 SiteFooter(content: state.content),
               ],
             ),
           ),
-          if (widget.grain)
-            const Positioned.fill(child: FilmGrain(intensity: 0.75)),
           Positioned(
             top: 0,
             left: 0,
@@ -133,32 +100,14 @@ class _SiteScaffoldState extends State<SiteScaffold> {
               height: navH,
               padding: EdgeInsets.symmetric(horizontal: context.gutter),
               decoration: BoxDecoration(
-                gradient: dark && !_scrolled
-                    ? const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Color(0x80000000), Color(0x00000000)],
-                      )
-                    : null,
-                color: dark
-                    ? (_scrolled ? Palette.ink.withValues(alpha: 0.92) : null)
-                    : Palette.paper.withValues(alpha: 0.97),
+                color: Palette.paper.withValues(alpha: 0.97),
                 border: Border(
                   bottom: BorderSide(
-                    color: !dark && _scrolled
-                        ? Palette.lineLight
-                        : Colors.transparent,
+                    color: _scrolled ? Palette.line : Colors.transparent,
                   ),
                 ),
               ),
-              child: _NavBar(
-                name: state.content.studioName,
-                location: widget.location,
-                fg: fg,
-                onDark: dark,
-                // Sopra la foto d'apertura c'è già il logo grande: qui solo l'icona.
-                showName: !(widget.logoHero && !_scrolled),
-              ),
+              child: _NavBar(location: widget.location),
             ),
           ),
           if (widget.overlay != null) widget.overlay!,
@@ -168,19 +117,28 @@ class _SiteScaffoldState extends State<SiteScaffold> {
   }
 }
 
+/// Il logo in alto a sinistra, che riporta alla home.
+class _HomeLogo extends StatelessWidget {
+  const _HomeLogo({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: 'Home',
+    child: MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: BrandLogo(height: context.navH * 0.7),
+      ),
+    ),
+  );
+}
+
 class _NavBar extends StatelessWidget {
-  const _NavBar({
-    required this.name,
-    required this.location,
-    required this.fg,
-    required this.onDark,
-    this.showName = true,
-  });
-  final String name;
+  const _NavBar({required this.location});
   final String location;
-  final Color fg;
-  final bool onDark;
-  final bool showName;
 
   @override
   Widget build(BuildContext context) {
@@ -190,18 +148,7 @@ class _NavBar extends StatelessWidget {
         Expanded(
           child: Align(
             alignment: Alignment.centerLeft,
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: GestureDetector(
-                onTap: () => context.go('/'),
-                child: BrandWordmark(
-                  name: name,
-                  height: context.fluid(20, 24),
-                  onDark: onDark,
-                  showName: showName,
-                ),
-              ),
-            ),
+            child: _HomeLogo(onTap: () => context.go('/')),
           ),
         ),
         const SizedBox(width: 16),
@@ -211,20 +158,19 @@ class _NavBar extends StatelessWidget {
             HoverLink(
               _navItems[i].$1.toUpperCase(),
               active: location == _navItems[i].$2,
-              style: label(11.5, color: fg),
+              style: label(11.5, color: Palette.ink),
               onTap: () => context.go(_navItems[i].$2),
             ),
           ],
         ] else
-          _MenuButton(color: fg, onTap: () => _openMenu(context, location)),
+          _MenuButton(onTap: () => _openMenu(context, location)),
       ],
     );
   }
 }
 
 class _MenuButton extends StatelessWidget {
-  const _MenuButton({required this.color, required this.onTap});
-  final Color color;
+  const _MenuButton({required this.onTap});
   final VoidCallback onTap;
 
   @override
@@ -240,15 +186,15 @@ class _MenuButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('MENU', style: label(11.5, color: color)),
+              Text('MENU', style: label(11.5)),
               const SizedBox(width: 12),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Container(width: 26, height: 1.6, color: color),
+                  Container(width: 26, height: 1.6, color: Palette.ink),
                   const SizedBox(height: 6),
-                  Container(width: 16, height: 1.6, color: color),
+                  Container(width: 16, height: 1.6, color: Palette.ink),
                 ],
               ),
             ],
@@ -291,10 +237,9 @@ class _FullMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
     final c = content.contacts;
     return Material(
-      color: Palette.ink,
+      color: Palette.paper,
       child: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: context.gutter),
@@ -302,15 +247,17 @@ class _FullMenu extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                height: context.fluid(66, 88),
+                height: context.navH,
                 child: Row(
                   children: [
                     Expanded(
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: BrandWordmark(
-                          name: content.studioName,
-                          height: context.fluid(20, 24),
+                        child: _HomeLogo(
+                          onTap: () {
+                            Navigator.pop(context);
+                            context.go('/');
+                          },
                         ),
                       ),
                     ),
@@ -319,7 +266,7 @@ class _FullMenu extends StatelessWidget {
                       tooltip: 'Chiudi',
                       icon: const Icon(
                         Icons.close_rounded,
-                        color: Palette.paper,
+                        color: Palette.ink,
                         size: 30,
                       ),
                     ),
@@ -343,7 +290,7 @@ class _FullMenu extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 4, right: 16),
                           child: Text(
                             '0${i + 1}',
-                            style: label(10.5, color: accent),
+                            style: label(10.5, color: context.accentInk),
                           ),
                         ),
                         Flexible(
@@ -356,8 +303,8 @@ class _FullMenu extends StatelessWidget {
                                 30,
                                 spacing: 0.12,
                                 color: location == _navItems[i].$2
-                                    ? Palette.paper
-                                    : Palette.paper.withValues(alpha: 0.5),
+                                    ? Palette.ink
+                                    : Palette.ash,
                               ),
                             ),
                           ),
@@ -370,13 +317,13 @@ class _FullMenu extends StatelessWidget {
               if (c.phone.isNotEmpty)
                 GestureDetector(
                   onTap: () => openUrl('tel:${digitsOf(c.phone)}'),
-                  child: Text(c.phone, style: body(14.5, color: Palette.ash)),
+                  child: Text(c.phone, style: body(14.5, color: Palette.stone)),
                 ),
               if (c.email.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 GestureDetector(
                   onTap: () => openUrl('mailto:${c.email}'),
-                  child: Text(c.email, style: body(14.5, color: Palette.ash)),
+                  child: Text(c.email, style: body(14.5, color: Palette.stone)),
                 ),
               ],
               const SizedBox(height: 28),
@@ -397,24 +344,19 @@ class SiteFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = content.contacts;
-    final accent = Theme.of(context).colorScheme.primary;
     final cols = context.isPhone ? 1 : (context.isTablet ? 2 : 4);
 
     Widget link(String text, String? url) => Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: url == null
-          ? Text(text, style: body(15, color: Palette.paper))
-          : HoverLink(
-              text,
-              style: body(15, color: Palette.paper),
-              onTap: () => openUrl(url),
-            ),
+          ? Text(text, style: body(15))
+          : HoverLink(text, style: body(15), onTap: () => openUrl(url)),
     );
 
     Widget col(String title, List<Widget> children) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title.toUpperCase(), style: label(10.5, color: Palette.ash)),
+        Text(title.toUpperCase(), style: label(10.5, color: Palette.stone)),
         const SizedBox(height: 16),
         ...children,
       ],
@@ -437,7 +379,7 @@ class SiteFooter extends StatelessWidget {
             'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(c.address)}',
           ),
         if (c.hours.isNotEmpty)
-          Text(c.hours, style: body(14, color: Palette.ash)),
+          Text(c.hours, style: body(14, color: Palette.stone)),
       ]),
       col('Social', [
         if (c.instagram.isNotEmpty) link('Instagram', c.instagram),
@@ -447,17 +389,13 @@ class SiteFooter extends StatelessWidget {
         for (final (t, p) in _navItems)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: HoverLink(
-              t,
-              style: body(15, color: Palette.paper),
-              onTap: () => context.go(p),
-            ),
+            child: HoverLink(t, style: body(15), onTap: () => context.go(p)),
           ),
       ]),
     ];
 
     return Container(
-      color: Palette.ink,
+      color: Palette.linen,
       padding: EdgeInsets.fromLTRB(
         context.gutter,
         context.fluid(64, 110),
@@ -482,9 +420,9 @@ class SiteFooter extends StatelessWidget {
           ),
           SizedBox(height: context.fluid(56, 90)),
           // Firma: il logo al centro.
-          Center(child: BrandLogo(width: context.fluid(220, 300))),
+          Center(child: BrandLogo(width: context.fluid(150, 200))),
           SizedBox(height: context.fluid(36, 56)),
-          Container(height: 1, color: Palette.lineDark),
+          Container(height: 1, color: Palette.line),
           const SizedBox(height: 18),
           Wrap(
             alignment: WrapAlignment.spaceBetween,
@@ -494,7 +432,7 @@ class SiteFooter extends StatelessWidget {
               Text(
                 '© ${DateTime.now().year} ${content.studioName}'
                 '${c.vat.isEmpty ? '' : '  ·  ${c.vat}'}',
-                style: body(12.5, color: Palette.ash),
+                style: body(12.5, color: Palette.stone),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -503,14 +441,14 @@ class SiteFooter extends StatelessWidget {
                     width: 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: accent,
+                      color: context.accent,
                       shape: BoxShape.circle,
                     ),
                   ),
                   const SizedBox(width: 8),
                   HoverLink(
                     'Area riservata',
-                    style: body(12.5, color: Palette.ash),
+                    style: body(12.5, color: Palette.stone),
                     onTap: () => context.go('/admin'),
                   ),
                 ],

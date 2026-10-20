@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 
 import '../models/models.dart';
 import '../state/app_state.dart';
@@ -12,14 +12,139 @@ import '../widgets/photo_ui.dart';
 import '../widgets/sections.dart';
 import '../widgets/site_scaffold.dart';
 
-/// Larghezza massima del contenuto: la pagina resta raccolta e leggibile.
-const _maxW = 1120.0;
+/// Larghezza massima del modulo: resta raccolto e facile da compilare.
+const _formW = 820.0;
 
-// Toni scuri, come l'apertura della home e la pellicola dei servizi.
-const _card = Palette.ink2;
-const _line = Palette.lineDark;
-const _muted = Palette.ash;
-const _error = Color(0xFFF2B8B5);
+final _dateFmt = DateFormat('dd/MM/yyyy', 'it_IT');
+
+// ------------------------------------------------------------ controlli
+
+/// Data come gg/mm/aaaa: solo cifre, le barre si inseriscono da sole.
+class DateMaskFormatter extends TextInputFormatter {
+  const DateMaskFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    var d = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (d.length > 8) d = d.substring(0, 8);
+    final b = StringBuffer();
+    for (var i = 0; i < d.length; i++) {
+      if (i == 2 || i == 4) b.write('/');
+      b.write(d[i]);
+    }
+    final t = b.toString();
+    return TextEditingValue(
+      text: t,
+      selection: TextSelection.collapsed(offset: t.length),
+    );
+  }
+}
+
+/// Il "+" del prefisso internazionale è ammesso solo come primo carattere;
+/// gli altri (es. in un numero incollato) si tolgono.
+class _PlusOnlyFirst extends TextInputFormatter {
+  const _PlusOnlyFirst();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final lead = newValue.text.trimLeft();
+    final plus = lead.startsWith('+');
+    final out =
+        (plus ? '+' : '') + (plus ? lead.substring(1) : lead).replaceAll('+', '');
+    if (out == newValue.text) return newValue;
+    return TextEditingValue(
+      text: out,
+      selection: TextSelection.collapsed(offset: out.length),
+    );
+  }
+}
+
+final _phoneFormatters = <TextInputFormatter>[
+  FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
+  const _PlusOnlyFirst(),
+  LengthLimitingTextInputFormatter(20),
+];
+
+final _nameFormatters = <TextInputFormatter>[
+  FilteringTextInputFormatter.allow(RegExp(r"[A-Za-zÀ-ÖØ-öø-ÿ' \-]")),
+  LengthLimitingTextInputFormatter(40),
+];
+
+final _emailFormatters = <TextInputFormatter>[
+  FilteringTextInputFormatter.deny(RegExp(r'\s')),
+  LengthLimitingTextInputFormatter(80),
+];
+
+final _emailRe = RegExp(
+  r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$',
+);
+
+/// Controlli dei campi (usati sia dal modulo sia dai test).
+abstract final class QuoteRules {
+  static String? name(String? v, String what) {
+    final t = (v ?? '').trim();
+    if (t.isEmpty) return 'Inserisci il $what';
+    if (t.replaceAll(RegExp(r"[' \-]"), '').length < 2) {
+      return 'Il $what deve avere almeno 2 lettere';
+    }
+    return null;
+  }
+
+  static String? phone(String? v) {
+    final t = (v ?? '').trim();
+    if (t.isEmpty) return 'Inserisci il numero di telefono';
+    final d = t.replaceAll(RegExp(r'\D'), '');
+    if (d.length < 8 || d.length > 15) {
+      return 'Numero non valido: servono da 8 a 15 cifre';
+    }
+    return null;
+  }
+
+  static String? email(String? v) {
+    final t = (v ?? '').trim();
+    if (t.isEmpty) return 'Inserisci l\'indirizzo email';
+    return _emailRe.hasMatch(t) ? null : 'Email non valida (es. nome@email.it)';
+  }
+
+  static String? place(String? v) => (v ?? '').trim().length < 2
+      ? 'Indica la città o la location dell\'evento'
+      : null;
+
+  /// Data dell'evento come gg/mm/aaaa, da oggi a 5 anni.
+  static String? date(String? v, {DateTime? today}) {
+    final t = (v ?? '').trim();
+    if (t.isEmpty) return 'Inserisci la data dell\'evento';
+    final d = parseDate(t);
+    if (!RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(t)) {
+      return 'Scrivi la data come gg/mm/aaaa';
+    }
+    if (d == null) return 'Questa data non esiste';
+    final now = today ?? DateTime.now();
+    final day0 = DateTime(now.year, now.month, now.day);
+    if (d.isBefore(day0)) return 'La data è già passata';
+    if (d.isAfter(DateTime(now.year + 5, now.month, now.day))) {
+      return 'Scegli una data entro 5 anni';
+    }
+    return null;
+  }
+
+  /// gg/mm/aaaa → data, oppure null se non esiste (es. 31/02/2026).
+  static DateTime? parseDate(String t) {
+    final m = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(t.trim());
+    if (m == null) return null;
+    final d = int.parse(m[1]!), mo = int.parse(m[2]!), y = int.parse(m[3]!);
+    final r = DateTime(y, mo, d);
+    return r.year == y && r.month == mo && r.day == d ? r : null;
+  }
+}
+
+// ------------------------------------------------------------------ pagina
 
 class QuotePage extends StatefulWidget {
   const QuotePage({super.key, this.preService, this.prePackage});
@@ -32,33 +157,29 @@ class QuotePage extends StatefulWidget {
 
 class _QuotePageState extends State<QuotePage> {
   final _formKey = GlobalKey<FormState>();
-  final _formAnchor = GlobalKey();
   final _topAnchor = GlobalKey();
+  final _eventKey = GlobalKey();
+  final _servicesKey = GlobalKey();
+  final _contactsKey = GlobalKey();
+  final _privacyKey = GlobalKey();
 
-  /// Chiave unica per pagina: durante la dissolvenza tra due preventivi
-  /// (es. da `?p=` a `?s=`) ci sono due moduli insieme, e VisibilityDetector
-  /// vuole chiavi diverse.
-  final _formDetectorKey = UniqueKey();
-
-  // Selezione
-  String? _packageId;
-  final Set<String> _extra = {};
-  bool _custom = false;
-
-  // Modulo
   final _first = TextEditingController();
   final _last = TextEditingController();
   final _phone = TextEditingController();
   final _email = TextEditingController();
+  final _date = TextEditingController();
+  final _place = TextEditingController();
   final _other = TextEditingController();
   final _message = TextEditingController();
+
   String? _eventType;
-  DateTime? _eventDate;
+  final Set<String> _services = {};
+
+  /// Pacchetto arrivato dal link (?p=), finché la scelta resta quella.
+  String? _packageId;
   bool _privacy = false;
-  bool _privacyError = false;
+  bool _tried = false;
   bool _sending = false;
-  bool _formVisible = false;
-  String? _selectionError;
   String? _sendError;
   QuoteRequest? _sent;
 
@@ -66,93 +187,104 @@ class _QuotePageState extends State<QuotePage> {
   void initState() {
     super.initState();
     final s = context.read<AppState>();
-    // Si preselezionano solo voci visibili sul sito: un pacchetto nascosto
-    // resterebbe selezionato senza comparire tra le schede.
-    if (s.packageById(widget.prePackage)?.active ?? false) {
-      _packageId = widget.prePackage;
+    // Si preselezionano solo voci visibili sul sito.
+    final p = s.packageById(widget.prePackage);
+    if (p != null && p.active) {
+      _packageId = p.id;
+      _services.addAll(
+        p.serviceIds.where((id) => s.serviceById(id)?.active ?? false),
+      );
     } else if (widget.preService != null &&
         (s.serviceById(widget.preService!)?.active ?? false)) {
-      _extra.add(widget.preService!);
-      _custom = true;
-    } else {
-      _custom = s.activePackages.isEmpty;
+      _services.add(widget.preService!);
     }
   }
 
   @override
   void dispose() {
-    for (final c in [_first, _last, _phone, _email, _other, _message]) {
+    for (final c in [
+      _first,
+      _last,
+      _phone,
+      _email,
+      _date,
+      _place,
+      _other,
+      _message,
+    ]) {
       c.dispose();
     }
     super.dispose();
   }
 
-  // ------------------------------------------------------------- selezione
+  List<String> _selected(AppState s) => [
+    for (final sv in s.activeServices)
+      if (_services.contains(sv.id)) sv.id,
+  ];
 
-  List<String> _ids(AppState s) {
-    final ids = <String>[];
-    final p = s.packageById(_packageId);
-    if (p != null) ids.addAll(p.serviceIds);
-    ids.addAll(_extra.where((e) => !ids.contains(e)));
-    return ids.where((id) => s.serviceById(id)?.active ?? false).toList();
-  }
-
-  void _choosePackage(ServicePackage p) => setState(() {
-    _packageId = _packageId == p.id ? null : p.id;
-    _extra.removeWhere((e) => p.serviceIds.contains(e));
-    _selectionError = null;
-  });
-
-  /// Togliendo un servizio di un pacchetto, il pacchetto diventa "su misura".
-  void _dissolvePackage(AppState s) {
-    final p = s.packageById(_packageId);
-    if (p == null) return;
-    _extra.addAll(p.serviceIds);
+  void _toggle(String id) => setState(() {
+    if (!_services.remove(id)) _services.add(id);
     _packageId = null;
-  }
-
-  void _toggle(AppState s, String id) => setState(() {
-    final p = s.packageById(_packageId);
-    if (p != null && p.serviceIds.contains(id)) {
-      _dissolvePackage(s);
-      _extra.remove(id);
-    } else if (!_extra.remove(id)) {
-      _extra.add(id);
-    }
-    _selectionError = null;
   });
+
+  String? _typeError(AppState s) =>
+      _eventType == null && s.content.eventTypes.isNotEmpty
+      ? 'Scegli il tipo di evento'
+      : null;
+
+  String? _otherError() => _eventType == 'Altro' && _other.text.trim().isEmpty
+      ? 'Scrivi di che evento si tratta'
+      : null;
+
+  String? _servicesError(AppState s) =>
+      s.activeServices.isNotEmpty && _selected(s).isEmpty
+      ? 'Scegli almeno una voce'
+      : null;
 
   void _scrollTo(GlobalKey key) {
     final ctx = key.currentContext;
-    if (ctx != null) {
-      Scrollable.ensureVisible(
-        ctx,
-        duration: const Duration(milliseconds: 700),
-        curve: Curves.easeInOutCubic,
-        // Lascia spazio alla barra di navigazione in alto.
-        alignment: 0.13,
-      );
-    }
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOutCubic,
+      // Lascia spazio alla barra di navigazione in alto.
+      alignment: 0.1,
+    );
   }
 
-  // ----------------------------------------------------------------- invio
+  /// La prima parte del modulo con un errore, per portarci il visitatore.
+  GlobalKey? _firstError(AppState s) {
+    if (_typeError(s) != null ||
+        _otherError() != null ||
+        QuoteRules.date(_date.text) != null ||
+        QuoteRules.place(_place.text) != null) {
+      return _eventKey;
+    }
+    if (_servicesError(s) != null) return _servicesKey;
+    if (QuoteRules.name(_first.text, 'nome') != null ||
+        QuoteRules.name(_last.text, 'cognome') != null ||
+        QuoteRules.phone(_phone.text) != null ||
+        QuoteRules.email(_email.text) != null) {
+      return _contactsKey;
+    }
+    if (!_privacy) return _privacyKey;
+    return null;
+  }
 
   Future<void> _submit(AppState s) async {
-    final ids = _ids(s);
+    setState(() => _tried = true);
     final okForm = _formKey.currentState!.validate();
-    setState(() {
-      _privacyError = !_privacy;
-      _selectionError = ids.isEmpty
-          ? 'Scegli almeno un servizio o un pacchetto.'
-          : null;
-    });
-    if (ids.isEmpty || !okForm || !_privacy) return;
-
+    final err = _firstError(s);
+    if (!okForm || err != null) {
+      if (err != null) _scrollTo(err);
+      return;
+    }
     setState(() {
       _sending = true;
       _sendError = null;
     });
-    final type = _eventType == 'Altro' && _other.text.trim().isNotEmpty
+    final type = _eventType == 'Altro'
         ? 'Altro: ${_other.text.trim()}'
         : (_eventType ?? '');
     final q = QuoteRequest(
@@ -161,9 +293,10 @@ class _QuotePageState extends State<QuotePage> {
       phone: _phone.text.trim(),
       email: _email.text.trim(),
       eventType: type,
-      eventDate: _eventDate,
+      eventDate: QuoteRules.parseDate(_date.text),
+      location: _place.text.trim(),
       message: _message.text.trim(),
-      serviceIds: ids,
+      serviceIds: _selected(s),
       packageId: _packageId,
     );
     try {
@@ -186,277 +319,274 @@ class _QuotePageState extends State<QuotePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollTo(_topAnchor));
   }
 
+  void _reset() => setState(() {
+    _sent = null;
+    _tried = false;
+    _services.clear();
+    _packageId = null;
+    _eventType = null;
+    for (final c in [_date, _place, _other, _message]) {
+      c.clear();
+    }
+    // Il consenso va dato di nuovo per ogni richiesta.
+    _privacy = false;
+  });
+
   // ----------------------------------------------------------------- build
 
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
-    final ids = _ids(s);
-    final showBar = _sent == null && ids.isNotEmpty && !_formVisible;
-
-    final heroImage = s.content.bannerImage.trim().isNotEmpty
+    final image = s.content.bannerImage.trim().isNotEmpty
         ? s.content.bannerImage
         : (s.heroPhotos.isEmpty ? '' : s.heroPhotos.first.url);
 
     return SiteScaffold(
       location: '/preventivo',
-      darkHero: true,
-      darkPage: true,
-      overlay: Positioned(
-        left: 0,
-        right: 0,
-        bottom: 0,
-        child: AnimatedSlide(
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeOutCubic,
-          offset: showBar ? Offset.zero : const Offset(0, 1.3),
-          child: _SelectionBar(
-            count: ids.length,
-            packageName: s.packageById(_packageId)?.name,
-            onNext: () => _scrollTo(_formAnchor),
-          ),
-        ),
-      ),
       children: [
         SizedBox(key: _topAnchor, height: 0),
-        _Hero(image: heroImage, step: _sent != null || _formVisible ? 2 : 1),
-        _Page(
-          child: _sent != null
-              ? _Success(
-                  quote: _sent!,
-                  onNew: () => setState(() {
-                    _sent = null;
-                    _packageId = null;
-                    _extra.clear();
-                    // Il consenso va dato di nuovo per ogni richiesta.
-                    _privacy = false;
-                  }),
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _Card(
-                      number: '1',
-                      title: 'Cosa ti serve',
-                      trailing: s.activePackages.isEmpty
-                          ? null
-                          : _Segmented(
-                              custom: _custom,
-                              onChanged: (v) => setState(() => _custom = v),
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            context.gutter,
+            context.fluid(36, 80),
+            context.gutter,
+            context.fluid(70, 120),
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1120),
+              child: _sent != null
+                  ? _Success(quote: _sent!, onNew: _reset)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _Header(image: image),
+                        SizedBox(height: context.fluid(28, 48)),
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxWidth: _formW,
                             ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: _custom || s.activePackages.isEmpty
-                            ? _ServiceGrid(
-                                key: const ValueKey('custom'),
-                                state: s,
-                                selected: ids.toSet(),
-                                onTap: (id) => _toggle(s, id),
-                              )
-                            : _PackageGrid(
-                                key: const ValueKey('packages'),
-                                state: s,
-                                selectedId: _packageId,
-                                onTap: _choosePackage,
-                                onCustom: () => setState(() => _custom = true),
-                              ),
-                      ),
+                            child: _buildForm(s),
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: context.fluid(20, 28)),
-                    VisibilityDetector(
-                      key: _formDetectorKey,
-                      onVisibilityChanged: (i) {
-                        final v = i.visibleFraction > 0.2;
-                        if (v != _formVisible && mounted) {
-                          setState(() => _formVisible = v);
-                        }
-                      },
-                      child: _Card(
-                        key: _formAnchor,
-                        number: '2',
-                        title: 'I tuoi contatti',
-                        child: _buildContacts(s, ids),
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+          ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildContacts(AppState s, List<String> ids) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _Summary(
-          state: s,
-          ids: ids,
-          package: s.packageById(_packageId),
-          error: _selectionError,
-          onRemove: (id) => _toggle(s, id),
-        ),
-        const SizedBox(height: 28),
-        _buildForm(s),
       ],
     );
   }
 
   Widget _buildForm(AppState s) {
     final twoCols = context.w >= 720;
-    String? req(String? v, String m) =>
-        (v == null || v.trim().isEmpty) ? m : null;
-
     Widget pair(Widget a, Widget b) => twoCols
         ? Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: a),
-              const SizedBox(width: 28),
+              const SizedBox(width: 16),
               Expanded(child: b),
             ],
           )
         : Column(children: [a, const SizedBox(height: 16), b]);
+    const gap = SizedBox(height: 16);
+    final types = s.content.eventTypes.toSet().toList();
+    final live = AutovalidateMode.onUserInteraction;
+    final servicesError = _tried ? _servicesError(s) : null;
 
-    const gap = SizedBox(height: 18);
-    final light = Theme.of(context);
-    // Se il titolare ha tolto tutti i tipi di evento il campo non è
-    // obbligatorio (altrimenti il modulo non si potrebbe più inviare).
-    final types = s.content.eventTypes;
-    return Theme(
-      data: _darkFormTheme(light),
-      child: Form(
-        key: _formKey,
+    return Form(
+      key: _formKey,
+      child: Container(
+        padding: EdgeInsets.all(context.fluid(20, 44)),
+        decoration: BoxDecoration(
+          color: Palette.ivory,
+          border: Border.all(color: Palette.line),
+          borderRadius: BorderRadius.circular(10),
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            pair(
-              TextFormField(
-                controller: _first,
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.givenName],
-                decoration: const InputDecoration(labelText: 'Nome'),
-                validator: (v) => req(v, 'Inserisci il nome'),
-              ),
-              TextFormField(
-                controller: _last,
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.familyName],
-                decoration: const InputDecoration(labelText: 'Cognome'),
-                validator: (v) => req(v, 'Inserisci il cognome'),
-              ),
-            ),
-            gap,
-            pair(
-              TextFormField(
-                controller: _phone,
-                keyboardType: TextInputType.phone,
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.telephoneNumber],
-                decoration: const InputDecoration(labelText: 'Telefono'),
-                validator: (v) {
-                  final d = (v ?? '').replaceAll(RegExp(r'\D'), '');
-                  return d.length < 6 ? 'Inserisci un numero valido' : null;
-                },
-              ),
-              TextFormField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.email],
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (v) =>
-                    RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                        .hasMatch((v ?? '').trim())
-                    ? null
-                    : 'Inserisci un indirizzo email valido',
-              ),
-            ),
-            gap,
-            pair(
-              DropdownButtonFormField<String>(
-                initialValue: types.contains(_eventType) ? _eventType : null,
-                isExpanded: true,
-                dropdownColor: _card,
-                // La freccia di default è grigio scuro: illeggibile sul nero.
-                iconEnabledColor: _muted,
-                decoration: const InputDecoration(labelText: 'Tipo di evento'),
-                items: [
-                  for (final t in types.toSet())
-                    DropdownMenuItem(value: t, child: Text(t)),
+            _Step(
+              key: _eventKey,
+              number: 1,
+              title: 'Il tuo evento',
+              child: Column(
+                children: [
+                  pair(
+                    DropdownButtonFormField<String>(
+                      initialValue: types.contains(_eventType)
+                          ? _eventType
+                          : null,
+                      isExpanded: true,
+                      autovalidateMode: live,
+                      dropdownColor: Palette.ivory,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo di evento *',
+                      ),
+                      items: [
+                        for (final t in types)
+                          DropdownMenuItem(value: t, child: Text(t)),
+                      ],
+                      onChanged: (v) => setState(() => _eventType = v),
+                      validator: (_) => _typeError(s),
+                    ),
+                    TextFormField(
+                      controller: _date,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
+                      inputFormatters: const [DateMaskFormatter()],
+                      autovalidateMode: live,
+                      decoration: InputDecoration(
+                        labelText: 'Data dell\'evento *',
+                        hintText: 'gg/mm/aaaa',
+                        suffixIcon: IconButton(
+                          tooltip: 'Scegli dal calendario',
+                          icon: const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 19,
+                          ),
+                          onPressed: _pickDate,
+                        ),
+                      ),
+                      validator: (v) => QuoteRules.date(v),
+                    ),
+                  ),
+                  if (_eventType == 'Altro') ...[
+                    gap,
+                    TextFormField(
+                      controller: _other,
+                      autovalidateMode: live,
+                      inputFormatters: [LengthLimitingTextInputFormatter(60)],
+                      decoration: const InputDecoration(
+                        labelText: 'Di che evento si tratta? *',
+                      ),
+                      validator: (_) => _otherError(),
+                    ),
+                  ],
+                  gap,
+                  TextFormField(
+                    controller: _place,
+                    textInputAction: TextInputAction.next,
+                    autovalidateMode: live,
+                    inputFormatters: [LengthLimitingTextInputFormatter(80)],
+                    decoration: const InputDecoration(
+                      labelText: 'Luogo *',
+                      hintText: 'Città o nome della location',
+                    ),
+                    validator: QuoteRules.place,
+                  ),
                 ],
-                onChanged: (v) => setState(() => _eventType = v),
-                validator: (v) => v == null && types.isNotEmpty
-                    ? 'Scegli il tipo di evento'
-                    : null,
-              ),
-              _DateField(
-                pickerTheme: light,
-                value: _eventDate,
-                onChanged: (d) => setState(() => _eventDate = d),
               ),
             ),
-            if (_eventType == 'Altro') ...[
-              gap,
-              TextFormField(
-                controller: _other,
-                decoration: const InputDecoration(
-                  labelText: 'Di che evento si tratta?',
+            if (s.activeServices.isNotEmpty) ...[
+              const _Divider(),
+              _Step(
+                key: _servicesKey,
+                number: 2,
+                title: 'Cosa ti serve',
+                hint: 'Tocca una o più voci.',
+                child: _ServicePicker(
+                  services: s.activeServices,
+                  selected: _services,
+                  error: servicesError,
+                  onToggle: _toggle,
                 ),
               ),
             ],
-            gap,
-            TextFormField(
-              controller: _message,
-              minLines: 1,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Note (luogo, numero di invitati…)',
-              ),
-            ),
-            const SizedBox(height: 24),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() {
-                _privacy = !_privacy;
-                _privacyError = false;
-              }),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: Checkbox(
-                      value: _privacy,
-                      onChanged: (v) => setState(() {
-                        _privacy = v ?? false;
-                        _privacyError = false;
-                      }),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Acconsento al trattamento dei miei dati per essere ricontattato.',
-                        style: body(13.5, color: _muted),
+            const _Divider(),
+            _Step(
+              key: _contactsKey,
+              number: s.activeServices.isEmpty ? 2 : 3,
+              title: 'I tuoi contatti',
+              child: AutofillGroup(
+                child: Column(
+                  children: [
+                    pair(
+                      TextFormField(
+                        controller: _first,
+                        textInputAction: TextInputAction.next,
+                        textCapitalization: TextCapitalization.words,
+                        autofillHints: const [AutofillHints.givenName],
+                        inputFormatters: _nameFormatters,
+                        autovalidateMode: live,
+                        decoration: const InputDecoration(
+                          labelText: 'Nome *',
+                        ),
+                        validator: (v) => QuoteRules.name(v, 'nome'),
+                      ),
+                      TextFormField(
+                        controller: _last,
+                        textInputAction: TextInputAction.next,
+                        textCapitalization: TextCapitalization.words,
+                        autofillHints: const [AutofillHints.familyName],
+                        inputFormatters: _nameFormatters,
+                        autovalidateMode: live,
+                        decoration: const InputDecoration(
+                          labelText: 'Cognome *',
+                        ),
+                        validator: (v) => QuoteRules.name(v, 'cognome'),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            if (_privacyError)
-              Padding(
-                padding: const EdgeInsets.only(top: 8, left: 38),
-                child: Text(
-                  'Serve il consenso per inviare la richiesta.',
-                  style: body(13, color: _error),
+                    gap,
+                    pair(
+                      TextFormField(
+                        controller: _phone,
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.telephoneNumber],
+                        inputFormatters: _phoneFormatters,
+                        autovalidateMode: live,
+                        decoration: const InputDecoration(
+                          labelText: 'Telefono *',
+                          hintText: 'Es. 333 123 4567',
+                          prefixIcon: Icon(Icons.phone_outlined, size: 19),
+                        ),
+                        validator: QuoteRules.phone,
+                      ),
+                      TextFormField(
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.email],
+                        inputFormatters: _emailFormatters,
+                        autovalidateMode: live,
+                        decoration: const InputDecoration(
+                          labelText: 'Email *',
+                          hintText: 'nome@email.it',
+                          prefixIcon: Icon(
+                            Icons.mail_outline_rounded,
+                            size: 19,
+                          ),
+                        ),
+                        validator: QuoteRules.email,
+                      ),
+                    ),
+                    gap,
+                    TextFormField(
+                      controller: _message,
+                      minLines: 3,
+                      maxLines: 6,
+                      maxLength: 500,
+                      decoration: const InputDecoration(
+                        labelText: 'Note (facoltative)',
+                        hintText: 'Numero di invitati, orari, idee…',
+                        alignLabelWithHint: true,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            const SizedBox(height: 28),
+            ),
+            const SizedBox(height: 8),
+            _Privacy(
+              key: _privacyKey,
+              value: _privacy,
+              error: _tried && !_privacy,
+              onChanged: (v) => setState(() => _privacy = v),
+            ),
+            const SizedBox(height: 26),
             Wrap(
               spacing: 18,
               runSpacing: 12,
@@ -464,675 +594,194 @@ class _QuotePageState extends State<QuotePage> {
               children: [
                 PillButton(
                   'Invia la richiesta',
-                  onDark: true,
+                  big: true,
                   loading: _sending,
                   icon: Icons.arrow_forward_rounded,
                   onTap: () => _submit(s),
                 ),
                 Text(
-                  'Gratuito e senza impegno.',
-                  style: body(13.5, color: _muted),
+                  '* campi obbligatori',
+                  style: body(13, color: Palette.stone),
                 ),
               ],
             ),
             if (_sendError != null)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
-                child: Text(_sendError!, style: body(13.5, color: _error)),
+                child: Text(
+                  _sendError!,
+                  style: body(13.5, color: Palette.error),
+                ),
               ),
           ],
         ),
       ),
     );
   }
-}
 
-/// Il tema del sito è chiaro: qui campi e spunte diventano chiari su scuro.
-ThemeData _darkFormTheme(ThemeData light) {
-  UnderlineInputBorder u(Color c, [double w = 1]) => UnderlineInputBorder(
-    borderSide: BorderSide(color: c, width: w),
-  );
-  return light.copyWith(
-    colorScheme: light.colorScheme.copyWith(
-      onSurface: Palette.paper,
-      onSurfaceVariant: _muted,
-      error: _error,
-    ),
-    textTheme: light.textTheme.apply(
-      bodyColor: Palette.paper,
-      displayColor: Palette.paper,
-    ),
-    textSelectionTheme: TextSelectionThemeData(
-      cursorColor: Palette.paper,
-      selectionColor: Palette.paper.withValues(alpha: 0.25),
-      selectionHandleColor: Palette.paper,
-    ),
-    inputDecorationTheme: light.inputDecorationTheme.copyWith(
-      border: u(_line),
-      enabledBorder: u(const Color(0x59FFFFFF)),
-      focusedBorder: u(Palette.paper, 2),
-      errorBorder: u(_error),
-      focusedErrorBorder: u(_error, 2),
-      labelStyle: body(15, color: _muted),
-      floatingLabelStyle: label(11, color: Palette.paper),
-      errorStyle: body(12.5, color: _error),
-      suffixIconColor: _muted,
-    ),
-    iconTheme: const IconThemeData(color: _muted),
-    checkboxTheme: CheckboxThemeData(
-      side: const BorderSide(color: Palette.paper, width: 1.4),
-      fillColor: WidgetStateProperty.resolveWith(
-        (s) => s.contains(WidgetState.selected) ? Palette.paper : null,
-      ),
-      checkColor: const WidgetStatePropertyAll(Palette.ink),
-    ),
-  );
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final current = QuoteRules.parseDate(_date.text);
+    final last = DateTime(now.year + 5, now.month, now.day);
+    final d = await showDatePicker(
+      context: context,
+      initialDate: current != null && !current.isBefore(today)
+          ? (current.isAfter(last) ? last : current)
+          : today.add(const Duration(days: 30)),
+      firstDate: today,
+      lastDate: last,
+      locale: const Locale('it', 'IT'),
+    );
+    if (d != null && mounted) setState(() => _date.text = _dateFmt.format(d));
+  }
 }
 
 // ---------------------------------------------------------------- struttura
 
-/// Contenuto centrato e raccolto, sul fondo scuro della pagina.
-class _Page extends StatelessWidget {
-  const _Page({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.fromLTRB(
-      context.gutter,
-      context.fluid(8, 20),
-      context.gutter,
-      context.fluid(70, 120),
-    ),
-    child: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxW),
-        child: SizedBox(width: double.infinity, child: child),
-      ),
-    ),
-  );
-}
-
-/// Apertura fotografica: foto scura, mirino, titolo e passaggi.
-/// Sfuma in basso nel nero della pagina.
-class _Hero extends StatelessWidget {
-  const _Hero({required this.image, required this.step});
+/// Titolo e invito, con una foto accanto su schermi larghi.
+class _Header extends StatelessWidget {
+  const _Header({required this.image});
   final String image;
-  final int step;
 
   @override
   Widget build(BuildContext context) {
-    final navH = context.fluid(66, 88);
-    final g = context.gutter;
-    // Su telefono il testo va su più righe: serve un po' più di altezza.
-    final h = (context.screenH * 0.56).clamp(
-      context.isPhone ? 470.0 : 380.0,
-      560.0,
-    );
-    final steps = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _StepDot(n: 1, text: 'Scegli', active: step >= 1),
-        Container(
-          width: 36,
-          height: 1,
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          color: Palette.paper.withValues(alpha: 0.3),
-        ),
-        _StepDot(n: 2, text: 'Contatti', active: step >= 2),
-      ],
-    );
     final text = Column(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const MaskReveal(
-          child: Tag('Preventivo gratuito', color: Palette.paper),
-        ),
-        SizedBox(height: context.fluid(12, 16)),
+        const MaskReveal(child: Tag('Preventivo gratuito')),
+        SizedBox(height: context.fluid(14, 20)),
         MaskReveal(
           delay: 120,
           child: Text(
-            'RACCONTACI IL TUO EVENTO',
-            style: display(
-              context.fluid(26, 44),
-              color: Palette.paper,
-              spacing: 0.08,
-            ),
+            'RACCONTACI\nIL TUO EVENTO',
+            style: display(context.fluid(30, 54), spacing: 0.08, height: 1.08),
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: context.fluid(12, 18)),
         MaskReveal(
           delay: 240,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Text(
-              'Scegli cosa ti serve e lasciaci i tuoi contatti: '
-              'ti richiamiamo noi con una proposta su misura.',
-              style: display(
-                context.fluid(16, 19),
-                color: Palette.paper.withValues(alpha: 0.8),
-                italic: true,
-                height: 1.4,
-              ),
+          child: Text(
+            'Bastano due minuti: compila i campi e ti richiamiamo noi con una '
+            'proposta su misura. Gratuito e senza impegno.',
+            style: display(
+              context.fluid(17, 20),
+              color: Palette.stone,
+              italic: true,
+              height: 1.45,
             ),
           ),
         ),
       ],
     );
-    return SizedBox(
-      height: h,
-      child: ClipRect(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            const ColoredBox(color: Palette.ink),
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 1.1, end: 1.0),
-              duration: const Duration(seconds: 3),
-              curve: Curves.easeOutCubic,
-              builder: (_, s, child) => Transform.scale(scale: s, child: child),
-              child: SizedBox.expand(
-                child: PhotoImage(
-                  image,
-                  dark: true,
-                  alignment: const Alignment(0, -0.2),
-                ),
-              ),
-            ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x99000000),
-                    Color(0x80000000),
-                    Color(0xF20B0B0B),
-                    Palette.ink,
-                  ],
-                  stops: [0, 0.45, 0.88, 1],
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(g * 0.7, navH + 6, g * 0.7, 18),
-              child: const Viewfinder(
-                color: Color(0x80FFFFFF),
-                length: 24,
-                stroke: 1,
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                g + 8,
-                navH,
-                g + 8,
-                context.fluid(44, 60),
-              ),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: _maxW - 16),
-                  child: context.isTablet
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            text,
-                            const SizedBox(height: 22),
-                            FittedBox(fit: BoxFit.scaleDown, child: steps),
-                          ],
-                        )
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(child: text),
-                            steps,
-                          ],
-                        ),
-                ),
-              ),
-            ),
-          ],
+    if (context.isTablet || image.trim().isEmpty) return text;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(flex: 6, child: text),
+        SizedBox(width: context.fluid(40, 80)),
+        Expanded(
+          flex: 5,
+          child: Reveal(
+            child: AspectRatio(aspectRatio: 3 / 2, child: PhotoImage(image)),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
 
-class _StepDot extends StatelessWidget {
-  const _StepDot({required this.n, required this.text, required this.active});
-  final int n;
-  final String text;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        width: 26,
-        height: 26,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: active ? Palette.paper : Colors.transparent,
-          border: Border.all(
-            color: active
-                ? Palette.paper
-                : Palette.paper.withValues(alpha: 0.4),
-          ),
-        ),
-        child: Text(
-          '$n',
-          style: body(
-            12,
-            color: active ? Palette.ink : _muted,
-            weight: FontWeight.w500,
-            height: 1,
-          ),
-        ),
-      ),
-      const SizedBox(width: 8),
-      Text(
-        text.toUpperCase(),
-        style: label(10.5, color: active ? Palette.paper : _muted),
-      ),
-    ],
-  );
-}
-
-/// Scheda scura con numero di passaggio e titolo.
-class _Card extends StatelessWidget {
-  const _Card({
+/// Una parte del modulo, con il suo numero.
+class _Step extends StatelessWidget {
+  const _Step({
     super.key,
     required this.number,
     required this.title,
     required this.child,
-    this.trailing,
+    this.hint,
   });
-  final String number;
+  final int number;
   final String title;
+  final String? hint;
   final Widget child;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    final pad = context.fluid(18, 36);
-    final heading = Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Numerazione da fotogramma di pellicola, come nella home.
-        Text(
-          '0${number}A',
-          style: cameraText(11, color: const Color(0xFFE8C27A)),
-        ),
-        Container(
-          width: 1,
-          height: 22,
-          margin: const EdgeInsets.symmetric(horizontal: 14),
-          color: _line,
-        ),
-        Flexible(
-          child: Text(
-            title.toUpperCase(),
-            style: display(
-              context.fluid(17, 21),
-              color: Palette.paper,
-              weight: FontWeight.w400,
-              spacing: 0.1,
-            ),
-          ),
-        ),
-      ],
-    );
-    return Container(
-      padding: EdgeInsets.all(pad),
-      decoration: BoxDecoration(
-        color: _card,
-        border: Border.all(color: _line),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (trailing == null || context.isPhone) ...[
-            heading,
-            if (trailing != null) ...[const SizedBox(height: 16), trailing!],
-          ] else
-            Row(
-              children: [
-                Expanded(child: heading),
-                trailing!,
-              ],
-            ),
-          SizedBox(height: context.fluid(20, 30)),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _Segmented extends StatelessWidget {
-  const _Segmented({required this.custom, required this.onChanged});
-  final bool custom;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget item(String text, bool active, VoidCallback onTap) => Expanded(
-      child: Semantics(
-        button: true,
-        selected: active,
-        label: text,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: onTap,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              height: 38,
+        Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
               alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: active ? Palette.paper : Colors.transparent,
-                borderRadius: BorderRadius.circular(40),
+              decoration: const BoxDecoration(
+                color: Palette.ink,
+                shape: BoxShape.circle,
               ),
               child: Text(
-                text.toUpperCase(),
-                style: label(10.5, color: active ? Palette.ink : Palette.paper),
+                '$number',
+                style: body(
+                  13,
+                  color: Palette.paper,
+                  weight: FontWeight.w600,
+                  height: 1,
+                ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-    return Container(
-      width: 300,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        border: Border.all(color: _line),
-        borderRadius: BorderRadius.circular(40),
-      ),
-      child: Row(
-        children: [
-          item('Pacchetti', !custom, () => onChanged(false)),
-          item('Su misura', custom, () => onChanged(true)),
-        ],
-      ),
-    );
-  }
-}
-
-/// Spunta circolare di selezione.
-class _Check extends StatelessWidget {
-  const _Check({required this.selected});
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 200),
-    width: 26,
-    height: 26,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: selected ? Palette.paper : Colors.black.withValues(alpha: 0.45),
-      border: Border.all(
-        color: selected ? Palette.paper : const Color(0x99FFFFFF),
-      ),
-    ),
-    child: AnimatedOpacity(
-      opacity: selected ? 1 : 0,
-      duration: const Duration(milliseconds: 200),
-      child: const Icon(Icons.check_rounded, size: 16, color: Palette.ink),
-    ),
-  );
-}
-
-int _cols(
-  BuildContext c, {
-  required int phone,
-  required int tablet,
-  required int desk,
-}) => c.isPhone ? phone : (c.isTablet ? tablet : desk);
-
-/// Griglia di schede di uguale larghezza.
-class _Grid extends StatelessWidget {
-  const _Grid({required this.cols, required this.children, this.gap = 16});
-  final int cols;
-  final double gap;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, box) {
-      final w = (box.maxWidth - gap * (cols - 1)) / cols;
-      return Wrap(
-        spacing: gap,
-        runSpacing: gap,
-        children: [for (final c in children) SizedBox(width: w, child: c)],
-      );
-    },
-  );
-}
-
-class _PackageGrid extends StatelessWidget {
-  const _PackageGrid({
-    super.key,
-    required this.state,
-    required this.selectedId,
-    required this.onTap,
-    required this.onCustom,
-  });
-  final AppState state;
-  final String? selectedId;
-  final ValueChanged<ServicePackage> onTap;
-  final VoidCallback onCustom;
-
-  @override
-  Widget build(BuildContext context) {
-    final pkgs = state.activePackages;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _Grid(
-          cols: _cols(
-            context,
-            phone: 1,
-            tablet: 2,
-            desk: pkgs.length < 4 ? pkgs.length : 4,
-          ),
-          gap: context.fluid(12, 18),
-          children: [
-            for (final p in pkgs)
-              _PackageCard(
-                state: state,
-                pkg: p,
-                selected: p.id == selectedId,
-                onTap: () => onTap(p),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title.toUpperCase(),
+                style: display(
+                  context.fluid(17, 20),
+                  weight: FontWeight.w400,
+                  spacing: 0.1,
+                ),
               ),
+            ),
           ],
         ),
-        const SizedBox(height: 18),
-        HoverLink(
-          'Preferisci scegliere voce per voce? Componi su misura →',
-          style: body(14, color: _muted, weight: FontWeight.w500),
-          onTap: onCustom,
-        ),
+        if (hint != null) ...[
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(left: 42),
+            child: Text(hint!, style: body(13.5, color: Palette.stone)),
+          ),
+        ],
+        SizedBox(height: context.fluid(16, 22)),
+        child,
       ],
     );
   }
 }
 
-class _PackageCard extends StatefulWidget {
-  const _PackageCard({
-    required this.state,
-    required this.pkg,
-    required this.selected,
-    required this.onTap,
-  });
-  final AppState state;
-  final ServicePackage pkg;
-  final bool selected;
-  final VoidCallback onTap;
+class _Divider extends StatelessWidget {
+  const _Divider();
 
   @override
-  State<_PackageCard> createState() => _PackageCardState();
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.symmetric(vertical: context.fluid(22, 32)),
+    child: Container(height: 1, color: Palette.line),
+  );
 }
 
-class _PackageCardState extends State<_PackageCard> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = widget.pkg;
-    final sel = widget.selected;
-    final names = [
-      for (final id in p.serviceIds)
-        if (widget.state.serviceById(id)?.active ?? false)
-          widget.state.serviceById(id)!.name,
-    ];
-    return Semantics(
-      button: true,
-      selected: sel,
-      label: 'Pacchetto ${p.name}',
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            decoration: BoxDecoration(
-              color: Palette.ink,
-              border: Border.all(
-                color: sel ? Palette.paper : (_hover ? _muted : _line),
-                width: sel ? 1.5 : 1,
-              ),
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AspectRatio(
-                  aspectRatio: 3 / 2,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      PhotoImage(p.image),
-                      // Selezionare = "mettere a fuoco".
-                      FocusFrame(
-                        active: sel || _hover,
-                        length: 16,
-                        inset: 12,
-                        focusPoint: sel,
-                      ),
-                      if (p.featured)
-                        Positioned(
-                          left: 12,
-                          top: 12,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            color: Palette.paper,
-                            child: Text(
-                              'PIÙ SCELTO',
-                              style: label(9, color: Palette.ink),
-                            ),
-                          ),
-                        ),
-                      Positioned(
-                        right: 12,
-                        top: 12,
-                        child: _Check(selected: sel),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        p.name.toUpperCase(),
-                        style: display(
-                          19,
-                          color: Palette.paper,
-                          weight: FontWeight.w400,
-                          spacing: 0.1,
-                        ),
-                      ),
-                      if (p.tagline.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          p.tagline,
-                          style: body(13.5, color: _muted, height: 1.4),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      Container(height: 1, color: _line),
-                      const SizedBox(height: 12),
-                      for (final n in names)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.only(top: 3),
-                                child: Icon(
-                                  Icons.check_rounded,
-                                  size: 14,
-                                  color: _muted,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  n,
-                                  style: body(
-                                    13.5,
-                                    color: const Color(0xD9F6F5F2),
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ServiceGrid extends StatelessWidget {
-  const _ServiceGrid({
-    super.key,
-    required this.state,
+/// Servizi come pulsanti a pillola, raggruppati per categoria.
+class _ServicePicker extends StatelessWidget {
+  const _ServicePicker({
+    required this.services,
     required this.selected,
-    required this.onTap,
+    required this.error,
+    required this.onToggle,
   });
-  final AppState state;
+  final List<ServiceItem> services;
   final Set<String> selected;
-  final ValueChanged<String> onTap;
+  final String? error;
+  final ValueChanged<String> onToggle;
 
   @override
   Widget build(BuildContext context) {
-    final services = state.activeServices;
     final cats = <String>[];
     for (final s in services) {
       if (!cats.contains(s.category)) cats.add(s.category);
@@ -1141,57 +790,62 @@ class _ServiceGrid extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var c = 0; c < cats.length; c++) ...[
-          if (c > 0) const SizedBox(height: 26),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: Text(
-              cats[c].toUpperCase(),
-              style: label(10.5, color: _muted),
+          if (c > 0) const SizedBox(height: 18),
+          if (cats.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                cats[c].toUpperCase(),
+                style: label(10, color: Palette.stone),
+              ),
             ),
-          ),
-          _Grid(
-            cols: _cols(context, phone: 2, tablet: 3, desk: 4),
-            gap: context.fluid(10, 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               for (final s in services.where((e) => e.category == cats[c]))
-                _ServiceTile(
-                  service: s,
+                _Choice(
+                  text: s.name,
                   selected: selected.contains(s.id),
-                  onTap: () => onTap(s.id),
+                  onTap: () => onToggle(s.id),
                 ),
             ],
           ),
+        ],
+        if (error != null) ...[
+          const SizedBox(height: 12),
+          Text(error!, style: body(13, color: Palette.error)),
         ],
       ],
     );
   }
 }
 
-class _ServiceTile extends StatefulWidget {
-  const _ServiceTile({
-    required this.service,
+class _Choice extends StatefulWidget {
+  const _Choice({
+    required this.text,
     required this.selected,
     required this.onTap,
   });
-  final ServiceItem service;
+  final String text;
   final bool selected;
   final VoidCallback onTap;
 
   @override
-  State<_ServiceTile> createState() => _ServiceTileState();
+  State<_Choice> createState() => _ChoiceState();
 }
 
-class _ServiceTileState extends State<_ServiceTile> {
+class _ChoiceState extends State<_Choice> {
   bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    final s = widget.service;
     final sel = widget.selected;
     return Semantics(
       button: true,
       selected: sel,
-      label: s.name,
+      label: widget.text,
+      excludeSemantics: true,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hover = true),
@@ -1199,50 +853,34 @@ class _ServiceTileState extends State<_ServiceTile> {
         child: GestureDetector(
           onTap: widget.onTap,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(6),
+            duration: const Duration(milliseconds: 180),
+            padding: EdgeInsets.fromLTRB(sel ? 12 : 16, 10, 16, 10),
             decoration: BoxDecoration(
-              color: Palette.ink,
+              color: sel ? Palette.ink : Palette.paper,
+              borderRadius: BorderRadius.circular(40),
               border: Border.all(
-                color: sel ? Palette.paper : (_hover ? _muted : _line),
-                width: sel ? 1.5 : 1,
+                color: sel || _hover ? Palette.ink : Palette.lineStrong,
               ),
-              borderRadius: BorderRadius.circular(3),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                AspectRatio(
-                  aspectRatio: 4 / 3,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      PhotoImage(s.image),
-                      FocusFrame(
-                        active: sel,
-                        length: 12,
-                        inset: 8,
-                        focusPoint: true,
-                      ),
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: _Check(selected: sel),
-                      ),
-                    ],
+                if (sel) ...[
+                  const Icon(
+                    Icons.check_rounded,
+                    size: 16,
+                    color: Palette.paper,
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 10, 6, 6),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
                   child: Text(
-                    s.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    widget.text,
                     style: body(
-                      13.5,
-                      color: Palette.paper,
+                      14,
+                      color: sel ? Palette.paper : Palette.ink,
                       weight: FontWeight.w500,
-                      height: 1.35,
+                      height: 1.2,
                     ),
                   ),
                 ),
@@ -1255,200 +893,63 @@ class _ServiceTileState extends State<_ServiceTile> {
   }
 }
 
-/// Riepilogo della selezione, in cima al modulo.
-class _Summary extends StatelessWidget {
-  const _Summary({
-    required this.state,
-    required this.ids,
-    required this.package,
-    required this.error,
-    required this.onRemove,
-  });
-  final AppState state;
-  final List<String> ids;
-  final ServicePackage? package;
-  final String? error;
-  final ValueChanged<String> onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Palette.ink,
-        border: Border.all(color: error != null ? _error : _line),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            ids.isEmpty
-                ? 'LA TUA SELEZIONE'
-                : (package != null
-                      ? 'PACCHETTO ${package!.name.toUpperCase()}'
-                      : 'SU MISURA · ${ids.length} VOCI'),
-            style: label(10.5, color: _muted),
-          ),
-          const SizedBox(height: 10),
-          if (ids.isEmpty)
-            Text(
-              'Non hai ancora scelto nulla: seleziona un pacchetto o dei servizi qui sopra.',
-              style: body(14, color: _muted),
-            )
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final id in ids)
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      border: Border.all(color: _line),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            state.serviceById(id)?.name ?? '—',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: body(13, color: Palette.paper, height: 1.2),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Semantics(
-                          container: true,
-                          button: true,
-                          label: 'Rimuovi ${state.serviceById(id)?.name ?? ''}',
-                          excludeSemantics: true,
-                          child: InkResponse(
-                            onTap: () => onRemove(id),
-                            radius: 14,
-                            child: const Padding(
-                              padding: EdgeInsets.all(2),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 15,
-                                color: _muted,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          if (error != null) ...[
-            const SizedBox(height: 10),
-            Text(error!, style: body(13.5, color: _error)),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SelectionBar extends StatelessWidget {
-  const _SelectionBar({
-    required this.count,
-    required this.packageName,
-    required this.onNext,
-  });
-  final int count;
-  final String? packageName;
-  final VoidCallback onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final bottom = MediaQuery.paddingOf(context).bottom;
-    return Material(
-      color: _card,
-      shape: const Border(top: BorderSide(color: _line)),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          context.gutter,
-          10,
-          context.gutter,
-          10 + bottom,
-        ),
-        child: Row(
-          children: [
-            const BrandMark(height: 16),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                packageName != null
-                    ? 'Pacchetto $packageName'
-                    : '$count ${count == 1 ? 'servizio scelto' : 'servizi scelti'}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: body(14.5, color: Palette.paper),
-              ),
-            ),
-            PillButton(
-              'Avanti',
-              onDark: true,
-              icon: Icons.arrow_downward_rounded,
-              onTap: onNext,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DateField extends StatelessWidget {
-  const _DateField({
-    required this.pickerTheme,
+class _Privacy extends StatelessWidget {
+  const _Privacy({
+    super.key,
     required this.value,
+    required this.error,
     required this.onChanged,
   });
-
-  /// Il calendario a comparsa resta chiaro, come il resto dei dialoghi.
-  final ThemeData pickerTheme;
-  final DateTime? value;
-  final ValueChanged<DateTime?> onChanged;
+  final bool value;
+  final bool error;
+  final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final text = value == null
-        ? ''
-        : DateFormat('d MMMM y', 'it_IT').format(value!);
-    return InkWell(
-      onTap: () async {
-        final now = DateTime.now();
-        final d = await showDatePicker(
-          context: context,
-          initialDate: value ?? now.add(const Duration(days: 30)),
-          firstDate: now,
-          lastDate: now.add(const Duration(days: 365 * 4)),
-          locale: const Locale('it', 'IT'),
-          builder: (_, child) => Theme(data: pickerTheme, child: child!),
-        );
-        if (d != null) onChanged(d);
-      },
-      child: InputDecorator(
-        isEmpty: value == null,
-        decoration: InputDecoration(
-          labelText: 'Data (facoltativa)',
-          suffixIcon: value == null
-              ? const Icon(Icons.calendar_today_outlined, size: 18)
-              : IconButton(
-                  tooltip: 'Rimuovi data',
-                  icon: const Icon(Icons.close_rounded, size: 18),
-                  onPressed: () => onChanged(null),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onChanged(!value),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 28,
+                height: 28,
+                child: Checkbox(
+                  value: value,
+                  side: BorderSide(
+                    color: error ? Palette.error : Palette.ink,
+                    width: 1.4,
+                  ),
+                  onChanged: (v) => onChanged(v ?? false),
                 ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Acconsento al trattamento dei miei dati per essere '
+                    'ricontattato. *',
+                    style: body(14, color: Palette.stone),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Text(text, style: body(16, color: Palette.paper)),
-      ),
+        if (error)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 38),
+            child: Text(
+              'Serve il consenso per inviare la richiesta.',
+              style: body(13, color: Palette.error),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -1466,58 +967,39 @@ class _Success extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(context.fluid(26, 48)),
           decoration: BoxDecoration(
-            color: _card,
-            border: Border.all(color: _line),
-            borderRadius: BorderRadius.circular(4),
+            color: Palette.ivory,
+            border: Border.all(color: Palette.line),
+            borderRadius: BorderRadius.circular(10),
           ),
-          child: Stack(
+          child: Column(
             children: [
-              const Positioned.fill(
-                child: Viewfinder(
-                  color: Color(0x80FFFFFF),
-                  length: 18,
-                  stroke: 1,
-                ),
+              const BrandMark(height: 40),
+              const SizedBox(height: 22),
+              const Tag('Richiesta inviata'),
+              const SizedBox(height: 16),
+              Text(
+                'Grazie, ${quote.firstName}',
+                textAlign: TextAlign.center,
+                style: display(context.fluid(28, 38)),
               ),
-              Column(
+              const SizedBox(height: 12),
+              Text(
+                'Ti richiameremo al ${quote.phone} per parlarne insieme.',
+                textAlign: TextAlign.center,
+                style: body(15.5, color: Palette.stone),
+              ),
+              const SizedBox(height: 28),
+              Wrap(
+                spacing: 18,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  const BrandMark(height: 30),
-                  const SizedBox(height: 22),
-                  const Tag('Richiesta inviata', color: Palette.paper),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Grazie, ${quote.firstName}',
-                    textAlign: TextAlign.center,
-                    style: display(context.fluid(28, 38), color: Palette.paper),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Ti richiameremo al ${quote.phone} per parlarne insieme.',
-                    textAlign: TextAlign.center,
-                    style: body(15.5, color: _muted),
-                  ),
-                  const SizedBox(height: 28),
-                  Wrap(
-                    spacing: 18,
-                    runSpacing: 12,
-                    alignment: WrapAlignment.center,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      PillButton(
-                        'Torna alla home',
-                        onDark: true,
-                        onTap: () => context.go('/'),
-                      ),
-                      HoverLink(
-                        'Nuova richiesta',
-                        style: body(
-                          14.5,
-                          color: Palette.paper,
-                          weight: FontWeight.w500,
-                        ),
-                        onTap: onNew,
-                      ),
-                    ],
+                  PillButton('Torna alla home', onTap: () => context.go('/')),
+                  HoverLink(
+                    'Nuova richiesta',
+                    style: body(14.5, weight: FontWeight.w500),
+                    onTap: onNew,
                   ),
                 ],
               ),

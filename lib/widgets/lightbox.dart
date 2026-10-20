@@ -14,7 +14,7 @@ Future<void> showPhotoLightbox(
 ) {
   return showGeneralDialog(
     context: context,
-    barrierColor: Colors.black,
+    barrierColor: Palette.paper,
     barrierDismissible: true,
     barrierLabel: 'Chiudi',
     transitionDuration: const Duration(milliseconds: 400),
@@ -57,7 +57,6 @@ class _LightboxState extends State<_Lightbox> {
   @override
   Widget build(BuildContext context) {
     final p = widget.photos[_i];
-    final accent = Theme.of(context).colorScheme.primary;
     final meta = [
       p.category,
       p.location,
@@ -80,7 +79,7 @@ class _LightboxState extends State<_Lightbox> {
         return KeyEventResult.handled;
       },
       child: Material(
-        color: Colors.black,
+        color: Palette.paper,
         child: Stack(
           children: [
             PageView.builder(
@@ -99,7 +98,6 @@ class _LightboxState extends State<_Lightbox> {
                   child: PhotoImage(
                     widget.photos[i].url,
                     fit: BoxFit.contain,
-                    dark: true,
                   ),
                 ),
               ),
@@ -122,7 +120,7 @@ class _LightboxState extends State<_Lightbox> {
                           overflow: TextOverflow.ellipsis,
                           style: display(
                             context.fluid(26, 40),
-                            color: Palette.paper,
+                            color: Palette.ink,
                             italic: true,
                           ),
                         ),
@@ -130,7 +128,7 @@ class _LightboxState extends State<_Lightbox> {
                           const SizedBox(height: 6),
                           Text(
                             meta.toUpperCase(),
-                            style: label(10.5, color: Palette.ash),
+                            style: label(10.5, color: Palette.stone),
                           ),
                         ],
                       ],
@@ -138,7 +136,7 @@ class _LightboxState extends State<_Lightbox> {
                   ),
                   Text(
                     '${(_i + 1).toString().padLeft(2, '0')} / ${widget.photos.length.toString().padLeft(2, '0')}',
-                    style: label(11, color: accent),
+                    style: label(11, color: context.accentInk),
                   ),
                 ],
               ),
@@ -152,7 +150,7 @@ class _LightboxState extends State<_Lightbox> {
                 icon: const Icon(
                   Icons.close_rounded,
                   size: 30,
-                  color: Palette.paper,
+                  color: Palette.ink,
                 ),
               ),
             ),
@@ -166,7 +164,7 @@ class _LightboxState extends State<_Lightbox> {
                     onPressed: () => _go(-1),
                     tooltip: 'Foto precedente',
                     iconSize: 40,
-                    color: Palette.paper,
+                    color: Palette.ink,
                     icon: const Icon(Icons.chevron_left_rounded),
                   ),
                 ),
@@ -180,7 +178,7 @@ class _LightboxState extends State<_Lightbox> {
                     onPressed: () => _go(1),
                     tooltip: 'Foto successiva',
                     iconSize: 40,
-                    color: Palette.paper,
+                    color: Palette.ink,
                     icon: const Icon(Icons.chevron_right_rounded),
                   ),
                 ),

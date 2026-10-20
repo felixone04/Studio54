@@ -1,12 +1,13 @@
-# Studio Lumen – sito per studio fotografico (Flutter Web)
+# Studio 54 – sito per studio fotografico (Flutter Web)
 
 Sito vetrina + preventivi + area admin, scritto in Flutter (solo web).
 
 | Pagina | Percorso | Cosa fa |
 |---|---|---|
-| Home | `/#/` | Hero a carosello, manifesto, "La mostra" (galleria d'arte con lightbox), servizi, banner preventivo, footer con info e contatti |
-| Preventivo | `/#/preventivo` | Scelta servizi (pacchetti pronti o "crea il tuo"), nessun prezzo esposto, form di richiamata |
-| Biografia | `/#/biografia` | Storia dello studio, tappe, team |
+| Home | `/#/` | Carosello di sole foto orizzontali (intere, 4 secondi ciascuna), manifesto, "La mostra" (galleria con lightbox), footer con info e contatti |
+| Lavori | `/#/lavori` | Elenco filtrabile per evento, stagione e tipo di location; il dettaglio mostra solo le foto in collage |
+| Preventivo | `/#/preventivo` | Modulo unico: evento (tipo, data, luogo), servizi, contatti; campi obbligatori con controllo dei caratteri |
+| Biografia | `/#/biografia` | Storia dello studio e metodo di lavoro |
 | Admin | `/#/admin` | Gestione di tutto il sito, richieste e calendario |
 
 ## Avvio
@@ -30,7 +31,8 @@ Al primo accesso (`/#/admin`) si crea la password. Sezioni:
 - **Servizi e prodotti** – aggiungi/modifica/ordina/nascondi; il prezzo è facoltativo e **solo interno**
 - **Pacchetti** – combinazioni pronte di servizi
 - **Galleria** – foto della mostra e del carosello (caricamento da computer o URL)
-- **Pagina Home / Biografia e team / Identità e contatti** – tutti i testi, le immagini, i contatti, il colore di accento e i tipi di festa del modulo
+- **Lavori** – foto, didascalie, evento, stagione (automatica dal mese) e tipo di location (masseria, mare, montagna…)
+- **Pagina Home / Biografia / Identità e contatti** – tutti i testi, le immagini, i contatti, il colore di accento e i tipi di festa del modulo
 - **Impostazioni** – Client ID Google, password, backup/ripristino
 
 ## Google Calendar

@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:studio_fotografico/data/seed.dart';
 import 'package:studio_fotografico/models/models.dart';
 import 'package:studio_fotografico/state/app_state.dart';
+import 'package:studio_fotografico/theme/app_theme.dart';
 import 'package:studio_fotografico/widgets/common.dart';
 
 import 'support/data.dart';
@@ -142,6 +143,23 @@ void main() {
       w.cover = 'copertina.jpg';
       expect(w.coverUrl, 'copertina.jpg');
       expect(Work(title: 't').coverUrl, '');
+    });
+
+    test('stagione: scelta a mano, altrimenti dal mese della data', () {
+      expect(seasonFromDate('Giugno 2024'), 'Estate');
+      expect(seasonFromDate('12 dicembre 2023'), 'Inverno');
+      expect(seasonFromDate('MARZO'), 'Primavera');
+      expect(seasonFromDate('Ottobre'), 'Autunno');
+      expect(seasonFromDate('2024'), '');
+      final w = Work(title: 't', date: 'Agosto 2025');
+      expect(w.seasonLabel, 'Estate');
+      w.season = 'Autunno';
+      expect(w.seasonLabel, 'Autunno');
+      expect(Work.fromJson(w.toJson()).season, 'Autunno');
+      // Lavori salvati prima dei filtri: campi vuoti.
+      final old = Work.fromJson({'title': 'x'});
+      expect(old.season, '');
+      expect(old.setting, '');
     });
 
     test('ogni nuovo lavoro e ogni foto hanno un id diverso', () {
@@ -320,12 +338,12 @@ void main() {
 
       await tester.tap(find.text('LAVORI'));
       await settle(tester);
-      expect(find.text('OGNI LAVORO,\nUNA MOSTRA'), findsOneWidget);
+      expect(find.text('OGNI LAVORO,\nUNA STORIA'), findsOneWidget);
       expect(navLink(tester, 'LAVORI').active, isTrue);
       expect(navLink(tester, 'HOME').active, isFalse);
 
       await goTo(tester, '/lavori/w-sofia-luca');
-      expect(find.text('SCHEDA'), findsOneWidget);
+      expect(find.text('SOFIA & LUCA'), findsOneWidget);
       expect(navLink(tester, 'LAVORI').active, isTrue);
       await disposeApp(tester);
     });
@@ -352,7 +370,7 @@ void main() {
       await tester.tap(find.text('LAVORI'));
       await settle(tester);
       expect(find.text('BIOGRAFIA'), findsNothing);
-      expect(find.text('OGNI LAVORO,\nUNA MOSTRA'), findsOneWidget);
+      expect(find.text('OGNI LAVORO,\nUNA STORIA'), findsOneWidget);
 
       // Nel menu aperto dai lavori la voce corrente è evidenziata.
       await tester.tap(find.text('MENU'));
@@ -364,11 +382,12 @@ void main() {
           matching: find.text('LAVORI'),
         ),
       );
-      expect(active.style!.color!.a, greaterThan(current.style!.color!.a));
+      expect(active.style!.color, Palette.ink);
+      expect(current.style!.color, isNot(Palette.ink));
       await tester.tap(find.text('BIOGRAFIA'));
       await settle(tester);
       expect(find.text('MENU'), findsOneWidget);
-      expect(find.text('OGNI LAVORO,\nUNA MOSTRA'), findsNothing);
+      expect(find.text('OGNI LAVORO,\nUNA STORIA'), findsNothing);
       await disposeApp(tester);
     });
   });
@@ -425,19 +444,57 @@ void main() {
         expect(find.text('GIULIA & MARCO'), findsNothing);
         expect(find.text('SOFIA & LUCA'), findsNothing);
         expect(find.text('NOTTE D\'ESTATE'), findsNothing);
+        expect(find.text('01 LAVORO TROVATO'), findsOneWidget);
 
         await tapShown(tester, find.text('MATRIMONIO').first);
         expect(find.text('GIULIA & MARCO'), findsOneWidget);
         expect(find.text('SOFIA & LUCA'), findsOneWidget);
         expect(find.text('IL BATTESIMO DI LEO'), findsNothing);
 
-        await tapShown(tester, find.text('TUTTI'));
+        // "Tutti" del primo gruppo (Evento).
+        await tapShown(tester, find.text('TUTTI').first);
         for (final t in [...all, 'NOTTE D\'ESTATE']) {
           expect(find.text(t), findsOneWidget, reason: t);
         }
         await disposeApp(tester);
       },
     );
+
+    testWidgets('filtri per stagione e location, insieme e azzerati', (
+      tester,
+    ) async {
+      final s = await loadState();
+      await pumpApp(tester, s, location: '/lavori');
+      for (final g in ['STAGIONE', 'LOCATION']) {
+        expect(find.text(g), findsOneWidget, reason: g);
+      }
+      // "EVENTO" è sia il titolo del gruppo sia un tipo di lavoro.
+      expect(find.text('EVENTO'), findsWidgets);
+      // La stagione si ricava dal mese ("Dicembre 2023" → Inverno).
+      await tapShown(tester, find.text('INVERNO').first);
+      expect(find.text('ELENA & DAVIDE'), findsOneWidget);
+      expect(find.text('ANNA & PAOLO'), findsNothing);
+
+      // Primavera: il battesimo (aprile) e la masseria (maggio).
+      await tapShown(tester, find.text('PRIMAVERA').first);
+      expect(find.text('IL BATTESIMO DI LEO'), findsOneWidget);
+      expect(find.text('ANNA & PAOLO'), findsOneWidget);
+      // + Masseria: resta solo quello in masseria.
+      await tapShown(tester, find.text('MASSERIA').first);
+      expect(find.text('ANNA & PAOLO'), findsOneWidget);
+      expect(find.text('IL BATTESIMO DI LEO'), findsNothing);
+      // Un secondo tocco toglie la scelta.
+      await tapShown(tester, find.text('MASSERIA').first);
+      expect(find.text('IL BATTESIMO DI LEO'), findsOneWidget);
+
+      // Nessun risultato, poi "Azzera filtri".
+      await tapShown(tester, find.text('MONTAGNA').first);
+      expect(find.text('Nessun lavoro con questi filtri.'), findsOneWidget);
+      await tapShown(tester, find.text('AZZERA FILTRI'));
+      expect(find.text('AZZERA FILTRI'), findsNothing);
+      expect(find.text('06 LAVORI'), findsNWidgets(2));
+      await disposeApp(tester);
+    });
 
     testWidgets('tipi scritti con maiuscole diverse sono un solo filtro', (
       tester,
@@ -482,9 +539,9 @@ void main() {
       await pumpApp(tester, s, location: '/lavori');
       await tapShown(tester, find.text('SOFIA & LUCA'));
       await settle(tester);
-      expect(find.text('SCHEDA'), findsOneWidget);
-      expect(find.text('Toscana'), findsOneWidget);
-      expect(find.text('OGNI LAVORO,\nUNA MOSTRA'), findsNothing);
+      expect(find.text('← TUTTI I LAVORI'), findsNWidgets(2));
+      expect(find.textContaining('TOSCANA'), findsOneWidget);
+      expect(find.text('OGNI LAVORO,\nUNA STORIA'), findsNothing);
       await disposeApp(tester);
     });
 
@@ -493,35 +550,32 @@ void main() {
     ) async {
       final s = await loadState();
       await pumpApp(tester, s, location: '/lavori', size: const Size(360, 640));
-      // La grana sopra la pagina non deve bloccare i tocchi.
       await tapShown(tester, find.text('03 SCATTI'));
       await settle(tester);
-      expect(find.text('SCHEDA'), findsOneWidget);
+      expect(find.text('← TUTTI I LAVORI'), findsNWidgets(2));
       expect(find.text('Il battesimo di Leo'.toUpperCase()), findsWidgets);
       await disposeApp(tester);
     });
   });
 
   group('dettaglio lavoro', () {
-    testWidgets('scheda, tavole numerate e foto a tutto schermo', (
+    testWidgets('solo foto: titolo, una riga di dati, tavole e lightbox', (
       tester,
     ) async {
       final s = await loadState();
       final w = s.workById('w-giulia-marco')!;
       await pumpApp(tester, s, location: '/lavori/w-giulia-marco');
 
-      expect(find.text('SCHEDA'), findsOneWidget);
-      for (final (k, v) in [
-        ('TIPO', w.category),
-        ('LUOGO', w.location),
-        ('DATA', w.date),
-        ('REALIZZATO', w.credits),
-        ('SCATTI', '06'),
-      ]) {
-        expect(find.text(k), findsOneWidget, reason: k);
-        expect(find.text(v), findsWidgets, reason: v);
-      }
-      expect(find.text(w.story), findsOneWidget);
+      expect(find.text('GIULIA & MARCO'), findsOneWidget);
+      expect(
+        find.text(
+          'MATRIMONIO  ·  MARE  ·  ESTATE  ·  COSTA TIRRENICA  ·  GIUGNO 2024',
+        ),
+        findsOneWidget,
+      );
+      // Nessun testo lungo: il racconto resta nell'elenco.
+      expect(find.text(w.story), findsNothing);
+      expect(find.text('SCHEDA'), findsNothing);
       expect(find.textContaining('TAV. '), findsNWidgets(w.photos.length));
       expect(find.text('TAV. 06'), findsOneWidget);
 
@@ -563,15 +617,20 @@ void main() {
       // Dall'ultimo si torna al primo.
       final first = s.workById(ids.first)!;
       expect(find.text(first.title.toUpperCase()), findsOneWidget);
+      final second = s.workById(ids[1])!;
+      final third = s.workById(ids[2])!;
       await tapShown(tester, find.text('LAVORO SUCCESSIVO'));
       await settle(tester);
-      expect(find.text(first.story), findsOneWidget);
+      // Sul primo: il suo titolo in alto e il secondo come successivo.
+      expect(find.text(first.title.toUpperCase()), findsOneWidget);
+      expect(find.text(second.title.toUpperCase()), findsOneWidget);
 
       // E dal primo al secondo.
-      final second = s.workById(ids[1])!;
       await tapShown(tester, find.text('LAVORO SUCCESSIVO'));
       await settle(tester);
-      expect(find.text(second.story), findsOneWidget);
+      expect(find.text(second.title.toUpperCase()), findsOneWidget);
+      expect(find.text(third.title.toUpperCase()), findsOneWidget);
+      expect(find.text(first.title.toUpperCase()), findsNothing);
       await disposeApp(tester);
     });
 
@@ -593,7 +652,8 @@ void main() {
       final s = await _withWorks([_work('a', 'Alfa')]);
       await pumpApp(tester, s, location: '/lavori/a');
       expect(find.text('LAVORO SUCCESSIVO'), findsNothing);
-      expect(find.text('← TUTTI I LAVORI'), findsOneWidget);
+      // In alto e in fondo alla pagina.
+      expect(find.text('← TUTTI I LAVORI'), findsNWidgets(2));
       await disposeApp(tester);
     });
 
@@ -610,7 +670,7 @@ void main() {
       await tapShown(tester, find.text('← TUTTI I LAVORI'));
       await settle(tester);
       expect(find.text('ALFA'), findsOneWidget);
-      expect(find.text('OGNI LAVORO,\nUNA MOSTRA'), findsOneWidget);
+      expect(find.text('OGNI LAVORO,\nUNA STORIA'), findsOneWidget);
       await disposeApp(tester);
     });
 
@@ -621,22 +681,14 @@ void main() {
       await disposeApp(tester);
     });
 
-    testWidgets('lavoro senza foto né testi: nessuna tavola, scheda minima', (
-      tester,
-    ) async {
+    testWidgets('lavoro senza foto né dati: solo il titolo', (tester) async {
       final s = await _withWorks([
         Work(id: 'x', title: 'Solo titolo'),
         _work('y', 'Altro'),
       ]);
       await pumpApp(tester, s, location: '/lavori/x');
       expect(find.textContaining('TAV. '), findsNothing);
-      expect(find.text('SCATTI'), findsOneWidget);
-      expect(find.text('00'), findsOneWidget);
-      for (final k in ['TIPO', 'LUOGO', 'DATA', 'REALIZZATO']) {
-        expect(find.text(k), findsNothing, reason: k);
-      }
-      // Senza racconto si legge il titolo.
-      expect(find.text('Solo titolo'), findsOneWidget);
+      expect(find.text('SOLO TITOLO'), findsOneWidget);
       await disposeApp(tester);
     });
 
@@ -647,12 +699,74 @@ void main() {
       await pumpApp(tester, s, location: '/lavori/w-sofia-luca');
       final w = s.workById('w-sofia-luca')!;
       final edited = Work.fromJson(w.toJson())
-        ..story = 'Racconto riscritto'
+        ..title = 'Titolo riscritto'
         ..photos.removeLast();
       await s.setWorks([for (final e in s.works) e.id == w.id ? edited : e]);
       await settle(tester);
-      expect(find.text('Racconto riscritto'), findsOneWidget);
+      expect(find.text('TITOLO RISCRITTO'), findsOneWidget);
       expect(find.textContaining('TAV. '), findsNWidgets(3));
+      await disposeApp(tester);
+    });
+
+    testWidgets('collage: verticali e orizzontali composte senza tagli', (
+      tester,
+    ) async {
+      // Proporzioni note: 0 = orizzontale, poi verticale + due orizzontali,
+      // poi orizzontale + due verticali.
+      final ratios = [1.5, 0.67, 1.5, 1.5, 1.5, 0.67, 0.67];
+      final w = Work(
+        id: 'c',
+        title: 'Collage',
+        photos: [
+          for (var i = 0; i < ratios.length; i++)
+            WorkPhoto(id: 'c$i', url: 'https://example.com/c$i.jpg'),
+        ],
+      );
+      for (var i = 0; i < ratios.length; i++) {
+        PhotoAspects.instance.debugSet(w.photos[i].url, ratios[i]);
+      }
+      addTearDown(PhotoAspects.instance.debugClear);
+      final s = await _withWorks([w, _work('y', 'Altro')]);
+      await pumpApp(tester, s, location: '/lavori/c');
+
+      Rect photo(int n) => tester.getRect(
+        find.byWidgetPredicate(
+          (e) => e is PhotoImage && e.url == w.photos[n - 1].url,
+        ),
+      );
+      // Ogni foto conserva le sue proporzioni (nessun taglio).
+      for (var i = 0; i < ratios.length; i++) {
+        final r = photo(i + 1);
+        expect(r.width / r.height, closeTo(ratios[i], 0.02), reason: '$i');
+      }
+      // La prima occupa tutta la larghezza.
+      final full = photo(1).width;
+      // Verticale a sinistra, alta quanto le due orizzontali accanto.
+      expect(photo(2).left, lessThan(photo(3).left));
+      expect(photo(3).left, closeTo(photo(4).left, 0.5));
+      expect(photo(4).top, greaterThan(photo(3).bottom));
+      expect(photo(2).width + photo(3).width, lessThan(full));
+      // Orizzontale e due verticali sulla stessa riga, stessa altezza.
+      expect(photo(5).top, closeTo(photo(6).top, 0.5));
+      expect(photo(6).top, closeTo(photo(7).top, 0.5));
+      expect(photo(5).height, closeTo(photo(7).height, 0.5));
+      await disposeApp(tester);
+    });
+
+    testWidgets('su telefono le foto sono una sotto l\'altra', (tester) async {
+      final s = await loadState();
+      await pumpApp(
+        tester,
+        s,
+        location: '/lavori/w-giulia-marco',
+        size: const Size(390, 844),
+      );
+      final plates = find.textContaining('TAV. ');
+      final xs = {
+        for (final e in plates.evaluate())
+          tester.getTopLeft(find.byWidget(e.widget)).dx.round(),
+      };
+      expect(xs, hasLength(1));
       await disposeApp(tester);
     });
   });
@@ -736,8 +850,20 @@ void main() {
       expect(btn('su', 1).onPressed, isNotNull);
 
       await tester.enterText(field('Titolo *'), 'Elena & Paolo');
-      await tester.enterText(field('Tipo (es. Matrimonio)'), 'Matrimonio');
+      await tester.enterText(field('Evento (es. Matrimonio)'), 'Matrimonio');
+      await tester.enterText(field('Data (es. Giugno 2024)'), 'Luglio 2025');
       await tester.enterText(field('Luogo'), 'Puglia');
+      await tester.pump();
+      // La stagione si propone dalla data; la location dai suggerimenti.
+      expect(find.text('Dalla data: Estate'), findsOneWidget);
+      await tapShown(tester, find.widgetWithText(ChoiceChip, 'Masseria'));
+      expect(
+        tester
+            .widget<TextField>(find.widgetWithText(TextField, 'Masseria'))
+            .controller!
+            .text,
+        'Masseria',
+      );
       await tester.tap(find.text('Salva'));
       await settle(tester, 800);
 
@@ -747,6 +873,9 @@ void main() {
       expect(saved['title'], 'Elena & Paolo');
       expect(saved['category'], 'Matrimonio');
       expect(saved['location'], 'Puglia');
+      expect(saved['setting'], 'Masseria');
+      expect(saved['season'], '');
+      expect(s.works.first.seasonLabel, 'Estate');
       expect(saved['published'], isTrue);
       final photos = (saved['photos'] as List).cast<Map>();
       expect(photos.map((p) => p['url']), [
@@ -1032,7 +1161,7 @@ void main() {
 
   group('home', () {
     testWidgets(
-      'la foto d\'apertura cambia ogni 3 secondi e le frecce girano',
+      'la foto d\'apertura cambia ogni 4 secondi e le frecce girano',
       (tester) async {
         final s = await loadState();
         final n = s.heroPhotos.length.toString().padLeft(2, '0');
@@ -1040,11 +1169,11 @@ void main() {
         await pumpApp(tester, s, location: '/');
         expect(find.text('01 / $n'), findsOneWidget);
         // pumpApp ha già fatto passare 1,6 s.
-        await settle(tester, 1000);
+        await settle(tester, 2000);
         expect(find.text('01 / $n'), findsOneWidget);
         await settle(tester, 600);
         expect(find.text('02 / $n'), findsOneWidget);
-        await settle(tester, 3000);
+        await settle(tester, 4000);
         expect(find.text('03 / $n'), findsOneWidget);
 
         Finder arrow(String label) => find.bySemanticsLabel(label);
@@ -1061,14 +1190,104 @@ void main() {
         await tester.pump();
         expect(find.text('01 / $n'), findsOneWidget);
 
-        // Un tocco sulle frecce fa ripartire il conto dei 3 secondi.
-        await settle(tester, 2400);
+        // Un tocco sulle frecce fa ripartire il conto dei 4 secondi.
+        await settle(tester, 3400);
         expect(find.text('01 / $n'), findsOneWidget);
         await settle(tester, 800);
         expect(find.text('02 / $n'), findsOneWidget);
         await disposeApp(tester);
       },
     );
+
+    testWidgets('su telefono il carosello riempie lo schermo e si sfoglia', (
+      tester,
+    ) async {
+      final s = await loadState();
+      final n = s.heroPhotos.length.toString().padLeft(2, '0');
+      await pumpApp(tester, s, location: '/', size: const Size(390, 844));
+      final hero = s.heroPhotos.first;
+      // Foto, titolo, descrizione e comandi stanno tutti nel primo schermo.
+      // (Titolo e didascalia ricompaiono più giù, nella mostra.)
+      for (final f in [
+        find.text(hero.title).first,
+        find.text(hero.caption).first,
+        find.text('01 / $n'),
+        find.bySemanticsLabel('Foto successiva'),
+      ]) {
+        expect(f, findsOneWidget);
+        final r = tester.getRect(f);
+        expect(r.bottom, lessThanOrEqualTo(844));
+        expect(r.left, greaterThanOrEqualTo(0));
+        expect(r.right, lessThanOrEqualTo(390));
+      }
+      // La sezione successiva comincia sotto lo schermo.
+      expect(tester.getTopLeft(find.text('MANIFESTO')).dy, greaterThan(844));
+
+      // Un colpo di dito verso sinistra porta alla foto successiva.
+      await tester.fling(
+        find.bySemanticsLabel(hero.title).first,
+        const Offset(-200, 0),
+        800,
+      );
+      await settle(tester, 800);
+      expect(find.text('02 / $n'), findsOneWidget);
+      await disposeApp(tester);
+    });
+
+    testWidgets('nel carosello solo le foto orizzontali', (tester) async {
+      final s = await loadState();
+      final hero = s.heroPhotos;
+      final total = hero.length;
+      addTearDown(PhotoAspects.instance.debugClear);
+      // Una foto risulta verticale: esce dal carosello.
+      PhotoAspects.instance.debugSet(hero[1].url, 0.67);
+      PhotoAspects.instance.debugSet(hero[0].url, 1.5);
+      await pumpApp(tester, s, location: '/');
+      final left = (total - 1).toString().padLeft(2, '0');
+      expect(find.text('01 / $left'), findsOneWidget);
+      expect(find.bySemanticsLabel(hero[0].title), findsWidgets);
+      // Si scopre dopo, mentre gira: anche questa esce, e si resta sulla
+      // foto che si stava guardando.
+      PhotoAspects.instance.debugSet(hero[2].url, 0.8);
+      await tester.pump();
+      final fewer = (total - 2).toString().padLeft(2, '0');
+      expect(find.text('01 / $fewer'), findsOneWidget);
+      await disposeApp(tester);
+    });
+
+    testWidgets('biografia senza team, anche se ne restano i dati', (
+      tester,
+    ) async {
+      final s = await loadState(hugeData());
+      expect(s.content.team, isNotEmpty);
+      await pumpApp(tester, s, location: '/biografia');
+      await tester.drag(
+        find.byType(SingleChildScrollView).first,
+        const Offset(0, -100000),
+      );
+      await settle(tester, 800);
+      expect(find.textContaining('Il team'), findsNothing);
+      expect(find.textContaining('PERSONA 1'), findsNothing);
+      expect(find.text('IL METODO'), findsOneWidget);
+      await disposeApp(tester);
+    });
+
+    testWidgets('niente sezione servizi né scritte della fotocamera', (
+      tester,
+    ) async {
+      final s = await loadState();
+      await pumpApp(tester, s, location: '/');
+      await tester.drag(
+        find.byType(SingleChildScrollView).first,
+        const Offset(0, -100000),
+      );
+      await settle(tester, 800);
+      expect(find.textContaining('RAW'), findsNothing);
+      expect(find.textContaining('AF-S'), findsNothing);
+      expect(find.text(s.content.servicesTitle), findsNothing);
+      expect(find.text('Reportage di matrimonio'), findsNothing);
+      await disposeApp(tester);
+    });
 
     testWidgets('con una sola foto non c\'è scorrimento automatico', (
       tester,
@@ -1079,11 +1298,11 @@ void main() {
         ],
       });
       await pumpApp(tester, s, location: '/');
-      await settle(tester, 7000);
-      expect(find.text('01 / 01'), findsOneWidget);
-      await tester.tap(find.bySemanticsLabel('Foto successiva'));
-      await tester.pump();
-      expect(find.text('01 / 01'), findsOneWidget);
+      await settle(tester, 9000);
+      // La foto resta, senza contatore né frecce.
+      expect(find.text('Unica'), findsOneWidget);
+      expect(find.text('01 / 01'), findsNothing);
+      expect(find.bySemanticsLabel('Foto successiva'), findsNothing);
       await disposeApp(tester);
     });
 
@@ -1104,8 +1323,8 @@ void main() {
       await pumpApp(tester, s, location: '/');
       for (final (link, check) in [
         ('BIOGRAFIA', 'BIOGRAFIA'),
-        ('LAVORI', 'OGNI LAVORO,\nUNA MOSTRA'),
-        ('PREVENTIVO', 'LA TUA SELEZIONE'),
+        ('LAVORI', 'OGNI LAVORO,\nUNA STORIA'),
+        ('PREVENTIVO', 'RACCONTACI\nIL TUO EVENTO'),
       ]) {
         await tester.tap(find.text(link).first);
         await settle(tester);

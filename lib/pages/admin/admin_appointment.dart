@@ -85,6 +85,8 @@ class _AppointmentDialogState extends State<_AppointmentDialog> {
                 'Email: ${q.email}',
                 if (q.eventDate != null)
                   'Data evento: ${DateFormat('d MMMM y', 'it_IT').format(q.eventDate!)}',
+                if (q.location.trim().isNotEmpty)
+                  'Luogo evento: ${q.location.trim()}',
                 'Servizi: ${serviceNames(s.services, q.serviceIds) ?? '—'}',
                 if (q.message.isNotEmpty) 'Note: ${q.message}',
               ].join('\n'),

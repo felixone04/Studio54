@@ -398,14 +398,57 @@ class WorkPhoto {
   Map<String, dynamic> toJson() => {'id': id, 'url': url, 'caption': caption};
 }
 
-/// Un lavoro realizzato (un matrimonio, un evento…), raccontato come una
-/// piccola mostra: copertina, scheda, testo e sequenza di foto.
+/// Stagioni proposte nel filtro dei lavori.
+const seasons = ['Primavera', 'Estate', 'Autunno', 'Inverno'];
+
+/// Tipi di location suggeriti nell'area riservata (se ne possono scrivere
+/// anche altri).
+const settingSuggestions = [
+  'Masseria',
+  'Mare',
+  'Montagna',
+  'Natura',
+  'Lago',
+  'Campagna',
+  'Villa',
+  'Città',
+  'Chiesa',
+];
+
+const _monthSeason = {
+  'gennaio': 'Inverno',
+  'febbraio': 'Inverno',
+  'marzo': 'Primavera',
+  'aprile': 'Primavera',
+  'maggio': 'Primavera',
+  'giugno': 'Estate',
+  'luglio': 'Estate',
+  'agosto': 'Estate',
+  'settembre': 'Autunno',
+  'ottobre': 'Autunno',
+  'novembre': 'Autunno',
+  'dicembre': 'Inverno',
+};
+
+/// Stagione ricavata dal mese scritto nella data ("Giugno 2024" → Estate).
+String seasonFromDate(String date) {
+  final d = date.toLowerCase();
+  for (final e in _monthSeason.entries) {
+    if (d.contains(e.key)) return e.value;
+  }
+  return '';
+}
+
+/// Un lavoro realizzato (un matrimonio, un evento…): copertina, poche righe
+/// di presentazione e la sequenza delle foto.
 class Work {
   String id;
   String title;
-  String category;
+  String category; // tipo di evento, es. "Matrimonio"
   String location;
   String date; // testo libero, es. "Giugno 2024"
+  String season; // vuota = ricavata dalla data
+  String setting; // tipo di location, es. "Masseria", "Mare"
   String story;
   String credits; // cosa è stato realizzato, es. "Reportage · Album fine art"
   String cover;
@@ -417,6 +460,8 @@ class Work {
     this.category = '',
     this.location = '',
     this.date = '',
+    this.season = '',
+    this.setting = '',
     this.story = '',
     this.credits = '',
     this.cover = '',
@@ -430,12 +475,18 @@ class Work {
       ? cover
       : (photos.isEmpty ? '' : photos.first.url);
 
+  /// Stagione scelta, altrimenti quella del mese indicato nella data.
+  String get seasonLabel =>
+      season.trim().isNotEmpty ? season.trim() : seasonFromDate(date);
+
   factory Work.fromJson(Map<String, dynamic> j) => Work(
     id: j['id'],
     title: j['title'] ?? '',
     category: j['category'] ?? '',
     location: j['location'] ?? '',
     date: j['date'] ?? '',
+    season: j['season'] ?? '',
+    setting: j['setting'] ?? '',
     story: j['story'] ?? '',
     credits: j['credits'] ?? '',
     cover: j['cover'] ?? '',
@@ -451,6 +502,8 @@ class Work {
     'category': category,
     'location': location,
     'date': date,
+    'season': season,
+    'setting': setting,
     'story': story,
     'credits': credits,
     'cover': cover,
@@ -479,6 +532,7 @@ class QuoteRequest {
   String email;
   String eventType;
   DateTime? eventDate;
+  String location; // dove si svolge l'evento
   String message;
   List<String> serviceIds;
   String? packageId;
@@ -494,6 +548,7 @@ class QuoteRequest {
     required this.email,
     required this.eventType,
     this.eventDate,
+    this.location = '',
     this.message = '',
     required this.serviceIds,
     this.packageId,
@@ -513,6 +568,7 @@ class QuoteRequest {
     email: j['email'] ?? '',
     eventType: j['eventType'] ?? '',
     eventDate: DateTime.tryParse(j['eventDate'] ?? ''),
+    location: j['location'] ?? '',
     message: j['message'] ?? '',
     serviceIds: List<String>.from(j['serviceIds'] ?? const []),
     packageId: j['packageId'],
@@ -531,6 +587,7 @@ class QuoteRequest {
     'email': email,
     'eventType': eventType,
     'eventDate': eventDate?.toIso8601String(),
+    'location': location,
     'message': message,
     'serviceIds': serviceIds,
     'packageId': packageId,

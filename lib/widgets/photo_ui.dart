@@ -1,6 +1,3 @@
-import 'dart:math' as math;
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -10,87 +7,40 @@ import '../theme/app_theme.dart';
 
 // ------------------------------------------------------------------- marchio
 
-const _brandLabel = 'Studio Lumen · Wedding & Events';
+const brandLabel = 'Studio 54';
 
-/// Logo completo (diaframma, nome e "Wedding & Events").
-/// [onDark] = logo bianco per sfondi scuri, altrimenti nero.
+/// Logo completo "STUDIO 54", con l'inchiostro scuro su fondo trasparente:
+/// si appoggia direttamente sui toni chiari del sito.
+/// (Il logo su fondo nero è quello del caricamento, in web/splash.jpg.)
 class BrandLogo extends StatelessWidget {
-  const BrandLogo({super.key, this.width, this.height, this.onDark = true});
+  const BrandLogo({super.key, this.width, this.height});
   final double? width;
   final double? height;
-  final bool onDark;
 
   @override
   Widget build(BuildContext context) => Image.asset(
-    onDark ? 'assets/brand/logo_white.png' : 'assets/brand/logo_black.png',
+    'assets/brand/logo.png',
     width: width,
     height: height,
     fit: BoxFit.contain,
     filterQuality: FilterQuality.high,
-    semanticLabel: _brandLabel,
+    semanticLabel: brandLabel,
   );
 }
 
-/// Solo il diaframma del logo.
+/// Solo il "54" del logo.
 class BrandMark extends StatelessWidget {
-  const BrandMark({super.key, this.height = 24, this.onDark = true});
+  const BrandMark({super.key, this.height = 24});
   final double height;
-  final bool onDark;
 
   @override
   Widget build(BuildContext context) => Image.asset(
-    onDark ? 'assets/brand/mark_white.png' : 'assets/brand/mark_black.png',
+    'assets/brand/mark.png',
     height: height,
     fit: BoxFit.contain,
     filterQuality: FilterQuality.high,
     excludeFromSemantics: true,
   );
-}
-
-/// Diaframma + nome, per la barra di navigazione.
-class BrandWordmark extends StatelessWidget {
-  const BrandWordmark({
-    super.key,
-    required this.name,
-    this.height = 22,
-    this.onDark = true,
-    this.showName = true,
-  });
-  final String name;
-  final double height;
-  final bool onDark;
-  final bool showName;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = onDark ? Palette.paper : Palette.ink;
-    return Semantics(
-      label: name,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          BrandMark(height: height, onDark: onDark),
-          if (showName) ...[
-            SizedBox(width: height * 0.55),
-            Flexible(
-              child: Text(
-                name.toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: display(
-                  height * 0.74,
-                  color: color,
-                  weight: FontWeight.w400,
-                  spacing: 0.14,
-                  height: 1,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 // ---------------------------------------------------- richiami fotografici
@@ -262,129 +212,6 @@ class _ThirdsPainter extends CustomPainter {
   bool shouldRepaint(_ThirdsPainter o) => o.opacity != opacity;
 }
 
-/// Fila di perforazioni di una pellicola 35 mm.
-class Sprockets extends StatelessWidget {
-  const Sprockets({
-    super.key,
-    this.height = 22,
-    this.color = const Color(0xE6F6F5F2),
-  });
-  final double height;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: height,
-    width: double.infinity,
-    child: CustomPaint(painter: _SprocketPainter(color)),
-  );
-}
-
-class _SprocketPainter extends CustomPainter {
-  _SprocketPainter(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()..color = color;
-    final h = size.height * 0.42;
-    final w = h * 1.35;
-    const gap = 14.0;
-    final y = (size.height - h) / 2;
-    for (var x = gap / 2; x + w < size.width; x += w + gap) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, y, w, h),
-          Radius.circular(h * 0.22),
-        ),
-        p,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_SprocketPainter o) => o.color != color;
-}
-
-/// Grana della pellicola, leggerissima, da appoggiare sopra a una sezione.
-/// La trama si genera una sola volta e poi si ripete: costa pochissimo.
-class FilmGrain extends StatelessWidget {
-  const FilmGrain({super.key, this.intensity = 1});
-
-  /// 1 = grana normale (già molto discreta); 0 = assente.
-  final double intensity;
-
-  static ui.Image? _tile;
-  static bool _failed = false;
-
-  static ui.Image? _texture() {
-    if (_tile != null || _failed) return _tile;
-    try {
-      const size = 160;
-      final r = math.Random(7);
-      final rec = ui.PictureRecorder();
-      final c = Canvas(rec);
-      final p = Paint();
-      for (var i = 0; i < 2600; i++) {
-        final light = r.nextBool();
-        final a = 0.04 + r.nextDouble() * 0.09;
-        p.color = (light ? Colors.white : Colors.black).withValues(alpha: a);
-        c.drawRect(
-          Rect.fromLTWH(
-            r.nextInt(size).toDouble(),
-            r.nextInt(size).toDouble(),
-            r.nextDouble() < 0.2 ? 1.6 : 1,
-            r.nextDouble() < 0.2 ? 1.6 : 1,
-          ),
-          p,
-        );
-      }
-      _tile = rec.endRecording().toImageSync(size, size);
-    } catch (_) {
-      // Se il motore grafico non lo permette, semplicemente niente grana.
-      _failed = true;
-    }
-    return _tile;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tile = intensity <= 0 ? null : _texture();
-    if (tile == null) return const SizedBox.shrink();
-    return IgnorePointer(
-      child: RepaintBoundary(
-        child: CustomPaint(
-          size: Size.infinite,
-          painter: _GrainPainter(tile, intensity.clamp(0.0, 1.0)),
-        ),
-      ),
-    );
-  }
-}
-
-class _GrainPainter extends CustomPainter {
-  _GrainPainter(this.tile, this.intensity);
-  final ui.Image tile;
-  final double intensity;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..shader = ImageShader(
-        tile,
-        TileMode.repeated,
-        TileMode.repeated,
-        Matrix4.identity().storage,
-      )
-      ..color = Colors.white.withValues(alpha: intensity);
-    canvas.drawRect(Offset.zero & size, p);
-  }
-
-  @override
-  bool shouldRepaint(_GrainPainter o) =>
-      o.tile != tile || o.intensity != intensity;
-}
-
-/// Riga di testo stile display della fotocamera ("RAW · AF-S · 03/08").
-TextStyle cameraText(double size, {Color color = Palette.paper}) =>
+/// Riga di testo stile display della fotocamera (contatori, numeri).
+TextStyle cameraText(double size, {Color color = Palette.stone}) =>
     label(size, color: color, weight: FontWeight.w400, spacing: 0.18);

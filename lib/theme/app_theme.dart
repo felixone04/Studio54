@@ -3,21 +3,31 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Palette del marchio Studio Lumen: bianco e nero come il logo, con un
-/// accento discreto scelto dal titolare.
+/// Palette del marchio Studio 54: toni chiari e caldi (carta, avorio, lino)
+/// con l'inchiostro del logo, e un accento discreto scelto dal titolare.
 class Palette {
-  static const ink = Color(0xFF0B0B0B);
-  static const ink2 = Color(0xFF171717);
-  static const paper = Color(0xFFF6F5F2);
-  static const paper2 = Color(0xFFEAE8E3);
-  static const stone = Color(0xFF66645F); // testo secondario su chiaro
-  static const ash = Color(0xFF9E9C97); // testo secondario su nero
-  static const lineDark = Color(0x29FFFFFF);
-  static const lineLight = Color(0x1F000000);
+  /// Inchiostro caldo del logo: testi e segni.
+  static const ink = Color(0xFF1E1B17);
+
+  /// Fondo del sito (#FFFAF0).
+  static const paper = Color(0xFFFFFAF0);
+
+  /// Schede e superfici in rilievo (#FFFFF0).
+  static const ivory = Color(0xFFFFFFF0);
+
+  /// Sezioni alternate, segnaposto delle foto (#FAF0E6).
+  static const linen = Color(0xFFFAF0E6);
+
+  static const stone = Color(0xFF6B635A); // testo secondario
+  static const ash = Color(0xFF8F867C); // testo di contorno (etichette)
+  static const line = Color(0x241E1B17);
+  static const lineStrong = Color(0x591E1B17);
+  static const error = Color(0xFFB3261E);
 }
 
 /// Colori tra cui il titolare può scegliere l'accento del sito.
 const accentChoices = <String, int>{
+  'Sabbia': 0xFFB89B72,
   'Argento': 0xFFC9C5BC,
   'Bianco': 0xFFFFFFFF,
   'Oro': 0xFFD4A85A,
@@ -33,8 +43,8 @@ Color accentOnPaper(Color accent) {
 }
 
 extension AccentX on BuildContext {
-  Color get accent => Theme.of(this).colorScheme.primary;
-  Color get accentInk => accentOnPaper(Theme.of(this).colorScheme.primary);
+  Color get accent => Theme.of(this).colorScheme.tertiary;
+  Color get accentInk => accentOnPaper(accent);
 
   /// Colore del brand (uguale sul sito e nell'area riservata).
   Color get brand => Theme.of(this).colorScheme.tertiary;
@@ -85,37 +95,52 @@ TextStyle body(
 );
 
 class AppTheme {
-  /// Tema del sito pubblico (base chiara, sezioni scure colorate a mano).
+  /// Tema del sito pubblico: tutto chiaro, campi a riquadro ben leggibili.
   static ThemeData site(Color accent) {
     final base = ThemeData(
       brightness: Brightness.light,
       useMaterial3: true,
       colorScheme: ColorScheme.light(
-        primary: accent,
-        onPrimary: Palette.ink,
-        secondary: accent,
+        primary: Palette.ink,
+        onPrimary: Palette.paper,
+        secondary: accentOnPaper(accent),
         tertiary: accent,
         surface: Palette.paper,
         onSurface: Palette.ink,
-        error: const Color(0xFFB3261E),
+        onSurfaceVariant: Palette.stone,
+        error: Palette.error,
       ),
       scaffoldBackgroundColor: Palette.paper,
     );
-    UnderlineInputBorder u(Color c, [double w = 1]) => UnderlineInputBorder(
+    OutlineInputBorder b(Color c, [double w = 1]) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(6),
       borderSide: BorderSide(color: c, width: w),
     );
     return base.copyWith(
-      textTheme: GoogleFonts.jostTextTheme(base.textTheme)
-          .apply(bodyColor: Palette.ink, displayColor: Palette.ink),
+      textTheme: GoogleFonts.jostTextTheme(
+        base.textTheme,
+      ).apply(bodyColor: Palette.ink, displayColor: Palette.ink),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: Palette.ink,
+        selectionColor: accent.withValues(alpha: 0.35),
+        selectionHandleColor: Palette.ink,
+      ),
       inputDecorationTheme: InputDecorationTheme(
-        border: u(Palette.lineLight),
-        enabledBorder: u(const Color(0x55000000)),
-        focusedBorder: u(Palette.ink, 2),
-        errorBorder: u(const Color(0xFFB3261E)),
-        focusedErrorBorder: u(const Color(0xFFB3261E), 2),
+        filled: true,
+        fillColor: Palette.ivory,
+        border: b(Palette.lineStrong),
+        enabledBorder: b(Palette.lineStrong),
+        focusedBorder: b(Palette.ink, 1.6),
+        errorBorder: b(Palette.error),
+        focusedErrorBorder: b(Palette.error, 1.6),
         labelStyle: body(15, color: Palette.stone),
-        floatingLabelStyle: label(11, color: Palette.ink),
-        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        floatingLabelStyle: body(14, color: Palette.ink, weight: FontWeight.w500),
+        hintStyle: body(15, color: Palette.ash),
+        helperStyle: body(12.5, color: Palette.stone),
+        errorStyle: body(12.5, color: Palette.error),
+        suffixIconColor: Palette.stone,
+        prefixIconColor: Palette.stone,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       checkboxTheme: CheckboxThemeData(
         side: const BorderSide(color: Palette.ink, width: 1.4),
@@ -124,19 +149,25 @@ class AppTheme {
         ),
         checkColor: const WidgetStatePropertyAll(Palette.paper),
       ),
+      dropdownMenuTheme: const DropdownMenuThemeData(
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(Palette.ivory),
+        ),
+      ),
       dialogTheme: DialogThemeData(
         backgroundColor: Palette.paper,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: Palette.ink,
         contentTextStyle: body(14, color: Palette.paper),
       ),
-      datePickerTheme: DatePickerThemeData(
+      datePickerTheme: const DatePickerThemeData(
         backgroundColor: Palette.paper,
-        headerBackgroundColor: Palette.ink,
-        headerForegroundColor: Palette.paper,
+        headerBackgroundColor: Palette.linen,
+        headerForegroundColor: Palette.ink,
+        surfaceTintColor: Colors.transparent,
       ),
     );
   }
@@ -240,6 +271,9 @@ extension Responsive on BuildContext {
 
   /// Margine laterale delle sezioni.
   double get gutter => fluid(20, 72);
+
+  /// Altezza della barra di navigazione (con il logo in alto a sinistra).
+  double get navH => fluid(72, 100);
 
   /// Altezza utile per sezioni "a schermo intero" (mai troppo bassa né
   /// troppo alta, anche su schermi in orizzontale di telefoni).

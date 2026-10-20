@@ -21,6 +21,88 @@ Uint8List? _decode(String url) {
   }
 }
 
+/// Le foto di Unsplash si possono chiedere alla larghezza esatta che serve.
+String _withWidth(String url, int w) {
+  if (!url.contains('images.unsplash.com')) return url;
+  return url.contains(RegExp(r'[?&]w=\d+'))
+      ? url.replaceFirstMapped(RegExp(r'([?&])w=\d+'), (m) => '${m[1]}w=$w')
+      : '$url${url.contains('?') ? '&' : '?'}w=$w';
+}
+
+/// Proporzioni (larghezza / altezza) delle foto, lette una volta sola e
+/// ricordate: servono per il carosello (solo foto orizzontali) e per
+/// comporre il collage dei lavori senza tagliare le immagini.
+class PhotoAspects extends ChangeNotifier {
+  PhotoAspects._();
+  static final instance = PhotoAspects._();
+
+  final _known = <String, double>{};
+  final _pending = <String>{};
+
+  /// Proporzione nota, oppure null se non ancora letta (o illeggibile).
+  double? of(String url) => _known[url];
+
+  /// Vero solo quando si sa con certezza che la foto non è orizzontale.
+  bool notLandscape(String url) => (_known[url] ?? 1.5) <= 1.0;
+
+  void resolveAll(Iterable<String> urls) {
+    for (final u in urls) {
+      resolve(u);
+    }
+  }
+
+  void resolve(String url) {
+    if (url.trim().isEmpty || _known.containsKey(url) || !_pending.add(url)) {
+      return;
+    }
+    final ImageProvider provider;
+    if (url.startsWith('data:')) {
+      final bytes = _decode(url);
+      if (bytes == null) return;
+      provider = MemoryImage(bytes);
+    } else {
+      // Basta una versione piccola per conoscere le proporzioni.
+      provider = NetworkImage(
+        _withWidth(url, 480),
+        webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
+      );
+    }
+    final stream = provider.resolve(ImageConfiguration.empty);
+    late final ImageStreamListener l;
+    void done() => stream.removeListener(l);
+    l = ImageStreamListener(
+      (info, _) {
+        done();
+        try {
+          final w = info.image.width, h = info.image.height;
+          if (w > 0 && h > 0) {
+            _known[url] = w / h;
+            notifyListeners();
+          }
+        } catch (_) {
+          // Immagine mostrata dal browser senza accesso ai pixel: proporzioni
+          // sconosciute, la si tratta come orizzontale.
+        }
+      },
+      onError: (_, _) => done(),
+    );
+    stream.addListener(l);
+  }
+
+  /// Solo per i test.
+  @visibleForTesting
+  void debugSet(String url, double aspect) {
+    _known[url] = aspect;
+    notifyListeners();
+  }
+
+  @visibleForTesting
+  void debugClear() {
+    _known.clear();
+    _pending.clear();
+  }
+}
+
 /// Mostra un'immagine da URL web oppure da un caricamento locale (data URL).
 class PhotoImage extends StatelessWidget {
   const PhotoImage(
@@ -28,22 +110,16 @@ class PhotoImage extends StatelessWidget {
     super.key,
     this.fit = BoxFit.cover,
     this.alignment = Alignment.center,
-    this.dark = false,
   });
 
   final String url;
   final BoxFit fit;
   final Alignment alignment;
-  final bool dark;
 
-  Widget _placeholder() => ColoredBox(
-    color: dark ? Palette.ink2 : Palette.paper2,
+  Widget _placeholder() => const ColoredBox(
+    color: Palette.linen,
     child: Center(
-      child: Icon(
-        Icons.photo_camera_outlined,
-        color: dark ? Palette.ash : Palette.stone,
-        size: 28,
-      ),
+      child: Icon(Icons.photo_camera_outlined, color: Palette.ash, size: 28),
     ),
   );
 
@@ -61,8 +137,9 @@ class PhotoImage extends StatelessWidget {
     frameBuilder: (context, child, frame, sync) {
       if (sync) return child;
       // Durante il caricamento: solo il colore di fondo, poi dissolvenza.
+      // Con BoxFit.contain il fondo resta trasparente (si vede la pagina).
       return ColoredBox(
-        color: dark ? Palette.ink2 : Palette.paper2,
+        color: fit == BoxFit.contain ? Colors.transparent : Palette.linen,
         child: AnimatedOpacity(
           opacity: frame == null ? 0 : 1,
           duration: const Duration(milliseconds: 700),
@@ -88,21 +165,15 @@ class PhotoImage extends StatelessWidget {
         errorBuilder: (_, _, _) => _placeholder(),
       );
     }
-    // Le foto di Unsplash si possono chiedere alla larghezza esatta che
-    // serve: molto più leggere per miniature e telefoni.
+    // Le foto di Unsplash si chiedono alla larghezza che serve: molto più
+    // leggere per miniature e telefoni.
     if (!url.contains('images.unsplash.com')) return _network(url);
     return LayoutBuilder(
       builder: (context, box) {
         if (!box.maxWidth.isFinite) return _network(url);
         final px = box.maxWidth * MediaQuery.devicePixelRatioOf(context);
         final w = _steps.firstWhere((s) => s >= px, orElse: () => _steps.last);
-        final src = url.contains(RegExp(r'[?&]w=\d+'))
-            ? url.replaceFirstMapped(
-                RegExp(r'([?&])w=\d+'),
-                (m) => '${m[1]}w=$w',
-              )
-            : '$url${url.contains('?') ? '&' : '?'}w=$w';
-        return _network(src);
+        return _network(_withWidth(url, w));
       },
     );
   }
@@ -204,7 +275,7 @@ class Tag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = color == Palette.ink ? context.accentInk : context.accent;
+    final accent = context.accentInk;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -224,13 +295,12 @@ class Tag extends StatelessWidget {
 
 // ----------------------------------------------------------------- bottoni
 
-/// Bottone a pillola con freccia che scivola al passaggio del mouse.
+/// Bottone a pillola con freccia che ruota al passaggio del mouse.
 class PillButton extends StatefulWidget {
   const PillButton(
     this.text, {
     super.key,
     required this.onTap,
-    this.onDark = false,
     this.filled = true,
     this.big = false,
     this.loading = false,
@@ -238,7 +308,6 @@ class PillButton extends StatefulWidget {
   });
   final String text;
   final VoidCallback? onTap;
-  final bool onDark;
   final bool filled;
   final bool big;
   final bool loading;
@@ -253,16 +322,15 @@ class _PillButtonState extends State<PillButton> {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    final base = widget.onDark ? Palette.paper : Palette.ink;
+    const base = Palette.ink;
     final Color bg;
     final Color fg;
     if (widget.filled) {
-      bg = _hover ? accent : base;
-      fg = _hover ? Palette.ink : (widget.onDark ? Palette.ink : Palette.paper);
+      bg = _hover ? context.accent : base;
+      fg = _hover ? Palette.ink : Palette.paper;
     } else {
       bg = _hover ? base : Colors.transparent;
-      fg = _hover ? (widget.onDark ? Palette.ink : Palette.paper) : base;
+      fg = _hover ? Palette.paper : base;
     }
     final enabled = widget.onTap != null && !widget.loading;
     final h = widget.big ? 64.0 : 50.0;

@@ -1,16 +1,17 @@
 import '../models/models.dart';
 
 /// Foto d'esempio da Unsplash: il titolare le sostituisce con le proprie
-/// dall'area admin (Galleria).
+/// dall'area admin (Galleria). Nel carosello d'apertura vanno solo quelle
+/// orizzontali.
 String unsplash(String id, {int w = 1800}) =>
     'https://images.unsplash.com/photo-$id?auto=format&fit=crop&w=$w&q=80';
 
 class Seed {
-  static const accentSilver = 0xFFC9C5BC;
+  static const accentSand = 0xFFB89B72;
 
   static SiteContent content() => SiteContent(
-    studioName: 'Studio Lumen',
-    tagline: 'Wedding & Events',
+    studioName: 'Studio 54',
+    tagline: 'Fotografia di matrimoni ed eventi',
     heroKicker: 'Matrimoni · Eventi · Ritratti',
     heroTitle: 'Ogni scatto, un\'opera.',
     heroSubtitle: '',
@@ -57,31 +58,12 @@ class Seed {
         text: 'Galleria online, album e stampe fine art.',
       ),
     ],
-    team: [
-      TeamMember(
-        name: 'Nome Cognome',
-        role: 'Fondatore · Fotografo',
-        bio: '',
-        photo: unsplash('1507003211169-0a1dd7228f2d', w: 1000),
-      ),
-      TeamMember(
-        name: 'Nome Cognome',
-        role: 'Fotografa',
-        bio: '',
-        photo: unsplash('1544005313-94ddf0286df2', w: 1000),
-      ),
-      TeamMember(
-        name: 'Nome Cognome',
-        role: 'Album · Stampa',
-        bio: '',
-        photo: unsplash('1531746020798-e6953c6e8e04', w: 1000),
-      ),
-    ],
+    team: [],
     teamTitle: 'Il team',
     contacts: Contacts(
       phone: '+39 06 1234 5678',
       whatsapp: '+39 333 123 4567',
-      email: 'info@studiolumen.example',
+      email: 'info@studio54.example',
       address: 'Via Roma 12, 00100 Roma',
       hours: 'Lun–Ven 10–19 · Sabato su appuntamento',
       instagram: 'https://instagram.com/',
@@ -89,7 +71,7 @@ class Seed {
       vat: 'P.IVA 00000000000',
     ),
     footerNote: '',
-    accent: accentSilver,
+    accent: accentSand,
     eventTypes: [
       'Matrimonio',
       'Battesimo',
@@ -308,6 +290,7 @@ class Seed {
       category: 'Matrimonio',
       location: 'Costa tirrenica',
       date: 'Giugno 2024',
+      setting: 'Mare',
       story:
           'Una giornata di vento e di sale. Dai preparativi in una casa '
           'affacciata sul mare fino all\'ultimo ballo sulla spiaggia, '
@@ -320,11 +303,11 @@ class Seed {
         ),
         WorkPhoto(
           url: unsplash('1465495976277-4387d4b0b4c6', w: 2200),
-          caption: 'Le fedi, poco prima della cerimonia',
+          caption: 'Le fedi',
         ),
         WorkPhoto(
           url: unsplash('1583939003579-730e3918a45a', w: 2200),
-          caption: 'Pioggia di petali all\'uscita',
+          caption: 'Pioggia di petali',
         ),
         WorkPhoto(
           url: unsplash('1460978812857-470ed1c77af0', w: 2200),
@@ -332,11 +315,11 @@ class Seed {
         ),
         WorkPhoto(
           url: unsplash('1522673607200-164d1b6ce486', w: 2200),
-          caption: 'Gli sposi tra gli invitati',
+          caption: 'Tra gli invitati',
         ),
         WorkPhoto(
           url: unsplash('1519741497674-611481863552', w: 2200),
-          caption: 'L\'ultima luce del giorno',
+          caption: 'L\'ultima luce',
         ),
       ],
     ),
@@ -346,6 +329,7 @@ class Seed {
       category: 'Matrimonio',
       location: 'Toscana',
       date: 'Settembre 2023',
+      setting: 'Campagna',
       story:
           'Un casale tra le colline, cento palloncini e una promessa '
           'detta sottovoce. Un racconto tenero, fatto di sguardi e di '
@@ -376,6 +360,7 @@ class Seed {
       category: 'Cerimonia',
       location: 'Roma',
       date: 'Aprile 2024',
+      setting: 'Chiesa',
       story:
           'Una mattina di primavera in famiglia: la chiesa piena di luce, '
           'i nonni emozionati e un piccolo protagonista che non ha mai '
@@ -392,7 +377,7 @@ class Seed {
         ),
         WorkPhoto(
           url: unsplash('1452587925148-ce544e77e70d', w: 2200),
-          caption: 'L\'album, cucito a mano',
+          caption: 'Album cucito a mano',
         ),
       ],
     ),
@@ -402,6 +387,7 @@ class Seed {
       category: 'Evento',
       location: 'Milano',
       date: 'Luglio 2023',
+      setting: 'Città',
       story:
           'Una serata aziendale diventata concerto: luci, musica e mani '
           'al cielo. Foto consegnate la mattina dopo, pronte per i social.',
@@ -425,6 +411,90 @@ class Seed {
         ),
       ],
     ),
+    Work(
+      id: 'w-anna-paolo',
+      title: 'Anna & Paolo',
+      category: 'Matrimonio',
+      location: 'Valle d\'Itria, Puglia',
+      date: 'Maggio 2024',
+      setting: 'Masseria',
+      story:
+          'Pietra bianca, ulivi e una lunga tavolata sotto le stelle: una '
+          'festa in masseria raccontata dalla mattina fino a notte.',
+      credits: 'Reportage · Film dell\'evento · Album fine art',
+      photos: [
+        WorkPhoto(
+          url: unsplash('1519741497674-611481863552', w: 2200),
+          caption: 'Tra gli ulivi',
+        ),
+        WorkPhoto(
+          url: unsplash('1583939003579-730e3918a45a', w: 2200),
+          caption: 'Petali',
+        ),
+        WorkPhoto(
+          url: unsplash('1465495976277-4387d4b0b4c6', w: 2200),
+          caption: 'Le fedi',
+        ),
+        WorkPhoto(
+          url: unsplash('1460978812857-470ed1c77af0', w: 2200),
+          caption: 'Il velo',
+        ),
+        WorkPhoto(
+          url: unsplash('1516589178581-6cd7833ae3b2', w: 2200),
+          caption: 'Al tramonto',
+        ),
+        WorkPhoto(
+          url: unsplash('1544005313-94ddf0286df2', w: 2200),
+          caption: 'Luce d\'oro',
+        ),
+        WorkPhoto(
+          url: unsplash('1511795409834-ef04bbd61622', w: 2200),
+          caption: 'La tavolata',
+        ),
+        WorkPhoto(
+          url: unsplash('1522673607200-164d1b6ce486', w: 2200),
+          caption: 'Si balla',
+        ),
+      ],
+    ),
+    Work(
+      id: 'w-elena-davide',
+      title: 'Elena & Davide',
+      category: 'Matrimonio',
+      location: 'Dolomiti',
+      date: 'Dicembre 2023',
+      setting: 'Montagna',
+      story:
+          'Neve, legno e candele accese: un matrimonio d\'inverno in quota, '
+          'piccolo e caldissimo.',
+      credits: 'Reportage · Galleria online',
+      photos: [
+        WorkPhoto(
+          url: unsplash('1554048612-b6a482bc67e5', w: 2200),
+          caption: 'In quota',
+        ),
+        WorkPhoto(
+          url: unsplash('1537633552985-df8429e8048b', w: 2200),
+          caption: 'Il vento',
+        ),
+        WorkPhoto(
+          url: unsplash('1531746020798-e6953c6e8e04', w: 2200),
+          caption: 'Uno sguardo',
+        ),
+        WorkPhoto(
+          url: unsplash('1519225421980-715cb0215aed', w: 2200),
+          caption: 'I ricordi',
+        ),
+        WorkPhoto(
+          url: unsplash('1452587925148-ce544e77e70d', w: 2200),
+          caption: 'L\'album',
+        ),
+        WorkPhoto(
+          url: unsplash('1507003211169-0a1dd7228f2d', w: 2200),
+          caption: 'Lo sposo',
+        ),
+      ],
+    ),
   ];
 
   static List<GalleryPhoto> gallery() => [
@@ -438,6 +508,7 @@ class Seed {
       category: 'Matrimonio',
       location: 'Costa tirrenica',
       year: '2023',
+      inHero: false,
     ),
     GalleryPhoto(
       id: 'g2',
@@ -447,6 +518,7 @@ class Seed {
       category: 'Matrimonio',
       location: 'Toscana',
       year: '2024',
+      inHero: false,
     ),
     GalleryPhoto(
       id: 'g3',
@@ -483,6 +555,7 @@ class Seed {
       category: 'Ritratto',
       location: 'Campagna romana',
       year: '2024',
+      inHero: false,
     ),
     GalleryPhoto(
       id: 'g7',
@@ -492,6 +565,7 @@ class Seed {
       category: 'Ritratto',
       location: 'Studio',
       year: '2023',
+      inHero: false,
     ),
     GalleryPhoto(
       id: 'g8',
@@ -510,7 +584,6 @@ class Seed {
       category: 'Eventi',
       location: 'Milano',
       year: '2023',
-      inHero: false,
     ),
     GalleryPhoto(
       id: 'g10',

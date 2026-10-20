@@ -9,7 +9,7 @@ void main() {
     final s = await loadState();
     await pumpApp(tester, s);
     expect(
-      find.bySemanticsLabel('Studio Lumen · Wedding & Events'),
+      find.bySemanticsLabel(RegExp('Studio 54')),
       findsWidgets,
     );
     await disposeApp(tester);

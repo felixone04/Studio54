@@ -139,7 +139,7 @@ class AdminHomeEditor extends StatelessWidget {
       builder: (context, d, changed) => [
         Panel(
           title: 'Apertura',
-          subtitle: 'La frase sotto il logo.',
+          subtitle: 'La frase sotto il carosello (su computer e tablet).',
           child: field('Frase', d.heroTitle, (v) => d.heroTitle = v, changed),
         ),
         Panel(
@@ -180,20 +180,6 @@ class AdminHomeEditor extends StatelessWidget {
           ),
         ),
         Panel(
-          title: 'Servizi',
-          trailing: TextButton.icon(
-            onPressed: () => context.go('/admin/servizi'),
-            icon: const Icon(Icons.design_services_outlined, size: 18),
-            label: const Text('Gestisci i servizi'),
-          ),
-          child: field(
-            'Titolo',
-            d.servicesTitle,
-            (v) => d.servicesTitle = v,
-            changed,
-          ),
-        ),
-        Panel(
           title: 'Pagina preventivo',
           subtitle: 'La foto in apertura.',
           child: ImageField(
@@ -219,8 +205,8 @@ class AdminBioEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DraftEditor(
-      title: 'Biografia e team',
-      subtitle: 'La storia dello studio e le persone che lo compongono.',
+      title: 'Biografia',
+      subtitle: 'La storia dello studio e il metodo di lavoro.',
       builder: (context, d, changed) => [
         Panel(
           title: 'La storia',
@@ -258,7 +244,7 @@ class AdminBioEditor extends StatelessWidget {
               ),
               _gap,
               ImageField(
-                label: 'Immagine accanto al racconto',
+                label: 'Foto accanto al racconto',
                 aspect: 4 / 5,
                 value: d.bioImage,
                 onChanged: (v) {
@@ -270,15 +256,15 @@ class AdminBioEditor extends StatelessWidget {
           ),
         ),
         Panel(
-          title: 'Tappe del percorso',
-          subtitle: 'Una breve linea del tempo (anno, titolo, testo).',
+          title: 'Il metodo',
+          subtitle: 'I passaggi del lavoro (numero, titolo, testo).',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (var i = 0; i < d.timeline.length; i++)
                 ItemCard(
                   key: ObjectKey(d.timeline[i]),
-                  title: 'Tappa ${i + 1}',
+                  title: 'Passaggio ${i + 1}',
                   onUp: i == 0
                       ? null
                       : () {
@@ -302,7 +288,7 @@ class AdminBioEditor extends StatelessWidget {
                           SizedBox(
                             width: 110,
                             child: BoundField(
-                              label: 'Anno',
+                              label: 'Numero',
                               value: d.timeline[i].year,
                               onChanged: (v) {
                                 d.timeline[i].year = v;
@@ -340,7 +326,7 @@ class AdminBioEditor extends StatelessWidget {
                 onPressed: () {
                   d.timeline.add(
                     Milestone(
-                      year: '${DateTime.now().year}',
+                      year: (d.timeline.length + 1).toString().padLeft(2, '0'),
                       title: '',
                       text: '',
                     ),
@@ -348,106 +334,7 @@ class AdminBioEditor extends StatelessWidget {
                   changed();
                 },
                 icon: const Icon(Icons.add),
-                label: const Text('Aggiungi tappa'),
-              ),
-            ],
-          ),
-        ),
-        Panel(
-          title: 'Il team',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BoundField(
-                label: 'Titolo della sezione',
-                value: d.teamTitle,
-                onChanged: (v) {
-                  d.teamTitle = v;
-                  changed();
-                },
-              ),
-              const SizedBox(height: 22),
-              for (var i = 0; i < d.team.length; i++)
-                ItemCard(
-                  key: ObjectKey(d.team[i]),
-                  title: d.team[i].name.isEmpty
-                      ? 'Nuova persona'
-                      : d.team[i].name,
-                  onUp: i == 0
-                      ? null
-                      : () {
-                          d.team.insert(i - 1, d.team.removeAt(i));
-                          changed();
-                        },
-                  onDown: i == d.team.length - 1
-                      ? null
-                      : () {
-                          d.team.insert(i + 1, d.team.removeAt(i));
-                          changed();
-                        },
-                  onDelete: () {
-                    d.team.removeAt(i);
-                    changed();
-                  },
-                  child: Column(
-                    children: [
-                      FieldRow(
-                        children: [
-                          Expanded(
-                            child: BoundField(
-                              label: 'Nome e cognome',
-                              value: d.team[i].name,
-                              onChanged: (v) {
-                                d.team[i].name = v;
-                                changed();
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: BoundField(
-                              label: 'Ruolo',
-                              value: d.team[i].role,
-                              onChanged: (v) {
-                                d.team[i].role = v;
-                                changed();
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      _gap,
-                      BoundField(
-                        label: 'Breve presentazione',
-                        value: d.team[i].bio,
-                        maxLines: 3,
-                        onChanged: (v) {
-                          d.team[i].bio = v;
-                          changed();
-                        },
-                      ),
-                      _gap,
-                      ImageField(
-                        label: 'Foto',
-                        aspect: 4 / 5,
-                        value: d.team[i].photo,
-                        onChanged: (v) {
-                          d.team[i].photo = v;
-                          changed();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              OutlinedButton.icon(
-                onPressed: () {
-                  d.team.add(
-                    TeamMember(name: '', role: '', bio: '', photo: ''),
-                  );
-                  changed();
-                },
-                icon: const Icon(Icons.person_add_alt_1_rounded),
-                label: const Text('Aggiungi persona'),
+                label: const Text('Aggiungi passaggio'),
               ),
             ],
           ),

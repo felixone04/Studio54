@@ -152,6 +152,7 @@ class _QuoteCard extends StatelessWidget {
               child: Text(
                 '${q.eventType}'
                 '${q.eventDate != null ? ' · ${DateFormat('d MMM y', 'it_IT').format(q.eventDate!)}' : ''}'
+                '${q.location.trim().isNotEmpty ? ' · ${q.location.trim()}' : ''}'
                 ' · richiesta del $date',
                 style: const TextStyle(color: Colors.black54),
               ),

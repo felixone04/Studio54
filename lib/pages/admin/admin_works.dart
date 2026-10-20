@@ -122,8 +122,15 @@ class _WorkDialogState extends State<_WorkDialog> {
   late final Work _d = widget.existing == null
       ? Work(title: '')
       : Work.fromJson(widget.existing!.toJson());
+  late final _setting = TextEditingController(text: _d.setting);
   bool _busy = false;
   String? _photosError;
+
+  @override
+  void dispose() {
+    _setting.dispose();
+    super.dispose();
+  }
 
   Future<void> _upload() async {
     setState(() => _busy = true);
@@ -261,7 +268,7 @@ class _WorkDialogState extends State<_WorkDialog> {
                   children: [
                     Expanded(
                       child: text(
-                        'Tipo (es. Matrimonio)',
+                        'Evento (es. Matrimonio)',
                         _d.category,
                         (v) => _d.category = v,
                       ),
@@ -271,13 +278,73 @@ class _WorkDialogState extends State<_WorkDialog> {
                       child: text(
                         'Data (es. Giugno 2024)',
                         _d.date,
-                        (v) => _d.date = v,
+                        // Aggiorna la stagione suggerita qui sotto.
+                        (v) => setState(() => _d.date = v),
                       ),
                     ),
                   ],
                 ),
                 gap,
                 text('Luogo', _d.location, (v) => _d.location = v),
+                gap,
+                // Stagione e tipo di location servono ai filtri del sito.
+                FieldRow(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: seasons.contains(_d.season)
+                            ? _d.season
+                            : '',
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Stagione',
+                          helperText: _d.season.isEmpty
+                              ? (seasonFromDate(_d.date).isEmpty
+                                    ? 'Scrivi il mese nella data o scegli qui.'
+                                    : 'Dalla data: ${seasonFromDate(_d.date)}')
+                              : null,
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: '',
+                            child: Text('Automatica (dalla data)'),
+                          ),
+                          for (final s in seasons)
+                            DropdownMenuItem(value: s, child: Text(s)),
+                        ],
+                        onChanged: (v) => setState(() => _d.season = v ?? ''),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _setting,
+                        decoration: const InputDecoration(
+                          labelText: 'Tipo di location',
+                          helperText: 'Es. Masseria, Mare, Montagna, Natura…',
+                        ),
+                        onChanged: (v) => setState(() => _d.setting = v),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final s in settingSuggestions)
+                      ChoiceChip(
+                        label: Text(s),
+                        selected:
+                            _d.setting.trim().toLowerCase() == s.toLowerCase(),
+                        onSelected: (_) => setState(() {
+                          _d.setting = s;
+                          _setting.text = s;
+                        }),
+                      ),
+                  ],
+                ),
                 gap,
                 text(
                   'Cosa abbiamo realizzato',

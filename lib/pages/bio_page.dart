@@ -5,10 +5,10 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
-import '../widgets/photo_ui.dart';
 import '../widgets/sections.dart';
 import '../widgets/site_scaffold.dart';
 
+/// Biografia: poche parole, una foto, il metodo. Niente di più.
 class BioPage extends StatelessWidget {
   const BioPage({super.key});
 
@@ -23,305 +23,187 @@ class BioPage extends StatelessWidget {
 
     return SiteScaffold(
       location: '/biografia',
-      darkHero: true,
       children: [
-        PageHero(
-          image: c.bioImage,
-          title: c.bioTitle,
-          subtitle: c.bioIntro,
-          kicker: c.tagline,
-        ),
-        if (paragraphs.isNotEmpty) _Story(paragraphs: paragraphs),
-        if (c.timeline.isNotEmpty) _Timeline(items: c.timeline),
-        if (c.team.isNotEmpty) _Team(title: c.teamTitle, members: c.team),
+        _Intro(content: c, paragraphs: paragraphs),
+        if (c.timeline.isNotEmpty) _Method(items: c.timeline),
       ],
     );
   }
 }
 
-class _Story extends StatelessWidget {
-  const _Story({required this.paragraphs});
+class _Intro extends StatelessWidget {
+  const _Intro({required this.content, required this.paragraphs});
+  final SiteContent content;
   final List<String> paragraphs;
 
   @override
   Widget build(BuildContext context) {
-    final lead = Reveal(
-      child: Text(
-        paragraphs.first,
-        style: display(context.fluid(22, 32), height: 1.4),
-      ),
-    );
-    final rest = Column(
+    final c = content;
+    final text = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final p in paragraphs.skip(1))
-          Reveal(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Text(
-                p,
-                style: body(
-                  context.fluid(16, 19),
-                  color: Palette.stone,
-                  height: 1.75,
-                ),
+        MaskReveal(child: Tag(c.tagline.trim().isEmpty ? 'Chi siamo' : c.tagline)),
+        SizedBox(height: context.fluid(16, 24)),
+        MaskReveal(
+          delay: 120,
+          child: Text(
+            c.bioTitle.toUpperCase(),
+            style: display(context.fluid(34, 60), spacing: 0.08, height: 1.08),
+          ),
+        ),
+        if (c.bioIntro.trim().isNotEmpty) ...[
+          SizedBox(height: context.fluid(16, 22)),
+          MaskReveal(
+            delay: 240,
+            child: Text(
+              c.bioIntro,
+              style: display(
+                context.fluid(19, 26),
+                color: Palette.stone,
+                italic: true,
+                height: 1.4,
               ),
             ),
           ),
-      ],
-    );
-    return Section(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Tag('La storia', number: '01'),
-          SizedBox(height: context.fluid(28, 48)),
-          if (context.isTablet) ...[
-            lead,
-            SizedBox(height: context.fluid(24, 40)),
-            rest,
-          ] else
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 7, child: lead),
-                SizedBox(width: context.fluid(40, 120)),
-                Expanded(
-                  flex: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: rest,
-                  ),
+        ],
+        if (paragraphs.isNotEmpty) ...[
+          SizedBox(height: context.fluid(28, 44)),
+          Container(width: 48, height: 1, color: Palette.ink),
+          SizedBox(height: context.fluid(28, 44)),
+          for (var i = 0; i < paragraphs.length; i++)
+            Reveal(
+              delay: Duration(milliseconds: 80 * i),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Text(
+                  paragraphs[i],
+                  style: i == 0
+                      ? display(context.fluid(20, 25), height: 1.5)
+                      : body(
+                          context.fluid(16, 18),
+                          color: Palette.stone,
+                          height: 1.75,
+                        ),
                 ),
-              ],
+              ),
             ),
         ],
+      ],
+    );
+    final image = c.bioImage.trim().isEmpty
+        ? null
+        : Reveal(
+            child: AspectRatio(
+              aspectRatio: 4 / 5,
+              child: PhotoImage(c.bioImage),
+            ),
+          );
+
+    return Section(
+      top: context.fluid(40, 90),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1180),
+          child: context.isTablet || image == null
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    text,
+                    if (image != null) ...[
+                      SizedBox(height: context.fluid(20, 40)),
+                      image,
+                    ],
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 6, child: text),
+                    SizedBox(width: context.fluid(40, 110)),
+                    Expanded(flex: 5, child: image),
+                  ],
+                ),
+        ),
       ),
     );
   }
 }
 
-class _Timeline extends StatelessWidget {
-  const _Timeline({required this.items});
+/// Il metodo di lavoro, in quattro tempi.
+class _Method extends StatelessWidget {
+  const _Method({required this.items});
   final List<Milestone> items;
 
   @override
   Widget build(BuildContext context) {
-    final cols = context.isPhone ? 2 : (items.length >= 4 ? 4 : items.length);
+    final cols = context.isPhone ? 1 : (items.length >= 4 ? 4 : items.length);
     return Section(
-      color: Palette.ink,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Tag('Il metodo', number: '02', color: Palette.paper),
-          SizedBox(height: context.fluid(36, 70)),
-          LayoutBuilder(
-            builder: (context, box) {
-              final gap = context.fluid(16, 32);
-              final w = (box.maxWidth - gap * (cols - 1)) / cols;
-              return Wrap(
-                spacing: gap,
-                runSpacing: context.fluid(36, 56),
-                children: [
-                  for (var i = 0; i < items.length; i++)
-                    SizedBox(
-                      width: w,
-                      child: Reveal(
-                        delay: Duration(milliseconds: 100 * (i % cols)),
-                        child: Container(
-                          padding: const EdgeInsets.only(top: 18),
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              top: BorderSide(color: Palette.lineDark),
+      color: Palette.linen,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1180),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Tag('Il metodo'),
+              SizedBox(height: context.fluid(30, 56)),
+              LayoutBuilder(
+                builder: (context, box) {
+                  final gap = context.fluid(16, 32);
+                  final w = (box.maxWidth - gap * (cols - 1)) / cols;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: context.fluid(28, 48),
+                    children: [
+                      for (var i = 0; i < items.length; i++)
+                        SizedBox(
+                          width: w,
+                          child: Reveal(
+                            delay: Duration(milliseconds: 100 * (i % cols)),
+                            child: Container(
+                              padding: const EdgeInsets.only(top: 18),
+                              decoration: const BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(color: Palette.lineStrong),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      items[i].year,
+                                      style: display(
+                                        context.fluid(30, 48),
+                                        color: context.accentInk,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    items[i].title.toUpperCase(),
+                                    style: label(11),
+                                  ),
+                                  if (items[i].text.isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      items[i].text,
+                                      style: body(14.5, color: Palette.stone),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  items[i].year,
-                                  style: display(
-                                    context.fluid(34, 56),
-                                    color: Palette.paper,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                items[i].title.toUpperCase(),
-                                style: label(11, color: Palette.paper),
-                              ),
-                              if (items[i].text.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  items[i].text,
-                                  style: body(14, color: Palette.ash),
-                                ),
-                              ],
-                            ],
-                          ),
                         ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Team extends StatelessWidget {
-  const _Team({required this.title, required this.members});
-  final String title;
-  final List<TeamMember> members;
-
-  @override
-  Widget build(BuildContext context) {
-    final cols = context.isPhone ? 2 : 3;
-    return Section(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Tag('Le persone', number: '03'),
-          SizedBox(height: context.fluid(14, 22)),
-          Reveal(child: Text(title, style: display(context.fluid(32, 54)))),
-          SizedBox(height: context.fluid(36, 80)),
-          LayoutBuilder(
-            builder: (context, box) {
-              final gap = context.fluid(12, 32);
-              final w = (box.maxWidth - gap * (cols - 1)) / cols;
-              return Wrap(
-                spacing: gap,
-                runSpacing: context.fluid(32, 56),
-                children: [
-                  for (var i = 0; i < members.length; i++)
-                    SizedBox(
-                      width: w,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          top: !context.isPhone && i % cols == 1
-                              ? context.fluid(0, 100)
-                              : 0,
-                        ),
-                        child: Reveal(
-                          delay: Duration(milliseconds: 100 * (i % cols)),
-                          child: _Member(member: members[i]),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Member extends StatefulWidget {
-  const _Member({required this.member});
-  final TeamMember member;
-
-  @override
-  State<_Member> createState() => _MemberState();
-}
-
-class _MemberState extends State<_Member> {
-  bool _hover = false;
-
-  static const _identity = <double>[
-    1, 0, 0, 0, 0, //
-    0, 1, 0, 0, 0,
-    0, 0, 1, 0, 0,
-    0, 0, 0, 1, 0,
-  ];
-  static const _gray = <double>[
-    0.2126, 0.7152, 0.0722, 0, 0, //
-    0.2126, 0.7152, 0.0722, 0, 0,
-    0.2126, 0.7152, 0.0722, 0, 0,
-    0, 0, 0, 1, 0,
-  ];
-
-  ColorFilter _filter(double t) => ColorFilter.matrix([
-    for (var i = 0; i < 20; i++) _identity[i] + (_gray[i] - _identity[i]) * t,
-  ]);
-
-  @override
-  Widget build(BuildContext context) {
-    final m = widget.member;
-    final small = context.isPhone;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: () => setState(() => _hover = !_hover),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 3 / 4,
-              child: ClipRect(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 1, end: _hover ? 0 : 1),
-                      duration: const Duration(milliseconds: 600),
-                      builder: (_, t, child) => ColorFiltered(
-                        colorFilter: _filter(t),
-                        child: Transform.scale(
-                          scale: 1 + (1 - t) * 0.05,
-                          child: child,
-                        ),
-                      ),
-                      child: SizedBox.expand(
-                        child: PhotoImage(
-                          m.photo,
-                          alignment: Alignment.topCenter,
-                        ),
-                      ),
-                    ),
-                    // Messa a fuoco sul ritratto.
-                    FocusFrame(
-                      active: _hover,
-                      length: 16,
-                      inset: 12,
-                      focusPoint: true,
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                },
               ),
-            ),
-            SizedBox(height: small ? 10 : 16),
-            Text(
-              m.name.toUpperCase(),
-              style: display(
-                small ? 15 : context.fluid(17, 21),
-                weight: FontWeight.w400,
-                spacing: 0.08,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              m.role.toUpperCase(),
-              style: label(
-                small ? 9 : 10,
-                color: Palette.stone,
-                weight: FontWeight.w400,
-              ),
-            ),
-            if (m.bio.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(m.bio, style: body(14, color: Palette.stone)),
             ],
-          ],
+          ),
         ),
       ),
     );

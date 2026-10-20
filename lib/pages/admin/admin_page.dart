@@ -46,7 +46,7 @@ const _groups = <(String, List<_Section>)>[
     'Sito',
     [
       _Section('home', 'Pagina Home', Icons.web_outlined),
-      _Section('biografia', 'Biografia e team', Icons.history_edu_outlined),
+      _Section('biografia', 'Biografia', Icons.history_edu_outlined),
       _Section('contatti', 'Identità e contatti', Icons.badge_outlined),
     ],
   ),
@@ -233,36 +233,32 @@ class _LoginState extends State<_Login> {
     final poster = Stack(
       fit: StackFit.expand,
       children: [
-        PhotoImage(photo, dark: true),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0x33000000), Color(0xCC000000)],
-            ),
-          ),
-        ),
+        PhotoImage(photo),
         Padding(
           padding: EdgeInsets.all(wide ? 32 : 18),
           child: const Viewfinder(
-            color: Color(0x99FFFFFF),
+            color: Color(0xCCFFFAF0),
             length: 24,
             stroke: 1,
           ),
         ),
+        // Il logo su un cartoncino chiaro, leggibile su qualsiasi foto.
         Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: wide ? 40 : 24,
+              vertical: wide ? 28 : 16,
+            ),
+            decoration: BoxDecoration(
+              color: Palette.paper.withValues(alpha: 0.94),
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                BrandLogo(width: wide ? 340 : 200),
-                SizedBox(height: wide ? 22 : 12),
-                Text(
-                  'AREA RISERVATA',
-                  style: label(10.5, color: Palette.paper),
-                ),
+                BrandLogo(width: wide ? 220 : 130),
+                SizedBox(height: wide ? 18 : 10),
+                Text('AREA RISERVATA', style: label(10.5)),
               ],
             ),
           ),
@@ -365,13 +361,13 @@ class _ShellState extends State<_Shell> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Palette.ink,
-        foregroundColor: Palette.paper,
+        backgroundColor: Palette.linen,
+        foregroundColor: Palette.ink,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 0,
         title: Text(
           current.label,
-          style: display(24, color: Palette.paper, italic: true),
+          style: display(24, italic: true),
         ),
         actions: [
           IconButton(
@@ -383,7 +379,7 @@ class _ShellState extends State<_Shell> {
       ),
       drawer: Drawer(
         width: 290,
-        backgroundColor: Palette.ink,
+        backgroundColor: Palette.linen,
         shape: const RoundedRectangleBorder(),
         child: nav,
       ),
@@ -404,7 +400,7 @@ class _NavPanel extends StatelessWidget {
         .where((q) => q.status == QuoteStatus.nuova)
         .length;
     return Material(
-      color: Palette.ink,
+      color: Palette.linen,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -413,7 +409,7 @@ class _NavPanel extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(24, 30, 24, 26),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: BrandLogo(width: 168),
+                child: BrandLogo(width: 120),
               ),
             ),
             Expanded(
@@ -429,7 +425,7 @@ class _NavPanel extends StatelessWidget {
                           horizontal: 12,
                           vertical: 10,
                         ),
-                        color: Palette.lineDark,
+                        color: Palette.line,
                       ),
                     for (final sec in _groups[g].$2)
                       _NavItem(
@@ -444,7 +440,7 @@ class _NavPanel extends StatelessWidget {
                 ],
               ),
             ),
-            Container(height: 1, color: Palette.lineDark),
+            Container(height: 1, color: Palette.line),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
               child: Column(
@@ -494,7 +490,7 @@ class _NavItemState extends State<_NavItem> {
   @override
   Widget build(BuildContext context) {
     final sel = widget.selected;
-    final fg = sel || _hover ? Palette.paper : Palette.ash;
+    final fg = sel || _hover ? Palette.ink : Palette.stone;
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: MouseRegion(
@@ -509,8 +505,8 @@ class _NavItemState extends State<_NavItem> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: sel
-                  ? Colors.white.withValues(alpha: 0.09)
-                  : (_hover ? Colors.white.withValues(alpha: 0.04) : null),
+                  ? Palette.ink.withValues(alpha: 0.07)
+                  : (_hover ? Palette.ink.withValues(alpha: 0.04) : null),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -588,9 +584,9 @@ class _NavAction extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: Palette.ash),
+            Icon(icon, size: 18, color: Palette.stone),
             const SizedBox(width: 12),
-            Text(text, style: body(14, color: Palette.ash, height: 1.2)),
+            Text(text, style: body(14, color: Palette.stone, height: 1.2)),
           ],
         ),
       ),

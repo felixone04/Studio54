@@ -14,20 +14,12 @@ class HomePage extends StatelessWidget {
     final c = s.content;
     return SiteScaffold(
       location: '/',
-      darkHero: true,
-      logoHero: true,
       children: [
         HeroSlideshow(content: c, photos: s.heroPhotos),
         if (c.manifestoTitle.trim().isNotEmpty)
           Statement(text: c.manifestoTitle, number: '01'),
         if (s.gallery.isNotEmpty)
           GalleryWall(content: c, photos: s.gallery, number: '02'),
-        if (s.activeServices.isNotEmpty)
-          ServicesStrip(
-            title: c.servicesTitle,
-            services: s.activeServices,
-            number: '03',
-          ),
       ],
     );
   }
