@@ -398,13 +398,35 @@ class _FilterMenuState extends State<_FilterMenu> {
                         style: label(10, color: Palette.stone),
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        on ? sel : 'Tutti',
-                        style: display(
-                          17,
-                          italic: true,
-                          color: on ? Palette.ink : Palette.stone,
-                          height: 1.2,
+                      // Larghezza fissa, quella della scelta più lunga: le
+                      // voci accanto non si spostano cambiando la scelta.
+                      ConstrainedBox(
+                        // Nomi molto lunghi: si accorciano con i puntini.
+                        constraints: BoxConstraints(
+                          maxWidth: context.isPhone ? 150 : 220,
+                        ),
+                        child: Stack(
+                          children: [
+                            for (final v in ['Tutti', ...widget.values])
+                              Visibility(
+                                visible: on ? isSel(v) : v == 'Tutti',
+                                maintainSize: true,
+                                maintainAnimation: true,
+                                maintainState: true,
+                                child: Text(
+                                  v,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: display(
+                                    17,
+                                    italic: true,
+                                    color: on ? Palette.ink : Palette.stone,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 4),

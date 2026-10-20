@@ -542,6 +542,21 @@ void main() {
       await disposeApp(tester);
     });
 
+    testWidgets('scegliendo un filtro le altre voci restano ferme', (
+      tester,
+    ) async {
+      final s = await loadState();
+      await pumpApp(tester, s, location: '/lavori');
+      Offset at(String t) => tester.getTopLeft(find.text(t));
+      final before = (at('STAGIONE'), at('LOCATION'));
+      await pick(tester, 'evento', 'Matrimonio');
+      expect((at('STAGIONE'), at('LOCATION')), before);
+      await pick(tester, 'evento', 'Cerimonia');
+      expect((at('STAGIONE'), at('LOCATION')), before);
+      await pick(tester, 'stagione', 'Primavera');
+      expect(at('LOCATION'), before.$2);
+      await disposeApp(tester);
+    });
     testWidgets('tipi scritti con maiuscole diverse sono un solo filtro', (
       tester,
     ) async {
@@ -552,9 +567,13 @@ void main() {
       ]);
       await pumpApp(tester, s, location: '/lavori');
       await tapShown(tester, find.byKey(const ValueKey('filtro-evento')));
-      expect(find.text('Matrimonio'), findsOneWidget);
-      expect(find.text('matrimonio'), findsNothing);
-      await tester.tap(find.text('Matrimonio'));
+      Finder inMenu(String v) => find.descendant(
+        of: find.byType(PopupMenuItem<String>),
+        matching: find.text(v),
+      );
+      expect(inMenu('Matrimonio'), findsOneWidget);
+      expect(inMenu('matrimonio'), findsNothing);
+      await tester.tap(inMenu('Matrimonio'));
       await settle(tester, 800);
       expect(find.text('ALFA'), findsOneWidget);
       expect(find.text('BETA'), findsOneWidget);
