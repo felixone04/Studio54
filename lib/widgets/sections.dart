@@ -462,9 +462,13 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
       child: Column(
         children: [
           Expanded(
-            child: Center(
-              // Su schermi molto bassi si rimpicciolisce invece di sforare.
-              child: FittedBox(fit: BoxFit.scaleDown, child: group),
+            child: Padding(
+              // Respiro tra la descrizione e la barra di avanzamento.
+              padding: const EdgeInsets.only(bottom: 22),
+              child: Center(
+                // Su schermi molto bassi si rimpicciolisce invece di sforare.
+                child: FittedBox(fit: BoxFit.scaleDown, child: group),
+              ),
             ),
           ),
           controls,
