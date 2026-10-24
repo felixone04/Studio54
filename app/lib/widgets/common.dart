@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -451,7 +451,104 @@ class _HoverLinkState extends State<HoverLink> {
 /// Istante di avvio dell'app (impostato in `main`).
 DateTime appStartedAt = DateTime.now();
 
-/// Durata del logo d'apertura definito in `web/index.html` (2 s + dissolvenza).
-/// Nell'app Android il logo d'avvio è quello di sistema, già sparito quando
-/// compare la prima pagina: le animazioni partono subito.
-const splashMs = kIsWeb ? 2300 : 0;
+/// Durata del logo d'apertura (2 s + dissolvenza): sul web è in
+/// `web/index.html`, nell'app è [AppIntro].
+const splashMs = 2300;
+
+/// Vero nell'app Android, dove il logo d'apertura lo disegna Flutter
+/// ([AppIntro], acceso da `main`): il carosello aspetta che sparisca.
+bool introInApp = false;
+
+/// Millisecondi che mancano alla fine del logo d'apertura dell'app.
+int introRemainingMs() {
+  if (!introInApp) return 0;
+  final passed = DateTime.now().difference(appStartedAt).inMilliseconds;
+  return math.max(0, splashMs - passed);
+}
+
+/// Logo d'apertura dell'app, come quello del sito: fondo crema, logo nero e
+/// una linea che si riempie; dopo 2 secondi sfuma.
+class AppIntro extends StatefulWidget {
+  const AppIntro({super.key, required this.child});
+  final Widget child;
+
+  @override
+  State<AppIntro> createState() => _AppIntroState();
+}
+
+class _AppIntroState extends State<AppIntro> {
+  bool _visible = true;
+  bool _gone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (mounted) setState(() => _visible = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    return Stack(
+      children: [
+        widget.child,
+        if (!_gone)
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: !_visible,
+              child: AnimatedOpacity(
+                opacity: _visible ? 1 : 0,
+                duration: const Duration(milliseconds: 800),
+                onEnd: () => setState(() => _gone = true),
+                child: ColoredBox(
+                  color: Palette.paper,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 1100),
+                          curve: Curves.easeOutCubic,
+                          builder: (_, t, child) => Opacity(
+                            opacity: t,
+                            child: Transform.scale(
+                              scale: 0.96 + 0.04 * t,
+                              child: child,
+                            ),
+                          ),
+                          child: Image.asset(
+                            'assets/brand/logo.png',
+                            width: math.min(380, w * 0.7),
+                            semanticLabel: 'Studio 54',
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        Container(
+                          width: math.min(160, w * 0.4),
+                          height: 1,
+                          color: Palette.line,
+                          alignment: Alignment.centerLeft,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: 1),
+                            duration: const Duration(seconds: 2),
+                            curve: Curves.easeInOut,
+                            builder: (_, v, _) => FractionallySizedBox(
+                              widthFactor: v,
+                              child: Container(color: Palette.ink),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}

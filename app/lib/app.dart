@@ -13,6 +13,7 @@ import 'pages/quote_page.dart';
 import 'pages/works_page.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
+import 'widgets/common.dart';
 
 /// Permette il trascinamento con il mouse nei carousel (di default solo touch).
 class _AppScrollBehavior extends MaterialScrollBehavior {
@@ -144,8 +145,11 @@ class _StudioAppState extends State<StudioApp> {
           '${state.content.studioName} · ${state.content.tagline}',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.site(Color(state.content.accent)),
-      builder: (context, child) =>
-          ScreenScale(child: _SystemBars(child: child!)),
+      builder: (context, child) => ScreenScale(
+        child: _SystemBars(
+          child: introInApp ? AppIntro(child: child!) : child!,
+        ),
+      ),
       scrollBehavior: _AppScrollBehavior(),
       locale: const Locale('it', 'IT'),
       supportedLocales: const [Locale('it', 'IT')],

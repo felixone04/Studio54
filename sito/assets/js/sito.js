@@ -138,14 +138,23 @@
     var mostrate = tutte.slice();
     var i = 0, timer = null;
 
+    var tUscita = null;
     function disegna() {
       var n = mostrate.length;
-      tutte.forEach(function (d) { d.classList.remove('attiva'); });
-      if (!n) return;
+      if (!n) { tutte.forEach(function (x) { x.classList.remove('attiva', 'uscente'); }); return; }
       var d = mostrate[i];
-      d.classList.add('attiva');
-      // Riavvia la leggera "avvicinata" della foto.
-      var img = $('img', d); img.style.animation = 'none'; void img.offsetWidth; img.style.animation = '';
+      var prima = $('.diapo.attiva', car);
+      // Dissolvenza incrociata: la foto che esce resta sotto finché la nuova
+      // non è comparsa del tutto.
+      tutte.forEach(function (x) { if (x !== prima) x.classList.remove('uscente'); });
+      if (prima && prima !== d) { prima.classList.remove('attiva'); prima.classList.add('uscente'); }
+      clearTimeout(tUscita);
+      tUscita = setTimeout(function () { $$('.diapo.uscente', car).forEach(function (x) { x.classList.remove('uscente'); }); }, 1500);
+      if (prima !== d) {
+        // Riavvia la leggera "avvicinata" della foto che entra.
+        var img = $('img', d); img.style.animation = 'none'; void img.offsetWidth; img.style.animation = '';
+        d.classList.add('attiva');
+      }
       car.classList.add('cambio');
       setTimeout(function () {
         $$('.ap-titolo', car).forEach(function (e) { e.textContent = d.getAttribute('data-titolo'); });

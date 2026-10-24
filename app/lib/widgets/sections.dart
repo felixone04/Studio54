@@ -162,6 +162,9 @@ class HeroSlideshow extends StatefulWidget {
   /// Tempo di ogni foto.
   static const interval = Duration(seconds: 4);
 
+  /// Durata della dissolvenza tra una foto e l'altra.
+  static const fade = Duration(milliseconds: 1400);
+
   @override
   State<HeroSlideshow> createState() => _HeroSlideshowState();
 }
@@ -172,13 +175,27 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
   Timer? _t;
   List<GalleryPhoto> _shown = const [];
 
+  /// Nell'app il carosello aspetta che sparisca il logo d'apertura: così la
+  /// prima foto dura davvero 4 secondi e la sua linea si vede riempire.
+  bool _waiting = false;
+
   @override
   void initState() {
     super.initState();
     _aspects.addListener(_refresh);
     _aspects.resolveAll(widget.photos.map((p) => p.url));
     _shown = _filter();
-    _restart();
+    final wait = introRemainingMs();
+    if (wait > 0) {
+      _waiting = true;
+      Future.delayed(Duration(milliseconds: wait), () {
+        if (!mounted) return;
+        setState(() => _waiting = false);
+        _restart();
+      });
+    } else {
+      _restart();
+    }
   }
 
   /// Nel carosello solo foto orizzontali: quelle verticali (scoperte appena
@@ -201,6 +218,7 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
 
   void _restart() {
     _t?.cancel();
+    if (_waiting) return;
     if (_shown.length > 1) {
       _t = Timer.periodic(
         HeroSlideshow.interval,
@@ -260,12 +278,22 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
             ),
           ),
         ),
+      // Dissolvenza incrociata: la foto che esce resta piena sotto e quella
+      // nuova compare piano sopra, senza "lampo" del fondo in mezzo.
       AnimatedSwitcher(
-        duration: const Duration(milliseconds: 900),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
+        duration: HeroSlideshow.fade,
         layoutBuilder: (current, previous) =>
             Stack(fit: StackFit.expand, children: [...previous, ?current]),
+        transitionBuilder: (child, animation) => AnimatedBuilder(
+          animation: animation,
+          child: child,
+          builder: (_, c) => Opacity(
+            opacity: animation.status == AnimationStatus.reverse
+                ? 1
+                : Curves.easeInOutCubic.transform(animation.value),
+            child: c,
+          ),
+        ),
         child: photo == null
             ? const SizedBox.shrink()
             : Semantics(
@@ -277,9 +305,8 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
                     ? PhotoImage(photo.url, fit: fit)
                     : TweenAnimationBuilder<double>(
                         tween: Tween(begin: 1.0, end: 1.05),
-                        duration:
-                            HeroSlideshow.interval +
-                            const Duration(milliseconds: 900),
+                        // Continua anche durante la dissolvenza successiva.
+                        duration: HeroSlideshow.interval + HeroSlideshow.fade,
                         builder: (_, s, child) =>
                             Transform.scale(scale: s, child: child),
                         child: SizedBox.expand(
@@ -428,7 +455,7 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _Progress(index: _i, total: total),
+                _Progress(index: _i, total: total, running: !_waiting),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -531,6 +558,7 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
                   total: photos.length,
                   photo: photo,
                   phrase: widget.content.heroTitle,
+                  running: !_waiting,
                   onPrev: () => _go(_i - 1),
                   onNext: () => _go(_i + 1),
                 ),
@@ -551,11 +579,15 @@ class _Progress extends StatelessWidget {
     required this.total,
     this.color = Palette.ink,
     this.track = Palette.line,
+    this.running = true,
   });
   final int index;
   final int total;
   final Color color;
   final Color track;
+
+  /// Falso mentre c'è il logo d'apertura: la linea resta vuota.
+  final bool running;
 
   @override
   Widget build(BuildContext context) {
@@ -579,7 +611,7 @@ class _Progress extends StatelessWidget {
               height: 2,
               color: k < index ? color : track,
               alignment: Alignment.centerLeft,
-              child: k != index
+              child: k != index || !running
                   ? null
                   : TweenAnimationBuilder<double>(
                       key: ValueKey('seg$index'),
@@ -605,6 +637,7 @@ class _HeroBar extends StatelessWidget {
     required this.total,
     required this.photo,
     required this.phrase,
+    this.running = true,
     required this.onPrev,
     required this.onNext,
   });
@@ -612,6 +645,7 @@ class _HeroBar extends StatelessWidget {
   final int total;
   final GalleryPhoto? photo;
   final String phrase;
+  final bool running;
   final VoidCallback onPrev;
   final VoidCallback onNext;
 
@@ -698,6 +732,7 @@ class _HeroBar extends StatelessWidget {
           _Progress(
             index: index,
             total: total,
+            running: running,
             color: _light,
             track: const Color(0x4DFFFAF0),
           ),

@@ -197,10 +197,14 @@ main { padding-top: var(--barra); }
 
 .apertura { position: relative; }
 .apertura-foto { position: absolute; inset: 0; background: var(--lino); overflow: hidden; }
-.diapo { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity .9s ease; }
-.diapo.attiva { opacity: 1; z-index: 1; }
+/* Dissolvenza incrociata: la foto che esce resta piena sotto ("uscente") e
+   quella nuova compare piano sopra, senza lampi del fondo in mezzo. */
+.diapo { position: absolute; inset: 0; margin: 0; opacity: 0; }
+.diapo.attiva { opacity: 1; z-index: 2; transition: opacity 1.4s cubic-bezier(.65, 0, .35, 1); }
+.diapo.uscente { opacity: 1; z-index: 1; }
 .diapo img { width: 100%; height: 100%; object-fit: cover; }
-.diapo.attiva img { animation: avvicina 4.9s linear forwards; }
+/* L'avvicinata continua anche mentre la foto esce. */
+.diapo.attiva img, .diapo.uscente img { animation: avvicina 5.4s linear forwards; }
 @keyframes avvicina { from { transform: scale(1); } to { transform: scale(1.05); } }
 .avanzamento { display: flex; gap: 4px; }
 .avanzamento span { position: relative; flex: 1; height: 2px; background: var(--linea); overflow: hidden; }
