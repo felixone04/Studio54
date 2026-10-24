@@ -205,7 +205,7 @@ main { padding-top: var(--barra); }
 .avanzamento { display: flex; gap: 4px; }
 .avanzamento span { position: relative; flex: 1; height: 2px; background: var(--linea); overflow: hidden; }
 .avanzamento span.fatto { background: var(--inchiostro); }
-.avanzamento span.ora::after { content: ''; position: absolute; inset: 0; background: var(--inchiostro); transform-origin: left; animation: riempi var(--durata, 4s) linear forwards; }
+.avanzamento span.ora::after { content: ''; position: absolute; inset: 0; background: var(--inchiostro); transform-origin: left; transform: scaleX(0); animation: riempi var(--durata, 4s) linear forwards; }
 .ap-conto { font: 400 10.5px/1 var(--display); letter-spacing: .18em; color: var(--pietra); }
 
 /* Orizzontale: la foto riempie lo schermo, comandi sopra la foto. */

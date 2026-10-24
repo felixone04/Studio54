@@ -42,7 +42,7 @@ $nuove = count(array_filter(dati()['quotes'] ?? [], fn($q) => ($q['status'] ?? '
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/riservata.css?v=1">
+  <link rel="stylesheet" href="<?= e(risorsa('assets/css/riservata.css')) ?>">
 </head>
 <body class="<?= $accesso ? 'accesso' : 'gestione' ?>">
 
@@ -125,6 +125,6 @@ $nuove = count(array_filter(dati()['quotes'] ?? [], fn($q) => ($q['status'] ?? '
   <div class="avviso-breve" id="avviso-breve" hidden></div>
 <?php endif; ?>
 
-  <script src="assets/js/riservata.js?v=1"></script>
+  <script src="<?= e(risorsa('assets/js/riservata.js')) ?>"></script>
 </body>
 </html>

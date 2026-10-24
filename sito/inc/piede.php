@@ -56,6 +56,6 @@ $wa = preg_replace('/[^0-9]/', '', $k['whatsapp'] ?? '');
     </div>
   </div>
 
-  <script src="assets/js/sito.js?v=1"></script>
+  <script src="<?= e(risorsa('assets/js/sito.js')) ?>"></script>
 </body>
 </html>

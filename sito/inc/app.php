@@ -84,6 +84,16 @@ function foto_attr(string $u, string $sizes = '100vw'): string
     return 'src="' . e(foto($u, 1200)) . '" srcset="' . implode(', ', $set) . '" sizes="' . e($sizes) . '"';
 }
 
+/**
+ * Indirizzo di un file di assets/ con la sua "impronta": quando il file
+ * cambia cambia anche l'indirizzo, così il browser non usa la copia vecchia.
+ */
+function risorsa(string $percorso): string
+{
+    $file = __DIR__ . '/../' . $percorso;
+    return $percorso . (is_file($file) ? '?v=' . substr(md5_file($file), 0, 10) : '');
+}
+
 function due(int $n): string
 {
     return str_pad((string) $n, 2, '0', STR_PAD_LEFT);

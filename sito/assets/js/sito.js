@@ -8,15 +8,25 @@
 
   /* ------------------------------------------------------ logo d'apertura */
 
-  function avvia() { document.body.classList.add('pronto'); }
+  // Quando il logo d'apertura sparisce la pagina è "pronta": partono le
+  // animazioni e il carosello (così la prima foto dura davvero 4 secondi).
+  var partito = false;
+  function avvia() {
+    if (partito) return;
+    partito = true;
+    document.body.classList.add('pronto');
+    document.dispatchEvent(new Event('s54-pronto'));
+  }
+  function quandoPronto(fn) {
+    if (partito) fn(); else document.addEventListener('s54-pronto', fn, { once: true });
+  }
   var intro = $('#intro');
-  var giaVisto = document.documentElement.classList.contains('senza-intro');
-  if (intro && !giaVisto) {
+  var senzaIntro = document.documentElement.classList.contains('senza-intro');
+  if (intro && !senzaIntro) {
     var inizio = Date.now();
     var chiudi = function () {
       setTimeout(function () {
         intro.classList.add('via');
-        try { sessionStorage.setItem('s54-intro', '1'); } catch (e) {}
         setTimeout(avvia, 250);
       }, Math.max(0, 2000 - (Date.now() - inizio)));
     };
@@ -166,6 +176,7 @@
     }
     function riparti() {
       clearInterval(timer);
+      if (!partito) return;
       if (mostrate.length > 1) timer = setInterval(function () { i = (i + 1) % mostrate.length; disegna(); }, intervallo);
     }
 
@@ -189,9 +200,14 @@
     $$('.ap-prec', car).forEach(function (b) { b.addEventListener('click', function () { vai(i - 1); }); });
     $$('.ap-succ', car).forEach(function (b) { b.addEventListener('click', function () { vai(i + 1); }); });
     sfoglia(car, function (d) { vai(i + d); });
-    document.addEventListener('visibilitychange', function () { if (document.hidden) clearInterval(timer); else riparti(); });
+    document.addEventListener('visibilitychange', function () {
+      if (!partito) return;
+      if (document.hidden) clearInterval(timer); else riparti();
+    });
+    // La prima foto si vede già sotto il logo; il conto dei 4 secondi e la
+    // linea di avanzamento partono quando il logo sparisce.
     disegna();
-    riparti();
+    quandoPronto(function () { disegna(); riparti(); });
   });
 
   /* ======================================================== MOSTRA (home) */
