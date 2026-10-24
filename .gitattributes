@@ -1,0 +1,5 @@
+# File binari: Git non deve toccarne i fine riga.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.apk binary
