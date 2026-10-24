@@ -28,7 +28,7 @@ pagina() { # pagina <file php> <file html>
 }
 
 echo "Pagine pubbliche"
-for p in index lavori biografia preventivo; do pagina "$p.php" "$p.html"; done
+for p in index lavori biografia preventivo idee; do pagina "$p.php" "$p.html"; done
 
 echo "Lavori"
 for id in $(php -r '$d = json_decode(file_get_contents("data/contenuti.json"), true);

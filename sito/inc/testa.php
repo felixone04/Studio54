@@ -19,6 +19,7 @@ $voci = [
   <title><?= e($titolo_pagina) ?></title>
   <meta name="description" content="<?= e($nome) ?> · Fotografia di matrimoni ed eventi. Guarda i nostri lavori e richiedi un preventivo gratuito.">
   <meta name="theme-color" content="#FFFAF0">
+  <?php if (!empty($noindex)): ?><meta name="robots" content="noindex"><?php endif; ?>
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
   <link rel="apple-touch-icon" href="assets/img/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,7 +44,9 @@ $voci = [
 
   <header class="barra" id="barra">
     <a class="barra-logo" href="<?= e(url('index')) ?>" aria-label="Home">
-      <img src="assets/img/logo.png" alt="<?= e($nome) ?>">
+      <img class="logo-scuro" src="assets/img/logo.png" alt="<?= e($nome) ?>">
+      <!-- Sopra la foto d'apertura il logo è chiaro. -->
+      <img class="logo-chiaro" src="assets/img/logo-chiaro.png" alt="" aria-hidden="true">
     </a>
     <nav class="barra-voci" aria-label="Menu principale">
       <?php foreach ($voci as [$t, $p]): ?>

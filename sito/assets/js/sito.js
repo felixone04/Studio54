@@ -40,8 +40,19 @@
   /* ---------------------------------------------------------- barra e menu */
 
   var barra = $('#barra');
-  var aggiornaBarra = function () { barra && barra.classList.toggle('scorsa', window.scrollY > 10); };
+  var aperturaHome = $('.pagina-home .apertura');
+  var orizzontale = window.matchMedia('(min-aspect-ratio: 1/1)');
+  var aggiornaBarra = function () {
+    if (!barra) return;
+    barra.classList.toggle('scorsa', window.scrollY > 10);
+    // Nella home in orizzontale la barra è trasparente finché sta sopra la
+    // foto d'apertura; poi prende il colore del sito.
+    var suFoto = !!aperturaHome && orizzontale.matches &&
+      window.scrollY < aperturaHome.offsetHeight - barra.offsetHeight;
+    barra.classList.toggle('su-foto', suFoto);
+  };
   window.addEventListener('scroll', aggiornaBarra, { passive: true });
+  window.addEventListener('resize', aggiornaBarra);
   aggiornaBarra();
 
   var menu = $('#menu');
@@ -305,6 +316,13 @@
     document.addEventListener('click', function () { chiudiTutti(null); });
     $('.filtri-azzera', box).addEventListener('click', function () {
       $$('.filtro', box).forEach(function (f) { f.scegli(''); });
+    });
+    // Arrivando con un filtro nell'indirizzo (es. ?evento=matrimonio dal
+    // mosaico della home) la scelta è già fatta.
+    var qs = new URLSearchParams(location.search);
+    $$('.filtro', box).forEach(function (f) {
+      var v = (qs.get(f.getAttribute('data-filtro')) || '').toLowerCase();
+      if (v && $('li[data-v="' + v.replace(/"/g, '') + '"]', f)) f.scegli(v);
     });
   });
 

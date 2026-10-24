@@ -155,8 +155,24 @@ main { padding-top: var(--barra); }
   background: rgba(255, 250, 240, .97); border-bottom: 1px solid transparent; transition: border-color .3s;
 }
 .barra.scorsa { border-bottom-color: var(--linea); }
-.barra-logo { margin-right: auto; }
-.barra-logo img { height: calc(var(--barra) * .7); width: auto; }
+.barra-logo { position: relative; margin-right: auto; }
+.barra-logo img { height: calc(var(--barra) * .7); width: auto; transition: opacity .35s; }
+.barra-logo .logo-chiaro { position: absolute; left: 0; top: 0; opacity: 0; }
+.barra { transition: background-color .35s, border-color .3s, color .35s; }
+/* Velatura leggera in alto, solo sopra la foto, per leggere logo e voci. */
+.barra::before {
+  content: ''; position: absolute; inset: 0 0 -40px; z-index: -1; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, .38), rgba(0, 0, 0, 0)); opacity: 0; transition: opacity .35s;
+}
+/* Home in orizzontale: la foto parte dal bordo in alto e la barra è
+   trasparente sopra di lei; scorrendo oltre la foto torna color carta. */
+.barra.su-foto { background-color: transparent; border-bottom-color: transparent; color: var(--carta); }
+.barra.su-foto::before { opacity: 1; }
+.barra.su-foto .logo-scuro { opacity: 0; }
+.barra.su-foto .logo-chiaro { opacity: 1; }
+@media (min-aspect-ratio: 1/1) {
+  .pagina-home main { padding-top: 0; }
+}
 .barra-voci { display: flex; gap: 34px; }
 .barra-voci .link { font: 600 11.5px/1.3 var(--display); letter-spacing: .24em; }
 .barra-menu { display: none; align-items: center; gap: 12px; padding: 12px 4px; font: 600 11.5px/1 var(--display); letter-spacing: .24em; }
@@ -214,10 +230,11 @@ main { padding-top: var(--barra); }
 
 /* Orizzontale: la foto riempie lo schermo, comandi sopra la foto. */
 @media (min-aspect-ratio: 1/1) {
-  .apertura { height: calc(max(100svh, 620px) - var(--barra)); }
+  .apertura { height: max(100svh, 620px); }
   .apertura-scena { position: absolute; inset: 0; }
   .apertura-velo { position: absolute; inset: 0; z-index: 2; background: linear-gradient(to bottom, transparent 0, transparent 62%, rgba(0, 0, 0, .55) 100%); }
-  .apertura-scena > .mirino { z-index: 3; inset: calc(var(--margine) * .6); }
+  /* Gli angoli del mirino iniziano sotto la barra trasparente. */
+  .apertura-scena > .mirino { z-index: 3; inset: calc(var(--barra) + 6px) calc(var(--margine) * .6) calc(var(--margine) * .6); }
   .apertura-barra { position: absolute; z-index: 4; left: calc(var(--margine) * .6 + 26px); right: calc(var(--margine) * .6 + 26px); bottom: calc(var(--margine) * .6 + 20px); color: var(--carta); }
   .apertura-riga { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 14px; }
   .apertura-testo { flex: 1; min-width: 0; }
@@ -476,6 +493,84 @@ main { padding-top: var(--barra); }
 .punto { width: 6px; height: 6px; border-radius: 50%; background: var(--accento); }
 @media (max-width: 1023px) { .piede-colonne { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 599px) { .piede-colonne { grid-template-columns: 1fr; } }
+
+/* ============================================================ PROPOSTE HOME */
+
+.proposte-testa { padding-top: clamp(40px, 6vw, 90px); padding-bottom: clamp(20px, 3vw, 40px); }
+/* Etichetta che separa una proposta dall'altra (solo nella pagina di prova). */
+.proposta {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin: 0; padding: 18px var(--margine);
+  border-top: 1px dashed var(--linea-forte); background: var(--avorio);
+  font: 600 11px/1.3 var(--display); letter-spacing: .24em; text-transform: uppercase; color: var(--pietra);
+}
+.proposta b { color: var(--accento-scuro); }
+.proposta span { font: italic 300 15px/1.3 var(--display); letter-spacing: 0; text-transform: none; }
+
+/* Idea 1 · mosaico dei tipi di servizio */
+.mosaico-griglia {
+  display: grid; gap: clamp(8px, 1.2vw, 16px);
+  grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, clamp(180px, 22vw, 330px)) clamp(160px, 17vw, 260px);
+}
+.tessera { position: relative; display: block; overflow: hidden; background: var(--lino); }
+.tessera.grande { grid-column: 1 / 3; grid-row: 1 / 3; }
+.tessera.alta { grid-column: 3; grid-row: 1 / 3; }
+.tessera.larga { grid-column: 1 / -1; }
+.tessera img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.1s cubic-bezier(.2, .7, .2, 1); }
+.tessera::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, .55)); }
+.tessera .mirino { --l: 22px; inset: 16px; z-index: 2; opacity: 0; transition: opacity .38s; }
+.tessera-testo { position: absolute; z-index: 2; left: clamp(16px, 2vw, 26px); right: 16px; bottom: clamp(14px, 2vw, 24px); color: var(--carta); }
+.tessera-testo strong { display: block; font: 300 clamp(20px, calc(20px + 14 * (100vw - 360px) / 1240), 34px)/1.1 var(--display); letter-spacing: .08em; }
+.tessera-testo small { display: block; max-height: 0; overflow: hidden; margin-top: 0; font: 600 10px/1.3 var(--display); letter-spacing: .24em; opacity: 0; transition: opacity .35s, max-height .35s, margin .35s; }
+.tessera:hover img { transform: scale(1.05); }
+.tessera:hover .mirino, .tessera:focus-visible .mirino { opacity: 1; }
+.tessera:hover small, .tessera:focus-visible small { max-height: 20px; margin-top: 8px; opacity: 1; }
+@media (max-width: 899px) {
+  .mosaico-griglia { grid-template-columns: 1fr 1fr; grid-template-rows: none; grid-auto-rows: 44vw; }
+  .tessera.grande, .tessera.larga { grid-column: 1 / -1; grid-row: auto; }
+  .tessera.alta { grid-column: auto; grid-row: span 2; }
+  .tessera-testo small { max-height: 20px; margin-top: 8px; opacity: 1; }
+}
+
+/* Idea 2 · pellicola che scorre da sola */
+.pellicola { overflow: hidden; padding: clamp(40px, 6vw, 90px) 0; background: var(--lino); }
+.pellicola-nastro { display: flex; gap: 14px; width: max-content; animation: scorri 70s linear infinite; }
+.pellicola:hover .pellicola-nastro { animation-play-state: paused; }
+@keyframes scorri { to { transform: translateX(-50%); } }
+.fotogramma { margin: 0; flex: none; }
+.fotogramma img { height: clamp(220px, 26vw, 380px); width: auto; aspect-ratio: auto; object-fit: cover; }
+.fotogramma figcaption { display: flex; gap: 12px; margin-top: 12px; font: 600 10.5px/1.3 var(--display); letter-spacing: .24em; }
+@media (prefers-reduced-motion: reduce) { .pellicola { overflow-x: auto; } .pellicola-nastro { animation: none; } }
+
+/* Idea 3 · trittico "una giornata" */
+.trittico-griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(12px, 2vw, 28px); max-width: 1240px; margin: 0 auto; }
+.trittico-foto { margin: 0; }
+.trittico-foto .mira { aspect-ratio: 2 / 3; }
+.trittico-foto figcaption { margin-top: 16px; text-align: center; }
+.trittico-foto strong { display: block; font: 300 clamp(22px, 2.4vw, 32px)/1.1 var(--display); letter-spacing: .16em; }
+.trittico-foto em { display: block; margin-top: 6px; font: italic 300 15px/1.4 var(--display); color: var(--pietra); }
+@media (max-width: 719px) { .trittico-griglia { grid-template-columns: 1fr; } .trittico-foto .mira { aspect-ratio: 4 / 5; } }
+
+/* Idea 4 · ultimi lavori */
+.ultimi .titolo-sezione { align-items: center; margin-bottom: clamp(22px, 3vw, 40px); }
+.ultimi-griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(12px, 2vw, 28px); }
+.ultimo-foto { display: block; aspect-ratio: 4 / 5; }
+.ultimo strong { display: block; margin-top: 14px; font: 300 clamp(18px, 1.8vw, 24px)/1.2 var(--display); letter-spacing: .08em; }
+.ultimo small { display: block; margin-top: 4px; font: italic 300 15px/1.4 var(--display); color: var(--pietra); }
+.ultimo:hover .mirino.piccolo { opacity: 1; transform: none; }
+@media (max-width: 719px) { .ultimi-griglia { grid-template-columns: 1fr; } .ultimo-foto { aspect-ratio: 3 / 2; } }
+
+/* Idea 5 · invito finale */
+.invito { position: relative; height: clamp(420px, 75vh, 760px); overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; }
+.invito > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.invito::after { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 0, .36); }
+.invito > .mirino { z-index: 2; inset: calc(var(--margine) * .6); }
+.invito-testo { position: relative; z-index: 3; color: var(--carta); padding: 0 var(--margine); }
+.invito-testo .etichetta { justify-content: center; }
+.invito-testo .trattino { background: rgba(255, 250, 240, .6); }
+.invito-testo h2 { margin: 18px 0 28px; font: 300 clamp(32px, calc(32px + 28 * (100vw - 360px) / 1240), 60px)/1.1 var(--display); letter-spacing: .08em; }
+.pillola.chiara { background: var(--carta); color: var(--inchiostro); }
+.pillola.chiara i { background: rgba(30, 27, 23, .08); }
+.pillola.chiara:hover { background: var(--accento); }
 
 /* ================================================================ LIGHTBOX */
 
