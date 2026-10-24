@@ -1,113 +1,127 @@
 <?php
-// Pagina di prova (non collegata dal menu): le proposte di nuove sezioni
-// per la home, da scegliere con il cliente. Quelle scelte andranno in
-// index.php e questa pagina verrà tolta.
+// Pagina di prova (non collegata dal menu): nuove proposte di sezioni per la
+// home, da scegliere con il cliente. Quelle scelte andranno in index.php e
+// questa pagina, con idee.css e idee.js, verrà tolta.
 require __DIR__ . '/inc/app.php';
 
 $pagina = '';
 $titolo = 'Proposte per la home';
 $noindex = true;
+$css_extra = ['assets/css/idee.css'];
+$js_extra = ['assets/js/idee.js'];
 $u = fn(string $id) => 'https://images.unsplash.com/photo-' . $id . '?auto=format&fit=crop&w=1800&q=80';
 
-// 1 · Mosaico dei tipi di servizio
-$tipi = [
-    ['Matrimoni', $u('1519741497674-611481863552'), 'matrimonio', 'grande'],
-    ['Ritratti', $u('1531746020798-e6953c6e8e04'), '', 'alta'],
-    ['Battesimi e comunioni', $u('1515488042361-ee00e0ddd4e4'), 'cerimonia', ''],
-    ['Feste', $u('1530103862676-de8c9debad1d'), 'evento', ''],
-    ['Eventi e aziende', $u('1470229722913-7c0e2dbbafd3'), 'evento', 'larga'],
+// 1 · Fisarmonica
+$strisce = [
+    ['Matrimoni', '1537633552985-df8429e8048b', 'matrimonio'],
+    ['Ritratti', '1531746020798-e6953c6e8e04', ''],
+    ['Battesimi', '1515488042361-ee00e0ddd4e4', 'cerimonia'],
+    ['Feste', '1530103862676-de8c9debad1d', 'evento'],
+    ['Eventi', '1470229722913-7c0e2dbbafd3', 'evento'],
 ];
-// 2 · Pellicola
-$rullino = [
-    ['Matrimoni', '1465495976277-4387d4b0b4c6'], ['Cerimonie', '1469371670807-013ccf25f16a'],
-    ['Ritratti', '1544005313-94ddf0286df2'], ['Feste', '1492684223066-81342ee5ff30'],
-    ['Famiglie', '1515488042361-ee00e0ddd4e4'], ['Eventi', '1470229722913-7c0e2dbbafd3'],
-    ['Dettagli', '1452587925148-ce544e77e70d'], ['Coppie', '1516589178581-6cd7833ae3b2'],
+// 2 · Messa a fuoco
+$fuoco = [
+    ['Matrimoni', '1519741497674-611481863552'],
+    ['Ritratti', '1544005313-94ddf0286df2'],
+    ['Cerimonie', '1469371670807-013ccf25f16a'],
+    ['Feste', '1492684223066-81342ee5ff30'],
 ];
-// 3 · Trittico
-$giornata = [
-    ['Prima', 'I preparativi, l\'attesa.', '1537633552985-df8429e8048b'],
-    ['Durante', 'La promessa, gli sguardi.', '1583939003579-730e3918a45a'],
-    ['Dopo', 'La festa, fino all\'ultimo ballo.', '1544005313-94ddf0286df2'],
+// 3 · Stampe sul tavolo: [foto, sinistra %, alto %, rotazione, larghezza]
+$stampe = [
+    ['1465495976277-4387d4b0b4c6', 6, 10, -7, 26],
+    ['1583939003579-730e3918a45a', 30, 4, 4, 18],
+    ['1511285560929-80b456fea0bc', 47, 16, -3, 28],
+    ['1544005313-94ddf0286df2', 74, 6, 6, 18],
+    ['1515488042361-ee00e0ddd4e4', 14, 52, 5, 24],
+    ['1470229722913-7c0e2dbbafd3', 40, 56, -5, 26],
+    ['1516589178581-6cd7833ae3b2', 68, 50, -8, 17],
 ];
-$ultimi = array_slice(lavori_pubblicati(), 0, 3);
+// 5 · Album: coppie di pagine
+$album = [
+    ['1583939003579-730e3918a45a', '1460978812857-470ed1c77af0'],
+    ['1511795409834-ef04bbd61622', '1522673607200-164d1b6ce486'],
+    ['1516589178581-6cd7833ae3b2', '1519741497674-611481863552'],
+];
 
 require __DIR__ . '/inc/testa.php';
 ?>
 
 <div class="contenitore proposte-testa">
   <p class="etichetta entra"><span class="trattino"></span>PROPOSTE PER LA HOME</p>
-  <h1 class="titolo-grande entra">SCEGLI LE SEZIONI</h1>
-  <p class="sottotitolo entra">Cinque idee da mettere sotto il carosello, al posto delle "Opere". Puoi sceglierne una, alcune o tutte.</p>
+  <h1 class="titolo-grande entra">NUOVE IDEE</h1>
+  <p class="sottotitolo entra">Cinque sezioni diverse da mettere sotto il carosello. Toccale e provale: sono tutte interattive.</p>
 </div>
 
 <!-- ============================================================ IDEA 1 -->
-<p class="proposta"><b>Idea 1</b> · Mosaico dei tipi di servizio <span>Toccando una foto si aprono i lavori di quel tipo</span></p>
-<section class="sezione mosaico">
-  <div class="mosaico-griglia">
-    <?php foreach ($tipi as [$nome, $img, $filtro, $forma]): ?>
-      <a class="tessera <?= e($forma) ?> rivela mira" href="<?= e(url('lavori') . ($filtro !== '' ? '?evento=' . $filtro : '')) ?>">
-        <img <?= foto_attr($img, '(max-width: 899px) 100vw, 50vw') ?> alt="" loading="lazy">
-        <span class="mirino" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span class="tessera-testo"><strong><?= e(maiuscolo($nome)) ?></strong><small>GUARDA I LAVORI &rarr;</small></span>
+<p class="proposta"><b>Idea 1</b> · Fisarmonica <span>Passa sopra (o tocca) una striscia: si apre la foto con il tipo di servizio</span></p>
+<section class="sezione fisarmonica">
+  <div class="fisa">
+    <?php foreach ($strisce as $k => [$nome, $id, $filtro]): ?>
+      <a class="fisa-striscia<?= $k === 0 ? ' aperta' : '' ?>" href="<?= e(url('lavori') . ($filtro !== '' ? '?evento=' . $filtro : '')) ?>">
+        <img <?= foto_attr($u($id), '60vw') ?> alt="" loading="lazy">
+        <span class="fisa-num"><?= due($k + 1) ?></span>
+        <span class="fisa-nome"><?= e(maiuscolo($nome)) ?></span>
       </a>
     <?php endforeach; ?>
   </div>
 </section>
 
 <!-- ============================================================ IDEA 2 -->
-<p class="proposta"><b>Idea 2</b> · Pellicola che scorre <span>Scorre lenta da sola; passandoci sopra si ferma</span></p>
-<section class="pellicola" aria-label="Rullino">
-  <div class="pellicola-nastro">
-    <?php for ($giro = 0; $giro < 2; $giro++): foreach ($rullino as $k => [$nome, $id]): ?>
-      <figure class="fotogramma"<?= $giro ? ' aria-hidden="true"' : '' ?>>
-        <img src="<?= e(foto($u($id), 700)) ?>" alt="" loading="lazy">
-        <figcaption><span class="num-oro"><?= due($k + 1) ?>A</span><?= e(maiuscolo($nome)) ?></figcaption>
+<p class="proposta"><b>Idea 2</b> · Messa a fuoco <span>Scorri: ogni foto passa da sfocata a nitida, come con l'obiettivo</span></p>
+<section class="fuoco" data-fuoco style="--n: <?= count($fuoco) ?>">
+  <div class="fuoco-schermo">
+    <?php foreach ($fuoco as $k => [$nome, $id]): ?>
+      <figure class="fuoco-foto" data-k="<?= $k ?>">
+        <img <?= foto_attr($u($id)) ?> alt="" loading="lazy">
+        <figcaption><span class="num-oro"><?= due($k + 1) ?> / <?= due(count($fuoco)) ?></span><strong><?= e(maiuscolo($nome)) ?></strong></figcaption>
       </figure>
-    <?php endforeach; endfor; ?>
+    <?php endforeach; ?>
+    <span class="fuoco-mirino" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></span>
   </div>
 </section>
 
 <!-- ============================================================ IDEA 3 -->
-<p class="proposta"><b>Idea 3</b> · Trittico "una giornata" <span>Tre foto verticali, una parola ciascuna</span></p>
-<section class="sezione trittico">
-  <div class="trittico-griglia">
-    <?php foreach ($giornata as $k => [$parola, $riga, $id]): ?>
-      <figure class="trittico-foto rivela" style="transition-delay: <?= $k * 120 ?>ms">
-        <div class="mira"><img <?= foto_attr($u($id), '(max-width: 719px) 100vw, 33vw') ?> alt="" loading="lazy"><span class="mirino piccolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
-        <figcaption><strong><?= e(maiuscolo($parola)) ?></strong><em><?= e($riga) ?></em></figcaption>
-      </figure>
-    <?php endforeach; ?>
-  </div>
+<p class="proposta"><b>Idea 3</b> · Stampe sul tavolo <span>Passaci sopra per raddrizzarle, trascinale per spostarle</span></p>
+<section class="tavolo" data-tavolo>
+  <p class="tavolo-scritta">SPOSTA LE STAMPE</p>
+  <?php foreach ($stampe as $k => [$id, $x, $y, $r, $w]): ?>
+    <figure class="stampa" style="left: <?= $x ?>%; top: <?= $y ?>%; --r: <?= $r ?>deg; --w: <?= $w ?>%; z-index: <?= $k + 1 ?>">
+      <img src="<?= e(foto($u($id), 900)) ?>" alt="" draggable="false" loading="lazy">
+    </figure>
+  <?php endforeach; ?>
 </section>
 
 <!-- ============================================================ IDEA 4 -->
-<p class="proposta"><b>Idea 4</b> · Ultimi lavori <span>Le copertine degli ultimi tre lavori</span></p>
-<section class="sezione ultimi">
-  <div class="titolo-sezione">
-    <p class="etichetta"><span class="trattino"></span>ULTIMI LAVORI</p>
-    <a class="link etichetta" href="<?= e(url('lavori')) ?>">TUTTI I LAVORI &rarr;</a>
-  </div>
-  <div class="ultimi-griglia">
-    <?php foreach ($ultimi as $w): ?>
-      <a class="ultimo rivela" href="<?= e(url('lavoro', $w['id'])) ?>">
-        <span class="ultimo-foto mira"><img <?= foto_attr(copertina($w), '(max-width: 719px) 100vw, 33vw') ?> alt="" loading="lazy"><span class="mirino piccolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span></span>
-        <strong><?= e(maiuscolo($w['title'])) ?></strong>
-        <small><?= e(unisci([$w['category'] ?? '', $w['location'] ?? ''])) ?></small>
-      </a>
-    <?php endforeach; ?>
+<p class="proposta"><b>Idea 4</b> · Prima e dopo <span>Trascina la linea: a sinistra lo scatto, a destra la foto finita dallo studio</span></p>
+<section class="sezione prima-dopo">
+  <div class="pd" data-prima-dopo>
+    <img class="pd-dopo" <?= foto_attr($u('1465495976277-4387d4b0b4c6')) ?> alt="La foto finita" draggable="false">
+    <div class="pd-prima"><img <?= foto_attr($u('1465495976277-4387d4b0b4c6')) ?> alt="Lo scatto originale" draggable="false"></div>
+    <span class="pd-etichetta sinistra">LO SCATTO</span>
+    <span class="pd-etichetta destra">LA FOTO FINITA</span>
+    <span class="pd-linea" role="slider" tabindex="0" aria-label="Confronto prima e dopo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><i></i></span>
   </div>
 </section>
 
 <!-- ============================================================ IDEA 5 -->
-<p class="proposta"><b>Idea 5</b> · Invito finale al preventivo <span>Una grande foto e un solo pulsante</span></p>
-<section class="invito">
-  <img <?= foto_attr($u('1511285560929-80b456fea0bc')) ?> alt="" loading="lazy">
-  <span class="mirino" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-  <div class="invito-testo">
-    <p class="etichetta"><span class="trattino"></span>PREVENTIVO GRATUITO</p>
-    <h2>RACCONTACI<br>IL TUO EVENTO</h2>
-    <a class="pillola chiara" href="<?= e(url('preventivo')) ?>">RICHIEDI UN PREVENTIVO <i>&#8599;</i></a>
+<p class="proposta"><b>Idea 5</b> · Album da sfogliare <span>Tocca le frecce o le pagine per sfogliarlo</span></p>
+<section class="sezione album-sez">
+  <div class="album" data-album>
+    <div class="album-libro">
+      <div class="pagina-fissa sinistra"><div class="copertina-dentro"><img src="assets/img/mark.png" alt=""><p>GIULIA &amp; MARCO</p><small>Giugno 2024</small></div></div>
+      <?php foreach ($album as $k => [$a, $b]): ?>
+        <div class="foglio" style="z-index: <?= count($album) - $k ?>">
+          <div class="faccia fronte"><img src="<?= e(foto($u($a), 1000)) ?>" alt="" loading="lazy"></div>
+          <div class="faccia retro"><img src="<?= e(foto($u($b), 1000)) ?>" alt="" loading="lazy"></div>
+        </div>
+      <?php endforeach; ?>
+      <div class="pagina-fissa destra"><div class="copertina-dentro"><p>FINE</p><small>Album fine art, cucito a mano</small></div></div>
+    </div>
+    <div class="album-comandi">
+      <button type="button" class="tondo" data-pagina="-1" aria-label="Pagina precedente">&#8249;</button>
+      <span class="contatore album-conto"></span>
+      <button type="button" class="tondo" data-pagina="1" aria-label="Pagina successiva">&#8250;</button>
+    </div>
   </div>
 </section>
 

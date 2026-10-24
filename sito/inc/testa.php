@@ -26,6 +26,7 @@ $voci = [
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= e(risorsa('assets/css/sito.css')) ?>">
+  <?php foreach ($css_extra ?? [] as $x): ?><link rel="stylesheet" href="<?= e(risorsa($x)) ?>"><?php endforeach; ?>
   <script>
     // Il logo d'apertura si vede entrando nel sito (o ricaricando la pagina);
     // passando da una pagina all'altra del sito no.

@@ -57,5 +57,6 @@ $wa = preg_replace('/[^0-9]/', '', $k['whatsapp'] ?? '');
   </div>
 
   <script src="<?= e(risorsa('assets/js/sito.js')) ?>"></script>
+  <?php foreach ($js_extra ?? [] as $x): ?><script src="<?= e(risorsa($x)) ?>"></script><?php endforeach; ?>
 </body>
 </html>
