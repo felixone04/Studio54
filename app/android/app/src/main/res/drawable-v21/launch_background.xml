@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Avvio dell'app: il fondo crema del sito con il logo nero al centro. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/studio_paper" />
+    <item android:width="240dp" android:height="134dp" android:gravity="center">
+        <bitmap android:gravity="fill" android:src="@drawable/splash_logo" />
+    </item>
+</layer-list>

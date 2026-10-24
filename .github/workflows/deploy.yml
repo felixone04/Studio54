@@ -1,4 +1,6 @@
-# Ricompila il sito e lo pubblica su GitHub Pages a ogni push su master.
+# Pubblica l'anteprima su GitHub Pages a ogni push su master:
+# - il sito (cartella sito/) trasformato da PHP in pagine HTML statiche;
+# - l'app Android, presa dall'ultima release del progetto (app/studio54.apk).
 name: Pubblica sito
 
 on:
@@ -21,20 +23,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: 3.47.6
-          cache: true
+      - name: Controllo della sintassi PHP
+        run: find sito -name '*.php' -print0 | xargs -0 -n1 php -l
 
-      - run: flutter pub get
+      - name: Pagine HTML dal PHP
+        run: bash sito/tools/esporta.sh _site
 
-      # Il sito sta in /<nome-repository>/, non nella radice del dominio.
-      - run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+      - name: App Android da scaricare
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p _site/app
+          gh release download --repo "${{ github.repository }}" --pattern studio54.apk --dir _site/app \
+            || echo "Nessuna release con l'APK: il link per scaricarla resterà vuoto."
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web
+          path: _site
 
   deploy:
     needs: build
