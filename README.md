@@ -11,10 +11,10 @@ Due progetti separati, con la stessa grafica:
 ## Anteprima online
 
 - Sito: https://felixone04.github.io/Studio54/
-- App Android: https://felixone04.github.io/Studio54/app/studio54.apk (si scarica anche dal link nel footer del sito)
+- App Android: il file [`apk/studio54.apk`](apk/studio54.apk), da copiare sul telefono e installare. Per ora sito e app restano separati: il sito non ha link all'app.
 
 GitHub Pages non esegue PHP: a ogni push su `master` la pubblicazione trasforma le pagine PHP in HTML statico
-(`sito/tools/esporta.sh`) e aggiunge l'APK che si trova nella cartella [`apk/`](apk) del progetto (per aggiornarla basta sostituire `apk/studio54.apk`).
+(`sito/tools/esporta.sh`).
 
 ## Stato attuale
 

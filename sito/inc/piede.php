@@ -39,7 +39,6 @@ $wa = preg_replace('/[^0-9]/', '', $k['whatsapp'] ?? '');
     <div class="piede-fondo">
       <span>&copy; <?= date('Y') ?> <?= e($c['studioName'] ?? '') ?><?= !empty($k['vat']) ? '  ·  ' . e($k['vat']) : '' ?></span>
       <span class="piede-link">
-        <a class="link" href="app/studio54.apk" download>Scarica l'app Android</a>
         <span class="punto"></span>
         <a class="link" href="<?= e(url('riservata')) ?>">Area riservata</a>
       </span>
