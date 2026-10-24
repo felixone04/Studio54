@@ -39,6 +39,7 @@ $wa = preg_replace('/[^0-9]/', '', $k['whatsapp'] ?? '');
     <div class="piede-fondo">
       <span>&copy; <?= date('Y') ?> <?= e($c['studioName'] ?? '') ?><?= !empty($k['vat']) ? '  ·  ' . e($k['vat']) : '' ?></span>
       <span class="piede-link">
+        <a class="link" href="<?= e(url('area-clienti')) ?>">Area clienti</a>
         <span class="punto"></span>
         <a class="link" href="<?= e(url('riservata')) ?>">Area riservata</a>
       </span>

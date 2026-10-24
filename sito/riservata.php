@@ -9,6 +9,7 @@ $sezioni = [
         'panoramica' => ['Panoramica', 'griglia'],
         'richieste' => ['Richieste', 'busta'],
         'calendario' => ['Calendario', 'calendario'],
+        'clienti' => ['Clienti', 'persone'],
     ],
     'Catalogo' => [
         'servizi' => ['Servizi e prodotti', 'servizi'],

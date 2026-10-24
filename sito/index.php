@@ -74,41 +74,27 @@ require __DIR__ . '/inc/testa.php';
 </section>
 <?php endif; ?>
 
-<?php if ($galleria): ?>
-<section class="sezione mostra" data-galleria>
-  <div class="titolo-sezione">
-    <div>
-      <p class="etichetta"><span class="num">(02)</span><span class="trattino"></span><?= e(maiuscolo($c['galleryKicker'] ?? '')) ?></p>
-      <h2 class="rivela"><?= e($c['galleryTitle'] ?? '') ?></h2>
-    </div>
-    <span class="etichetta tenue"><?= count($galleria) ?> SCATTI</span>
+<?php if ($galleria):
+    // Le stampe sparse sul tavolo: posizione (% sinistra, % alto), rotazione
+    // e larghezza di ognuna. Le foto sono le prime della Galleria.
+    $posti = [[5, 9, -7, 24], [29, 3, 4, 17], [46, 14, -3, 27], [74, 5, 6, 18], [13, 50, 5, 22], [39, 55, -5, 25], [67, 48, -8, 18]];
+    $stampe = array_slice($galleria, 0, count($posti));
+?>
+<section class="tavolo" data-tavolo aria-label="Gli scatti">
+  <div class="tavolo-testa">
+    <p class="etichetta"><span class="num">(02)</span><span class="trattino"></span>GLI SCATTI</p>
+    <p class="tavolo-aiuto">TOCCA PER GUARDARE · TRASCINA PER SPOSTARE</p>
   </div>
-  <div class="mostra-colonne">
-    <?php
-    $forme = ['4/5', '3/4', '1/1', '4/5', '2/3', '5/4'];
-    foreach ($galleria as $i => $p):
-        $meta = unisci([$p['category'] ?? '', $p['location'] ?? '', $p['year'] ?? '']);
-    ?>
-      <figure class="quadro rivela" style="--forma: <?= $forme[$i % count($forme)] ?>"
-              data-foto="<?= e(foto($p['url'] ?? '', 2200)) ?>"
-              data-titolo="<?= e($p['title'] ?? '') ?>"
-              data-meta="<?= e(maiuscolo($meta)) ?>"
-              tabindex="0" role="button" aria-label="<?= e($p['title'] ?? '') ?>">
-        <div class="quadro-foto mira">
-          <img <?= foto_attr($p['url'] ?? '', '(max-width: 1023px) 50vw, 33vw') ?> alt="" loading="lazy">
-          <span class="terzi"></span>
-          <span class="mirino piccolo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        </div>
-        <figcaption>
-          <span class="num"><?= due($i + 1) ?></span>
-          <span>
-            <strong><?= e($p['title'] ?? '') ?></strong>
-            <?php if ($meta !== ''): ?><small><?= e(maiuscolo($meta)) ?></small><?php endif; ?>
-          </span>
-        </figcaption>
-      </figure>
-    <?php endforeach; ?>
-  </div>
+  <?php foreach ($stampe as $k => $p):
+      [$x, $y, $r, $w] = $posti[$k];
+      $meta = unisci([$p['category'] ?? '', $p['location'] ?? '', $p['year'] ?? '']);
+  ?>
+    <figure class="stampa" style="left: <?= $x ?>%; top: <?= $y ?>%; --r: <?= $r ?>deg; --w: <?= $w ?>%; z-index: <?= $k + 1 ?>"
+            data-foto="<?= e(foto($p['url'] ?? '', 2200)) ?>" data-titolo="<?= e($p['title'] ?? '') ?>" data-meta="<?= e(maiuscolo($meta)) ?>"
+            tabindex="0" role="button" aria-label="<?= e($p['title'] ?? '') ?>">
+      <img src="<?= e(foto($p['url'] ?? '', 900)) ?>" alt="" draggable="false" loading="lazy">
+    </figure>
+  <?php endforeach; ?>
 </section>
 <?php endif; ?>
 

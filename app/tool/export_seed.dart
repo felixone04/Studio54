@@ -114,6 +114,8 @@ void main(List<String> args) {
     ],
     'quotes': quotes.map((e) => e.toJson()).toList(),
     'appointments': appointments.map((e) => e.toJson()).toList(),
+    // Clienti d'esempio dell'area clienti (password: Seed.demoClientPassword).
+    'clients': Seed.clients().map((e) => e.toJson()).toList(),
   };
   File(out)
     ..createSync(recursive: true)

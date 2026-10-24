@@ -25,6 +25,7 @@ class AppState extends ChangeNotifier {
   List<Work> works = [];
   List<QuoteRequest> quotes = [];
   List<Appointment> appointments = [];
+  List<ClientAccount> clients = [];
   AdminSettings settings = AdminSettings();
 
   final GoogleCalendarService calendar = GoogleCalendarService();
@@ -45,6 +46,7 @@ class AppState extends ChangeNotifier {
     works = await _list('works', Work.fromJson) ?? Seed.works();
     quotes = await _list('quotes', QuoteRequest.fromJson) ?? [];
     appointments = await _list('appointments', Appointment.fromJson) ?? [];
+    clients = await _list('clients', ClientAccount.fromJson) ?? Seed.clients();
 
     final s = await repo.read('settings');
     settings = s is Map
@@ -208,6 +210,75 @@ class AppState extends ChangeNotifier {
   Future<void> deleteQuote(String id) {
     quotes = quotes.where((e) => e.id != id).toList();
     return _persist('quotes', quotes.map((e) => e.toJson()).toList());
+  }
+
+  // -------------------------------------------------------------- clienti
+
+  ClientAccount? clientById(String? id) {
+    for (final c in clients) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
+
+  Future<void> _persistClients() =>
+      _persist('clients', clients.map((e) => e.toJson()).toList());
+
+  /// Password facile da dettare: niente lettere che si confondono (l, I, O, 0).
+  static String generatePassword([int length = 10]) {
+    const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final r = Random.secure();
+    return List.generate(length, (_) => chars[r.nextInt(chars.length)]).join();
+  }
+
+  void _setClientPassword(ClientAccount c, String pw) {
+    final r = Random.secure();
+    c.passwordSalt = base64Url.encode(
+      List<int>.generate(16, (_) => r.nextInt(256)),
+    );
+    c.passwordHash = _hash(c.passwordSalt, pw);
+  }
+
+  /// Crea l'account e restituisce la password generata, da mandare al
+  /// cliente (resta salvata solo cifrata).
+  Future<String> createClient(ClientAccount c) async {
+    final pw = generatePassword();
+    _setClientPassword(c, pw);
+    clients = [c, ...clients];
+    await _persistClients();
+    return pw;
+  }
+
+  /// Nuova password per un cliente (ad esempio se l'ha dimenticata).
+  Future<String> resetClientPassword(ClientAccount c) async {
+    final pw = generatePassword();
+    _setClientPassword(c, pw);
+    await _persistClients();
+    return pw;
+  }
+
+  Future<void> saveClient(ClientAccount c) {
+    clients = [for (final e in clients) e.id == c.id ? c : e];
+    return _persistClients();
+  }
+
+  Future<void> deleteClient(String id) {
+    clients = clients.where((e) => e.id != id).toList();
+    return _persistClients();
+  }
+
+  /// Verifica email e password di un cliente (accesso alla sua area).
+  ClientAccount? checkClientLogin(String email, String pw) {
+    final e = email.trim().toLowerCase();
+    for (final c in clients) {
+      if (c.active &&
+          c.email.trim().toLowerCase() == e &&
+          c.passwordHash.isNotEmpty &&
+          _hash(c.passwordSalt, pw) == c.passwordHash) {
+        return c;
+      }
+    }
+    return null;
   }
 
   Future<void> _persistAppointments() =>
@@ -378,6 +449,14 @@ class AppState extends ChangeNotifier {
         add(p.url);
       }
     }
+    for (final c in clients) {
+      for (final p in c.album) {
+        add(p.url);
+      }
+      for (final f in c.files) {
+        add(f.url);
+      }
+    }
     add(content.bioImage);
     add(content.bannerImage);
     return n;
@@ -393,6 +472,7 @@ class AppState extends ChangeNotifier {
     'works': works.map((e) => e.toJson()).toList(),
     'quotes': quotes.map((e) => e.toJson()).toList(),
     'appointments': appointments.map((e) => e.toJson()).toList(),
+    'clients': clients.map((e) => e.toJson()).toList(),
   });
 
   Future<void> importBackup(String raw) async {
@@ -416,6 +496,7 @@ class AppState extends ChangeNotifier {
       'works': Work.fromJson,
       'quotes': QuoteRequest.fromJson,
       'appointments': Appointment.fromJson,
+      'clients': ClientAccount.fromJson,
     };
     try {
       SiteContent.fromJson(
@@ -440,6 +521,7 @@ class AppState extends ChangeNotifier {
       'works',
       'quotes',
       'appointments',
+      'clients',
     ]) {
       if (j[k] != null) await repo.write(k, j[k] as Object);
     }

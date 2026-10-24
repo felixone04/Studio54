@@ -28,7 +28,7 @@ pagina() { # pagina <file php> <file html>
 }
 
 echo "Pagine pubbliche"
-for p in index lavori biografia preventivo idee; do pagina "$p.php" "$p.html"; done
+for p in index lavori biografia preventivo; do pagina "$p.php" "$p.html"; done
 
 echo "Lavori"
 for id in $(php -r '$d = json_decode(file_get_contents("data/contenuti.json"), true);
@@ -36,9 +36,16 @@ for id in $(php -r '$d = json_decode(file_get_contents("data/contenuti.json"), t
   ID="$id" pagina lavoro.php "lavoro-$id.html"
 done
 
+echo "Area clienti"
+pagina area-clienti.php area-clienti.html
+for id in $(php -r '$d = json_decode(file_get_contents("data/contenuti.json"), true);
+  foreach ($d["clients"] ?? [] as $c) echo $c["id"], "\n";'); do
+  ID="$id" pagina cliente.php "cliente-$id.html"
+done
+
 echo "Area riservata (anteprima grafica)"
 pagina riservata.php riservata.html
-for s in panoramica richieste calendario servizi pacchetti lavori galleria home biografia contatti impostazioni; do
+for s in panoramica richieste calendario clienti servizi pacchetti lavori galleria home biografia contatti impostazioni; do
   SEZ="$s" pagina riservata.php "riservata-$s.html"
 done
 

@@ -279,3 +279,15 @@ a.riga:hover { background: var(--carta); }
 .finestra-titolo { margin-bottom: 18px; font-size: 20px; font-weight: 600; }
 .finestra-azioni { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 .avviso-breve { position: fixed; left: 50%; bottom: 24px; z-index: 70; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 8px; background: var(--inchiostro); color: var(--carta); font-size: 14px; box-shadow: 0 10px 30px rgba(30, 27, 23, .25); }
+
+/* Clienti */
+.ico-persone { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6'%3E%3Ccircle cx='9' cy='8' r='3.5'/%3E%3Cpath d='M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.8.7 3 2.4 3.5 5.2'/%3E%3C/svg%3E"); }
+.miniature-album { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.miniature-album img { width: 64px; height: 48px; object-fit: cover; border-radius: 4px; }
+.file-riga { padding-left: 0; padding-right: 0; }
+.file-tipo { flex: none; display: grid; place-items: center; width: 44px; height: 32px; border-radius: 4px; background: var(--lino); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; color: var(--accento-scuro); }
+.campo.in-riga { display: flex; align-items: center; gap: 10px; margin: 0; }
+.campo.in-riga > span { margin: 0; white-space: nowrap; }
+.campo.in-riga select { min-height: 42px; padding: 8px 12px; }
+.interruttore-riga { display: inline-flex; align-items: center; gap: 10px; margin-right: auto; font-size: 14px; font-weight: 500; }
+.messaggio-cliente { width: 100%; margin: 12px 0 8px; padding: 12px 14px; border: 1px solid var(--linea-campo); border-radius: 6px; background: var(--carta); font: 400 14px/1.55 var(--testo); resize: vertical; }

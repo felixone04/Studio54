@@ -126,7 +126,10 @@
     servizio: ['Servizio', '<label class="campo"><span>Nome *</span><input value="{chi}"></label><label class="campo"><span>Descrizione</span><textarea rows="3"></textarea></label><div class="coppia"><label class="campo"><span>Categoria</span><input value="Fotografia"></label><label class="campo"><span>Prezzo interno (€)</span><input inputmode="decimal"></label></div>'],
     pacchetto: ['Pacchetto', '<label class="campo"><span>Nome *</span><input value="{chi}"></label><label class="campo"><span>Sottotitolo</span><input></label><label class="campo"><span>Descrizione</span><textarea rows="3"></textarea></label>'],
     lavoro: ['Lavoro', '<label class="campo"><span>Titolo *</span><input value="{chi}"></label><div class="coppia"><label class="campo"><span>Evento (es. Matrimonio)</span><input></label><label class="campo"><span>Data (es. Giugno 2024)</span><input></label></div><div class="coppia"><label class="campo"><span>Stagione</span><select><option>Automatica (dalla data)</option><option>Primavera</option><option>Estate</option><option>Autunno</option><option>Inverno</option></select></label><label class="campo"><span>Tipo di location</span><input placeholder="Masseria, Mare, Montagna…"></label></div><label class="campo"><span>Luogo</span><input></label><label class="campo"><span>Racconto</span><textarea rows="3"></textarea></label><p class="etichetta-campo">Foto</p><div class="azioni"><button type="button" class="bottone bordo"><i class="ico ico-carica"></i>Carica dal dispositivo</button><button type="button" class="bottone bordo"><i class="ico ico-link"></i>Da indirizzo</button></div>'],
-    foto: ['Foto', '<div class="campo-foto"><button type="button" class="bottone bordo"><i class="ico ico-carica"></i>Carica foto</button></div><br><label class="campo"><span>Titolo *</span><input value="{chi}"></label><label class="campo"><span>Didascalia</span><textarea rows="2"></textarea></label><div class="coppia"><label class="campo"><span>Luogo</span><input></label><label class="campo"><span>Anno</span><input></label></div>']
+    foto: ['Foto', '<div class="campo-foto"><button type="button" class="bottone bordo"><i class="ico ico-carica"></i>Carica foto</button></div><br><label class="campo"><span>Titolo *</span><input value="{chi}"></label><label class="campo"><span>Didascalia</span><textarea rows="2"></textarea></label><div class="coppia"><label class="campo"><span>Luogo</span><input></label><label class="campo"><span>Anno</span><input></label></div>'],
+    cliente: ['Cliente', '<div class="coppia"><label class="campo"><span>Nome e cognome *</span><input name="nome" value="{chi}"></label><label class="campo"><span>Email *</span><input name="email" type="email"></label></div><label class="campo"><span>Telefono (per WhatsApp)</span><input name="telefono" type="tel"></label><label class="campo"><span>Evento (es. Il matrimonio di Anna e Paolo)</span><input></label><div class="coppia"><label class="campo"><span>Data</span><input placeholder="18 maggio 2024"></label><label class="campo"><span>Luogo</span><input></label></div><label class="campo"><span>Benvenuto nella sua area</span><textarea rows="2"></textarea></label>'],
+    pdf: ['Documento', '<div class="campo-foto"><button type="button" class="bottone bordo"><i class="ico ico-carica"></i>Scegli il PDF</button><span class="tenue piccolo">Fino a 20 MB</span></div><br><label class="campo"><span>Nome del documento *</span><input></label><label class="campo"><span>Nota per il cliente</span><input></label>'],
+    link: ['Link', '<label class="campo"><span>Nome *</span><input placeholder="Galleria completa"></label><label class="campo"><span>Indirizzo *</span><input type="url" placeholder="https://"></label><label class="campo"><span>Nota per il cliente</span><input></label>']
   };
   function apriFinestra(tipo, chi) {
     var m = moduli[tipo];
@@ -141,9 +144,52 @@
   $$('[data-finestra]').forEach(function (b) {
     b.addEventListener('click', function () { apriFinestra(b.getAttribute('data-finestra'), b.getAttribute('data-chi') || ''); });
   });
+  /* Clienti: alla creazione (o con "Nuova password") si genera la password
+     e si prepara il messaggio da mandare al cliente. */
+  var cred = $('#credenziali'), creando = false;
+  function generaPassword() {
+    var s = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', p = '', r = new Uint32Array(10);
+    crypto.getRandomValues(r);
+    for (var k = 0; k < 10; k++) p += s[r[k] % s.length];
+    return p;
+  }
+  function mostraCredenziali(nome, email, telefono, titolo) {
+    var area = new URL('area-clienti' + (location.pathname.slice(-5) === '.html' ? '.html' : '.php'), location.href).href;
+    var msg = 'Ciao ' + (nome.split(' ')[0] || '') + ',\nda oggi puoi vedere le foto del tuo evento e i documenti nella tua area riservata di Studio 54.\n\n' +
+      'Indirizzo: ' + area + '\nEmail: ' + email + '\nPassword: ' + generaPassword() + '\n\nTi consigliamo di cambiare la password al primo accesso.';
+    $('.finestra-titolo', cred).textContent = titolo;
+    $('.messaggio-cliente', cred).value = msg;
+    $('[data-whatsapp]', cred).href = 'https://wa.me/' + (telefono || '').replace(/\D/g, '') + '?text=' + encodeURIComponent(msg);
+    $('[data-email-cliente]', cred).href = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent('La tua area riservata di Studio 54') + '&body=' + encodeURIComponent(msg);
+    cred.hidden = false;
+  }
+  if (cred) {
+    $('[data-chiudi-credenziali]', cred).addEventListener('click', function () { cred.hidden = true; });
+    $('[data-copia-messaggio]', cred).addEventListener('click', function () {
+      var t = $('.messaggio-cliente', cred);
+      if (navigator.clipboard) navigator.clipboard.writeText(t.value); else { t.select(); document.execCommand('copy'); }
+      dici('Messaggio copiato.');
+    });
+    $$('[data-nuova-password]').forEach(function (b) {
+      b.addEventListener('click', function () { mostraCredenziali(b.getAttribute('data-nuova-password'), b.getAttribute('data-email'), '', 'Nuova password'); });
+    });
+    $$('[data-nuovo-cliente]').forEach(function (b) {
+      b.addEventListener('click', function () { creando = true; apriFinestra('cliente', ''); });
+    });
+  }
+
   if (fin) {
-    $('[data-chiudi-finestra]', fin).addEventListener('click', function () { fin.hidden = true; });
-    $('[data-salva]', fin).addEventListener('click', function () { fin.hidden = true; dici(DEMO); });
+    $('[data-chiudi-finestra]', fin).addEventListener('click', function () { fin.hidden = true; creando = false; });
+    $('[data-salva]', fin).addEventListener('click', function () {
+      if (creando) {
+        var nome = $('[name="nome"]', fin).value.trim(), email = $('[name="email"]', fin).value.trim();
+        if (!nome || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { dici('Inserisci nome ed email del cliente.'); return; }
+        fin.hidden = true; creando = false;
+        mostraCredenziali(nome, email, $('[name="telefono"]', fin).value, 'Account creato');
+        return;
+      }
+      fin.hidden = true; dici(DEMO);
+    });
     fin.addEventListener('click', function (e) { if (e.target === fin) fin.hidden = true; });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { fin.hidden = true; laterale(false); } });
   }

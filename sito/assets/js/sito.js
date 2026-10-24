@@ -230,28 +230,44 @@
     quandoPronto(function () { disegna(); riparti(); });
   });
 
-  /* ======================================================== MOSTRA (home) */
+  /* ==================================================== STAMPE SUL TAVOLO */
 
-  $$('[data-galleria]').forEach(function (sez) {
-    var box = $('.mostra-colonne', sez);
-    var quadri = $$('.quadro', box);
-    var colonne = 0;
-    // Colonne sfalsate come un provino a contatto: la foto i nella colonna i % n.
-    function componi() {
-      var n = window.innerWidth < 1024 ? 2 : 3;
-      if (n === colonne) return;
-      colonne = n;
-      box.innerHTML = '';
-      var col = [];
-      for (var c = 0; c < n; c++) { col[c] = document.createElement('div'); col[c].className = 'mostra-colonna'; box.appendChild(col[c]); }
-      quadri.forEach(function (q, k) { col[k % n].appendChild(q); });
-    }
-    componi();
-    window.addEventListener('resize', componi);
-    var foto = quadri.map(function (q) { return { src: q.getAttribute('data-foto'), titolo: q.getAttribute('data-titolo'), meta: q.getAttribute('data-meta') }; });
-    quadri.forEach(function (q, k) { apribile(q, function () { lbApri(foto, k); }); });
+  $$('[data-tavolo]').forEach(function (tavolo) {
+    var stampe = $$('.stampa', tavolo), sopra = 100;
+    var foto = stampe.map(function (s) { return { src: s.getAttribute('data-foto'), titolo: s.getAttribute('data-titolo'), meta: s.getAttribute('data-meta') }; });
+    stampe.forEach(function (s, k) {
+      var x0, y0, l0, t0, presa = false, mossa = false;
+      s.addEventListener('pointerdown', function (e) {
+        presa = true; mossa = false;
+        s.setPointerCapture(e.pointerId);
+        s.classList.add('presa');
+        s.style.zIndex = ++sopra;
+        x0 = e.clientX; y0 = e.clientY;
+        l0 = s.offsetLeft; t0 = s.offsetTop;
+      });
+      s.addEventListener('pointermove', function (e) {
+        if (!presa) return;
+        var dx = e.clientX - x0, dy = e.clientY - y0;
+        if (!mossa && Math.abs(dx) + Math.abs(dy) < 6) return;
+        mossa = true;
+        var maxL = tavolo.clientWidth - s.offsetWidth * 0.4, maxT = tavolo.clientHeight - s.offsetHeight * 0.4;
+        s.style.left = Math.min(maxL, Math.max(-s.offsetWidth * 0.6, l0 + dx)) + 'px';
+        s.style.top = Math.min(maxT, Math.max(-s.offsetHeight * 0.4, t0 + dy)) + 'px';
+      });
+      var lascia = function () {
+        if (!presa) return;
+        presa = false;
+        s.classList.remove('presa');
+        // Se non è stata spostata è un tocco: si guarda la foto.
+        if (!mossa) { lbApri(foto, k); return; }
+        // Posata di nuovo, un po' storta in modo diverso.
+        s.style.setProperty('--r', (Math.random() * 14 - 7).toFixed(1) + 'deg');
+      };
+      s.addEventListener('pointerup', lascia);
+      s.addEventListener('pointercancel', function () { presa = false; s.classList.remove('presa'); });
+      s.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); lbApri(foto, k); } });
+    });
   });
-
   /* ======================================================== FILTRI LAVORI */
 
   $$('[data-filtri]').forEach(function (box) {
@@ -622,6 +638,119 @@
           grazie.hidden = true; form.hidden = false; $('.preventivo-testa').hidden = false;
         };
       }
+    });
+  });
+
+  /* ========================================================== AREA CLIENTI */
+
+  // Accesso. Con PHP il modulo va al server, che controlla email e password;
+  // nell'anteprima statica si entra solo con i clienti d'esempio.
+  $$('[data-accesso-cliente]').forEach(function (form) {
+    var demo = form.getAttribute('data-demo');
+    var errore = $('.errore-accesso', form);
+    form.addEventListener('submit', function (e) {
+      var email = $('#c-email', form).value.trim().toLowerCase(), pw = $('#c-password', form).value;
+      if (!email || !pw) { e.preventDefault(); errore.textContent = 'Inserite email e password.'; return; }
+      if (!demo) return;
+      e.preventDefault();
+      var id = JSON.parse(demo)[email];
+      if (!id || pw !== 'studio54') { errore.textContent = 'Email o password non corrette.'; return; }
+      location.href = 'cliente-' + encodeURIComponent(id) + '.html';
+    });
+  });
+
+  // Album da sfogliare: due pagine affiancate su schermi larghi, una pagina
+  // alla volta su telefono. I fogli girano come in un libro vero.
+  $$('[data-album]').forEach(function (album) {
+    var foto = JSON.parse(album.getAttribute('data-foto') || '[]');
+    var libro = $('.album-libro', album), conto = $('.album-conto', album);
+    var titolo = album.getAttribute('data-titolo'), data = album.getAttribute('data-data');
+    var fogli = [], girati = 0, singolo = null;
+    function pagina(classe, html) { var d = document.createElement('div'); d.className = classe; d.innerHTML = html; return d; }
+    function testoCopertina() {
+      var t = document.createElement('div');
+      t.className = 'copertina-dentro';
+      t.innerHTML = '<img src="assets/img/mark.png" alt=""><p></p><small></small>';
+      $('p', t).textContent = titolo; $('small', t).textContent = data;
+      return t;
+    }
+    function faccia(classe, p) {
+      var f = pagina('faccia ' + classe, '');
+      if (!p) { f.appendChild(testoCopertina()); return f; }
+      var img = document.createElement('img'); img.src = p.src; img.alt = p.didascalia || ''; img.loading = 'lazy';
+      f.appendChild(img);
+      if (p.didascalia) { var c = document.createElement('figcaption'); c.textContent = p.didascalia; f.appendChild(c); }
+      return f;
+    }
+    function costruisci() {
+      var s = window.innerWidth < 720;
+      if (s === singolo) return;
+      singolo = s; girati = 0; fogli = [];
+      album.classList.toggle('singolo', s);
+      libro.innerHTML = '';
+      var fine = pagina('pagina-fissa destra', '<div class="copertina-dentro"><p>FINE</p><small>' + foto.length + ' foto</small></div>');
+      if (s) {
+        // Una pagina alla volta: la copertina, poi le foto una sopra l'altra.
+        libro.appendChild(fine);
+        var pagine = [null].concat(foto);
+        pagine.forEach(function (p) {
+          var f = pagina('foglio', '');
+          f.appendChild(faccia('fronte', p));
+          fogli.push(f);
+        });
+      } else {
+        var sx = pagina('pagina-fissa sinistra', ''); sx.appendChild(testoCopertina());
+        libro.appendChild(sx); libro.appendChild(fine);
+        for (var k = 0; k < foto.length; k += 2) {
+          var f = pagina('foglio', '');
+          f.appendChild(faccia('fronte', foto[k]));
+          var dietro = foto[k + 1] ? faccia('retro', foto[k + 1]) : pagina('faccia retro', '');
+          f.appendChild(dietro);
+          fogli.push(f);
+        }
+      }
+      fogli.forEach(function (f, k) {
+        libro.appendChild(f);
+        f.addEventListener('click', function () { vai(k < girati ? -1 : 1); });
+      });
+      mostra();
+    }
+    function mostra() {
+      var n = fogli.length;
+      fogli.forEach(function (f, k) {
+        var g = k < girati;
+        f.classList.toggle('girato', g);
+        f.style.zIndex = g ? k + 1 : n - k + 10;
+      });
+      if (singolo) conto.textContent = girati === 0 ? 'COPERTINA' : (girati >= n ? 'FINE' : due(girati) + ' / ' + due(foto.length));
+      else conto.textContent = girati === 0 ? 'COPERTINA' : (girati >= n ? 'FINE' : 'PAGINE ' + due(girati * 2 - 1) + '–' + due(Math.min(foto.length, girati * 2)));
+    }
+    function vai(d) { girati = Math.min(fogli.length, Math.max(0, girati + d)); mostra(); }
+    $$('[data-pagina]', album).forEach(function (b) { b.addEventListener('click', function () { vai(+b.getAttribute('data-pagina')); }); });
+    sfoglia(libro, vai);
+    var grande = $('.album-grande', album);
+    if (grande) grande.addEventListener('click', function () {
+      var i = singolo ? Math.max(0, girati - 1) : Math.max(0, girati * 2 - 1);
+      lbApri(foto.map(function (p) { return { src: p.grande, titolo: p.didascalia || titolo, meta: '' }; }), Math.min(i, foto.length - 1));
+    });
+    costruisci();
+    var t0; window.addEventListener('resize', function () { clearTimeout(t0); t0 = setTimeout(costruisci, 150); });
+  });
+
+  // Cambio password del cliente: per ora solo i controlli (il salvataggio
+  // arriverà con il database).
+  $$('[data-cambia-password]').forEach(function (form) {
+    var err = $('.errore-password', form);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var a = $('#p-nuova', form).value, b = $('#p-ripeti', form).value;
+      var vecchio = $('.messaggio-ok', form); if (vecchio) vecchio.remove();
+      if (a.length < 8) { err.textContent = 'La password deve avere almeno 8 caratteri.'; return; }
+      if (a !== b) { err.textContent = 'Le due password non coincidono.'; return; }
+      err.textContent = '';
+      var ok = document.createElement('p'); ok.className = 'messaggio-ok';
+      ok.textContent = 'Anteprima: la nuova password verrà salvata quando il sito sarà collegato al database.';
+      form.appendChild(ok); form.reset();
     });
   });
 })();

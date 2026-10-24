@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 import '../models/models.dart';
 
 /// Foto d'esempio da Unsplash: il titolare le sostituisce con le proprie
@@ -496,6 +500,102 @@ class Seed {
       ],
     ),
   ];
+
+  /// Documento PDF d'esempio, pubblicato con il sito.
+  static const demoPdf =
+      'https://felixone04.github.io/Studio54/assets/demo/scheda-servizio.pdf';
+
+  /// Password dei clienti d'esempio (solo per provare l'area clienti).
+  static const demoClientPassword = 'studio54';
+
+  static String _demoHash(String salt) => sha256
+      .convert(utf8.encode('$salt::$demoClientPassword'))
+      .toString();
+
+  /// Clienti d'esempio: ognuno con l'album del suo evento, documenti e link.
+  static List<ClientAccount> clients() {
+    final works = {for (final w in Seed.works()) w.id: w};
+    ClientAccount client(
+      String id,
+      String name,
+      String email,
+      String phone,
+      String workId,
+      String title,
+      String date,
+      String location,
+      String welcome,
+      List<ClientFile> files,
+    ) => ClientAccount(
+      id: id,
+      name: name,
+      email: email,
+      phone: phone,
+      passwordSalt: 'demo-$id',
+      passwordHash: _demoHash('demo-$id'),
+      eventTitle: title,
+      eventDate: date,
+      location: location,
+      welcome: welcome,
+      album: [
+        for (final p in works[workId]!.photos)
+          WorkPhoto(id: '$id-${p.id}', url: p.url, caption: p.caption),
+      ],
+      files: files,
+      createdAt: DateTime(2024, 6, 2),
+    );
+    return [
+      client(
+        'cl-anna',
+        'Anna Ricci',
+        'anna.ricci@example.com',
+        '+39 333 555 0101',
+        'w-anna-paolo',
+        'Il matrimonio di Anna e Paolo',
+        '18 maggio 2024',
+        'Masseria in Valle d\'Itria',
+        'Ecco le foto del vostro giorno: sfogliate l\'album e scaricate i '
+            'documenti quando volete.',
+        [
+          ClientFile(
+            id: 'cl-anna-f1',
+            name: 'Scheda del servizio',
+            url: demoPdf,
+            note: 'Riepilogo di servizi, tempi di consegna e album.',
+            addedAt: DateTime(2024, 4, 2),
+          ),
+          ClientFile(
+            id: 'cl-anna-f2',
+            name: 'Galleria completa in alta risoluzione',
+            url: 'https://drive.google.com/',
+            isLink: true,
+            note: 'Tutte le foto da scaricare (link d\'esempio).',
+            addedAt: DateTime(2024, 6, 2),
+          ),
+        ],
+      ),
+      client(
+        'cl-elena',
+        'Elena Bianchi',
+        'elena.bianchi@example.com',
+        '+39 347 555 0202',
+        'w-elena-davide',
+        'Il matrimonio di Elena e Davide',
+        '9 dicembre 2023',
+        'Dolomiti',
+        'Il vostro inverno in quota, pagina dopo pagina.',
+        [
+          ClientFile(
+            id: 'cl-elena-f1',
+            name: 'Scheda del servizio',
+            url: demoPdf,
+            note: 'Riepilogo del servizio.',
+            addedAt: DateTime(2023, 11, 20),
+          ),
+        ],
+      ),
+    ];
+  }
 
   static List<GalleryPhoto> gallery() => [
     GalleryPhoto(

@@ -516,6 +516,124 @@ class Work {
   };
 }
 
+/// Un file nell'area di un cliente: un PDF da scaricare o un link (es. una
+/// galleria su Google Drive), con una nota.
+class ClientFile {
+  String id;
+  String name;
+  String url; // indirizzo web o file caricato (data URL)
+  bool isLink; // vero = link da aprire, falso = documento da scaricare
+  String note;
+  DateTime addedAt;
+  ClientFile({
+    String? id,
+    required this.name,
+    required this.url,
+    this.isLink = false,
+    this.note = '',
+    DateTime? addedAt,
+  }) : id = id ?? newId(),
+       addedAt = addedAt ?? DateTime.now();
+
+  factory ClientFile.fromJson(Map<String, dynamic> j) => ClientFile(
+    id: j['id'],
+    name: j['name'] ?? '',
+    url: j['url'] ?? '',
+    isLink: j['isLink'] ?? false,
+    note: j['note'] ?? '',
+    addedAt: DateTime.tryParse(j['addedAt'] ?? ''),
+  );
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'url': url,
+    'isLink': isLink,
+    'note': note,
+    'addedAt': addedAt.toIso8601String(),
+  };
+}
+
+/// Un cliente con accesso alla propria area riservata sul sito. Nessuno si
+/// registra da solo: gli account li crea il titolare dal gestionale.
+class ClientAccount {
+  String id;
+  String name;
+  String email;
+  String phone;
+  String passwordHash;
+  String passwordSalt;
+  bool active; // falso = accesso sospeso
+  String eventTitle; // es. "Il matrimonio di Anna e Paolo"
+  String eventDate; // testo libero, es. "18 maggio 2024"
+  String location;
+  String welcome; // due righe di benvenuto nell'area del cliente
+  List<WorkPhoto> album;
+  List<ClientFile> files;
+  DateTime createdAt;
+  DateTime? lastLogin;
+  ClientAccount({
+    String? id,
+    required this.name,
+    required this.email,
+    this.phone = '',
+    this.passwordHash = '',
+    this.passwordSalt = '',
+    this.active = true,
+    this.eventTitle = '',
+    this.eventDate = '',
+    this.location = '',
+    this.welcome = '',
+    List<WorkPhoto>? album,
+    List<ClientFile>? files,
+    DateTime? createdAt,
+    this.lastLogin,
+  }) : id = id ?? newId(),
+       album = album ?? [],
+       files = files ?? [],
+       createdAt = createdAt ?? DateTime.now();
+
+  factory ClientAccount.fromJson(Map<String, dynamic> j) => ClientAccount(
+    id: j['id'],
+    name: j['name'] ?? '',
+    email: j['email'] ?? '',
+    phone: j['phone'] ?? '',
+    passwordHash: j['passwordHash'] ?? '',
+    passwordSalt: j['passwordSalt'] ?? '',
+    active: j['active'] ?? true,
+    eventTitle: j['eventTitle'] ?? '',
+    eventDate: j['eventDate'] ?? '',
+    location: j['location'] ?? '',
+    welcome: j['welcome'] ?? '',
+    album: [
+      for (final p in (j['album'] as List? ?? const []))
+        WorkPhoto.fromJson(Map<String, dynamic>.from(p as Map)),
+    ],
+    files: [
+      for (final f in (j['files'] as List? ?? const []))
+        ClientFile.fromJson(Map<String, dynamic>.from(f as Map)),
+    ],
+    createdAt: DateTime.tryParse(j['createdAt'] ?? ''),
+    lastLogin: DateTime.tryParse(j['lastLogin'] ?? ''),
+  );
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'email': email,
+    'phone': phone,
+    'passwordHash': passwordHash,
+    'passwordSalt': passwordSalt,
+    'active': active,
+    'eventTitle': eventTitle,
+    'eventDate': eventDate,
+    'location': location,
+    'welcome': welcome,
+    'album': album.map((e) => e.toJson()).toList(),
+    'files': files.map((e) => e.toJson()).toList(),
+    'createdAt': createdAt.toIso8601String(),
+    'lastLogin': lastLogin?.toIso8601String(),
+  };
+}
+
 enum QuoteStatus { nuova, contattata, confermata, archiviata }
 
 extension QuoteStatusLabel on QuoteStatus {
