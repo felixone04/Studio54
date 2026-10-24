@@ -1,6 +1,6 @@
 # Pubblica l'anteprima su GitHub Pages a ogni push su master:
 # - il sito (cartella sito/) trasformato da PHP in pagine HTML statiche;
-# - l'app Android, presa dall'ultima release del progetto (app/studio54.apk).
+# - l'app Android, dalla cartella apk/ del progetto (online: app/studio54.apk).
 name: Pubblica sito
 
 on:
@@ -34,8 +34,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p _site/app
-          gh release download --repo "${{ github.repository }}" --pattern studio54.apk --dir _site/app \
-            || echo "Nessuna release con l'APK: il link per scaricarla resterà vuoto."
+          # L'APK sta nella cartella apk/ del progetto; in mancanza, quella
+          # dell'ultima release.
+          if [ -f apk/studio54.apk ]; then
+            cp apk/studio54.apk _site/app/studio54.apk
+          else
+            gh release download --repo "${{ github.repository }}" --pattern studio54.apk --dir _site/app \
+              || echo "Nessuna APK: il link per scaricarla resterà vuoto."
+          fi
 
       - uses: actions/upload-pages-artifact@v3
         with:

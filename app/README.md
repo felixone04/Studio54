@@ -16,6 +16,7 @@ App Android dello studio, con la stessa grafica del sito (cartella `../sito`): p
 flutter pub get
 flutter run            # telefono o emulatore collegato
 flutter build apk --release --target-platform android-arm,android-arm64
+# poi copia build/app/outputs/flutter-apk/app-release.apk in ../apk/studio54.apk
 ```
 
 Build di produzione: `flutter build web --release` (output in `build/web`).

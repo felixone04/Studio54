@@ -6,6 +6,7 @@ Due progetti separati, con la stessa grafica:
 |---|---|
 | [`sito/`](sito) | Il sito web in **HTML, CSS, JavaScript e PHP**: home, lavori, biografia, preventivo e area riservata (per ora solo grafica). |
 | [`app/`](app) | L'**app Android** in Flutter: le stesse pagine del sito e, dal menu, il gestionale per il titolare. |
+| [`apk/`](apk) | L'APK pronta da installare sul telefono (`studio54.apk`). |
 
 ## Anteprima online
 
@@ -13,7 +14,7 @@ Due progetti separati, con la stessa grafica:
 - App Android: https://felixone04.github.io/Studio54/app/studio54.apk (si scarica anche dal link nel footer del sito)
 
 GitHub Pages non esegue PHP: a ogni push su `master` la pubblicazione trasforma le pagine PHP in HTML statico
-(`sito/tools/esporta.sh`) e aggiunge l'APK presa dall'ultima *release* del progetto.
+(`sito/tools/esporta.sh`) e aggiunge l'APK che si trova nella cartella [`apk/`](apk) del progetto (per aggiornarla basta sostituire `apk/studio54.apk`).
 
 ## Stato attuale
 
