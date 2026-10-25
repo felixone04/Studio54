@@ -46,8 +46,10 @@
   // sotto (crema, lino...), così non si vede mai uno stacco.
   var coloreSotto = function () {
     var y = barra.offsetHeight + 1, x = window.innerWidth / 2;
-    var el = document.elementFromPoint(x, Math.min(y, window.innerHeight - 1));
-    var blocco = el && el.closest('main > *, .piede');
+    // Solo la pagina vera: niente logo d'apertura, menu o foto a schermo intero.
+    var sotto = document.elementsFromPoint(x, Math.min(y, window.innerHeight - 1));
+    var blocco = null;
+    for (var k = 0; k < sotto.length && !blocco; k++) blocco = sotto[k].closest('main > *, .piede');
     var c = blocco ? getComputedStyle(blocco).backgroundColor : '';
     if (!c || c === 'transparent' || /rgba\(.*,\s*0\)$/.test(c)) c = '';
     barra.style.setProperty('--sotto', c || 'var(--carta)');
