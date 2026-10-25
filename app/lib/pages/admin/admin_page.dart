@@ -9,6 +9,7 @@ import '../../widgets/common.dart';
 import '../../widgets/photo_ui.dart';
 import 'admin_calendar.dart';
 import 'admin_catalog.dart';
+import 'admin_clients.dart';
 import 'admin_content.dart';
 import 'admin_dashboard.dart';
 import 'admin_quotes.dart';
@@ -31,6 +32,7 @@ const _groups = <(String, List<_Section>)>[
       _Section('panoramica', 'Panoramica', Icons.space_dashboard_outlined),
       _Section('richieste', 'Richieste', Icons.mark_email_unread_outlined),
       _Section('calendario', 'Calendario', Icons.calendar_month_outlined),
+      _Section('clienti', 'Clienti', Icons.people_alt_outlined),
     ],
   ),
   (
@@ -322,6 +324,7 @@ class _ShellState extends State<_Shell> {
     final page = switch (_current) {
       'richieste' => const AdminPageScroll(child: AdminQuotes()),
       'calendario' => const AdminPageScroll(child: AdminCalendar()),
+      'clienti' => const AdminPageScroll(child: AdminClients()),
       'servizi' => const AdminPageScroll(child: AdminServices()),
       'pacchetti' => const AdminPageScroll(child: AdminPackages()),
       'lavori' => const AdminPageScroll(child: AdminWorks()),

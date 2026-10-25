@@ -42,8 +42,19 @@
   var barra = $('#barra');
   var aperturaHome = $('.pagina-home .apertura');
   var orizzontale = window.matchMedia('(min-aspect-ratio: 1/1)');
+  // La barra non ha uno sfondo suo: prende quello della sezione che le passa
+  // sotto (crema, lino...), così non si vede mai uno stacco.
+  var coloreSotto = function () {
+    var y = barra.offsetHeight + 1, x = window.innerWidth / 2;
+    var el = document.elementFromPoint(x, Math.min(y, window.innerHeight - 1));
+    var blocco = el && el.closest('main > *, .piede');
+    var c = blocco ? getComputedStyle(blocco).backgroundColor : '';
+    if (!c || c === 'transparent' || /rgba\(.*,\s*0\)$/.test(c)) c = '';
+    barra.style.setProperty('--sotto', c || 'var(--carta)');
+  };
   var aggiornaBarra = function () {
     if (!barra) return;
+    coloreSotto();
     barra.classList.toggle('scorsa', window.scrollY > 10);
     // Nella home in orizzontale la barra è trasparente finché sta sopra la
     // foto d'apertura; poi prende il colore del sito.

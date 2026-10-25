@@ -44,9 +44,8 @@ void main() {
 
   group('preventivo', () {
     // Una data valida qualsiasi: fra due mesi.
-    final inTwoMonths = DateFormat(
-      'dd/MM/yyyy',
-    ).format(DateTime.now().add(const Duration(days: 60)));
+    final inTwoMonths = DateFormat('dd/MM/yyyy')
+        .format(DateTime.now().add(const Duration(days: 60)));
 
     /// Compila tutti i campi obbligatori tranne i servizi.
     Future<void> fillAll(WidgetTester tester, {bool type = true}) async {
@@ -110,9 +109,7 @@ void main() {
       await disposeApp(tester);
     });
 
-    testWidgets('dal link di un pacchetto: servizi già scelti', (
-      tester,
-    ) async {
+    testWidgets('dal link di un pacchetto: servizi già scelti', (tester) async {
       final s = await loadState();
       await pumpApp(tester, s, location: '/preventivo?p=pkg-essential');
       await fillAll(tester);

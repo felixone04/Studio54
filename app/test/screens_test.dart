@@ -34,6 +34,7 @@ const adminRoutes = [
   '/admin/panoramica',
   '/admin/richieste',
   '/admin/calendario',
+  '/admin/clienti',
   '/admin/servizi',
   '/admin/pacchetti',
   '/admin/lavori',

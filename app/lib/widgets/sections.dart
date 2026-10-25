@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import 'common.dart';
 import 'lightbox.dart';
 import 'photo_ui.dart';
+import 'site_scaffold.dart' show NavTint;
 
 // ============================================================ animazioni
 
@@ -155,9 +156,18 @@ class _RoundIconButtonState extends State<RoundIconButton> {
 /// Apertura: carosello delle sole foto orizzontali, a tutto schermo e
 /// racchiuse dagli angoli del mirino.
 class HeroSlideshow extends StatefulWidget {
-  const HeroSlideshow({super.key, required this.content, required this.photos});
+  const HeroSlideshow({
+    super.key,
+    required this.content,
+    required this.photos,
+    this.underNav = false,
+  });
   final SiteContent content;
   final List<GalleryPhoto> photos;
+
+  /// In orizzontale la foto parte dal bordo in alto, sotto la barra
+  /// trasparente (vedi [SiteScaffold.photoUnderNav]).
+  final bool underNav;
 
   /// Tempo di ogni foto.
   static const interval = Duration(seconds: 4);
@@ -517,8 +527,11 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
     // gli angoli del mirino che la racchiudono e la descrizione in basso.
     final g = context.gutter;
     final inset = g * 0.6;
+    final top = widget.underNav ? context.navH + 6 : inset;
     return SizedBox(
-      height: context.screenH - context.navH,
+      height: widget.underNav
+          ? context.screenH
+          : context.screenH - context.navH,
       child: _swipe(
         ClipRect(
           child: Stack(
@@ -542,7 +555,7 @@ class _HeroSlideshowState extends State<HeroSlideshow> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.all(inset),
+                padding: EdgeInsets.fromLTRB(inset, top, inset, inset),
                 child: const Viewfinder(
                   color: Color(0xCCFFFAF0),
                   length: 30,
@@ -802,193 +815,204 @@ class Statement extends StatelessWidget {
   }
 }
 
-// ========================================================== GALLERIA
+// ===================================================== STAMPE SUL TAVOLO
 
-/// Il portfolio come un provino a contatto: colonne sfalsate, numero di
-/// fotogramma e, al passaggio del mouse, mirino e griglia dei terzi.
-class GalleryWall extends StatelessWidget {
-  const GalleryWall({
-    super.key,
-    required this.content,
-    required this.photos,
-    required this.number,
-  });
-  final SiteContent content;
+/// Le foto stampate, sparse e un po' storte su un tavolo color lino: al
+/// passaggio (o mentre si tengono premute) si raddrizzano, si spostano
+/// trascinandole e toccandole si aprono a schermo intero.
+class PrintsTable extends StatefulWidget {
+  const PrintsTable({super.key, required this.photos, required this.number});
   final List<GalleryPhoto> photos;
   final String number;
 
-  static const _ratios = [4 / 5, 3 / 4, 1.0, 4 / 5, 2 / 3, 5 / 4];
+  /// Posto di ogni stampa: sinistra e alto in %, rotazione (gradi), larghezza %.
+  static const slots = <(double, double, double, double)>[
+    (5, 9, -7, 24),
+    (29, 3, 4, 17),
+    (46, 14, -3, 27),
+    (74, 5, 6, 18),
+    (13, 50, 5, 22),
+    (39, 55, -5, 25),
+    (67, 48, -8, 18),
+  ];
 
   @override
-  Widget build(BuildContext context) {
-    final cols = context.w < 1024 ? 2 : 3;
-    final gap = context.fluid(10, 28);
-    final stagger = context.fluid(30, 110);
-    return Section(
-      color: Palette.linen,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionTitle(
-            kicker: content.galleryKicker,
-            title: content.galleryTitle,
-            number: number,
-            trailing: Text(
-              '${photos.length} SCATTI',
-              style: label(10.5, color: Palette.stone),
-            ),
-          ),
-          SizedBox(height: context.fluid(30, 60)),
-          LayoutBuilder(
-            builder: (context, box) {
-              final colW = (box.maxWidth - gap * (cols - 1)) / cols;
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var c = 0; c < cols; c++) ...[
-                    if (c > 0) SizedBox(width: gap),
-                    SizedBox(
-                      width: colW,
-                      child: Padding(
-                        padding: EdgeInsets.only(top: c.isOdd ? stagger : 0),
-                        child: Column(
-                          children: [
-                            for (var i = c; i < photos.length; i += cols)
-                              Padding(
-                                padding: EdgeInsets.only(bottom: gap * 1.5),
-                                child: Reveal(
-                                  delay: Duration(milliseconds: 70 * c),
-                                  child: _Frame(
-                                    photo: photos[i],
-                                    number: i + 1,
-                                    ratio: _ratios[i % _ratios.length],
-                                    onTap: () =>
-                                        showPhotoLightbox(context, photos, i),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
+  State<PrintsTable> createState() => _PrintsTableState();
+}
+
+class _PrintsTableState extends State<PrintsTable> {
+  final _aspects = PhotoAspects.instance;
+  final _moved = <int, Offset>{}; // posizioni scelte trascinando (px)
+  final _turn = <int, double>{}; // rotazione dopo essere state posate
+  final _order = <int>[]; // ordine di sovrapposizione (l'ultima sta sopra)
+  final _rnd = math.Random();
+  int? _held;
+  int? _hover;
+
+  List<GalleryPhoto> get _photos =>
+      widget.photos.take(PrintsTable.slots.length).toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _aspects.addListener(_changed);
+    _aspects.resolveAll(_photos.map((p) => p.url));
   }
-}
 
-class _Frame extends StatefulWidget {
-  const _Frame({
-    required this.photo,
-    required this.number,
-    required this.ratio,
-    required this.onTap,
-  });
-  final GalleryPhoto photo;
-  final int number;
-  final double ratio;
-  final VoidCallback onTap;
+  void _changed() {
+    if (mounted) setState(() {});
+  }
 
   @override
-  State<_Frame> createState() => _FrameState();
-}
+  void dispose() {
+    _aspects.removeListener(_changed);
+    super.dispose();
+  }
 
-class _FrameState extends State<_Frame> {
-  bool _hover = false;
+  void _front(int i) {
+    _order
+      ..remove(i)
+      ..add(i);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final small = context.isPhone;
-    final meta = [
-      widget.photo.category,
-      widget.photo.location,
-      widget.photo.year,
-    ].where((e) => e.isNotEmpty).join(' · ');
-    return Semantics(
-      button: true,
-      label: widget.photo.title,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AspectRatio(
-                aspectRatio: widget.ratio,
-                child: ClipRect(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      AnimatedScale(
-                        scale: _hover ? 1.04 : 1,
-                        duration: const Duration(milliseconds: 800),
-                        curve: Curves.easeOutCubic,
-                        child: PhotoImage(widget.photo.url),
-                      ),
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(end: _hover ? 1 : 0),
-                        duration: const Duration(milliseconds: 300),
-                        builder: (_, t, _) => ThirdsGrid(opacity: t),
-                      ),
-                      FocusFrame(
-                        active: _hover,
-                        length: 16,
-                        inset: 12,
-                        focusPoint: true,
-                      ),
-                    ],
-                  ),
-                ),
+    final photos = _photos;
+    final phone = context.isPhone;
+    for (var i = 0; i < photos.length; i++) {
+      if (!_order.contains(i)) _order.insert(i.clamp(0, _order.length), i);
+    }
+    _order.removeWhere((i) => i >= photos.length);
+    return NavTint(
+      color: Palette.linen,
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final w = box.maxWidth;
+          final h = phone ? w * 1.35 : (w * 0.64).clamp(600.0, 860.0);
+          return Container(
+            height: h,
+            decoration: const BoxDecoration(
+              color: Palette.linen,
+              gradient: RadialGradient(
+                center: Alignment(-0.4, -0.6),
+                radius: 1.1,
+                colors: [Color(0x80FFFFFF), Color(0x00FFFFFF)],
               ),
-              SizedBox(height: small ? 8 : 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.number.toString().padLeft(2, '0'),
-                    style: label(small ? 9 : 10, color: Palette.stone),
-                  ),
-                  SizedBox(width: small ? 8 : 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                Positioned(
+                  left: context.gutter,
+                  right: context.gutter,
+                  bottom: 24,
+                  child: IgnorePointer(
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      runSpacing: 8,
+                      spacing: 20,
                       children: [
+                        Tag('Gli scatti', number: widget.number),
                         Text(
-                          widget.photo.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: display(
-                            small ? 14 : 17,
-                            weight: FontWeight.w400,
-                          ),
+                          'TOCCA PER GUARDARE · TRASCINA PER SPOSTARE',
+                          style: label(10, color: Palette.ash),
                         ),
-                        if (meta.isNotEmpty && !small) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            meta.toUpperCase(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: label(
-                              9.5,
-                              color: Palette.stone,
-                              weight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
-                ],
+                ),
+                for (final i in _order) _print(context, photos, i, w, h, phone),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _print(
+    BuildContext context,
+    List<GalleryPhoto> photos,
+    int i,
+    double w,
+    double h,
+    bool phone,
+  ) {
+    final (x, y, r, pw) = PrintsTable.slots[i];
+    final width = w * pw / 100 * (phone ? 1.7 : 1);
+    final pos = _moved[i] ?? Offset(w * x / 100, h * y / 100);
+    final up = _held == i || _hover == i;
+    final ratio = (_aspects.of(photos[i].url) ?? 0.8).clamp(0.5, 2.0);
+    final pad = (w * 0.008).clamp(6.0, 12.0);
+    return Positioned(
+      // La chiave tiene la stampa (e il gesto in corso) quando viene portata
+      // sopra le altre.
+      key: ValueKey('stampa-$i'),
+      left: pos.dx,
+      top: pos.dy,
+      child: Semantics(
+        button: true,
+        label: photos[i].title,
+        child: MouseRegion(
+          cursor: _held == i
+              ? SystemMouseCursors.grabbing
+              : SystemMouseCursors.grab,
+          onEnter: (_) => setState(() => _hover = i),
+          onExit: (_) => setState(() => _hover = null),
+          child: GestureDetector(
+            onTap: () => showPhotoLightbox(context, photos, i),
+            onTapDown: (_) => setState(() {
+              _held = i;
+              _front(i);
+            }),
+            onTapCancel: () => setState(() => _held = null),
+            onTapUp: (_) => setState(() => _held = null),
+            onPanStart: (_) => setState(() {
+              _held = i;
+              _front(i);
+            }),
+            onPanUpdate: (d) => setState(() {
+              final p = (_moved[i] ?? pos) + d.delta;
+              _moved[i] = Offset(
+                p.dx.clamp(-width * 0.6, w - width * 0.4),
+                p.dy.clamp(-width * 0.4, h - width * 0.4),
+              );
+            }),
+            onPanEnd: (_) => setState(() {
+              _held = null;
+              // Posata di nuovo, un po' storta in modo diverso.
+              _turn[i] = _rnd.nextDouble() * 14 - 7;
+            }),
+            child: AnimatedRotation(
+              turns: up ? 0 : (_turn[i] ?? r) / 360,
+              duration: const Duration(milliseconds: 450),
+              curve: Curves.easeOutCubic,
+              child: AnimatedScale(
+                scale: up ? 1.05 : 1,
+                duration: const Duration(milliseconds: 450),
+                curve: Curves.easeOutCubic,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 450),
+                  width: width,
+                  padding: EdgeInsets.fromLTRB(pad, pad, pad, pad * 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0x2E1E1B17)
+                            .withValues(alpha: up ? 0.26 : 0.18),
+                        blurRadius: up ? 50 : 28,
+                        offset: Offset(0, up ? 22 : 10),
+                      ),
+                    ],
+                  ),
+                  child: AspectRatio(
+                    aspectRatio: ratio,
+                    child: PhotoImage(photos[i].url),
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import '../theme/app_theme.dart';
+import 'site_scaffold.dart' show NavTint;
 
 // ------------------------------------------------------------------ immagini
 
@@ -250,7 +251,7 @@ class Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = context.fluid(72, 150);
-    return Container(
+    final box = Container(
       color: color,
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(
@@ -261,6 +262,8 @@ class Section extends StatelessWidget {
       ),
       child: child,
     );
+    // Una sezione colorata dà il suo colore alla barra in alto.
+    return color == null ? box : NavTint(color: color!, child: box);
   }
 }
 

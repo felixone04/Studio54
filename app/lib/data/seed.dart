@@ -508,9 +508,8 @@ class Seed {
   /// Password dei clienti d'esempio (solo per provare l'area clienti).
   static const demoClientPassword = 'studio54';
 
-  static String _demoHash(String salt) => sha256
-      .convert(utf8.encode('$salt::$demoClientPassword'))
-      .toString();
+  static String _demoHash(String salt) =>
+      sha256.convert(utf8.encode('$salt::$demoClientPassword')).toString();
 
   /// Clienti d'esempio: ognuno con l'album del suo evento, documenti e link.
   static List<ClientAccount> clients() {

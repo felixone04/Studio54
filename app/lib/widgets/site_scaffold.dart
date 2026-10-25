@@ -30,14 +30,58 @@ const _navItems = <(String, String)>[
   ('Preventivo', '/preventivo'),
 ];
 
-/// Struttura comune delle pagine pubbliche: barra chiara con il logo in alto
-/// a sinistra, contenuto e footer.
+/// Segna una parte della pagina con il suo colore di fondo: quando la barra
+/// in alto ci passa sopra prende quel colore, così non si vede mai uno stacco.
+class NavTint extends StatefulWidget {
+  const NavTint({super.key, required this.color, required this.child});
+  final Color color;
+  final Widget child;
+
+  @override
+  State<NavTint> createState() => _NavTintState();
+}
+
+class _NavTintState extends State<NavTint> {
+  _NavTints? _scope;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final s = context.getInheritedWidgetOfExactType<_NavTints>();
+    if (s != _scope) {
+      _scope?.tints.remove(this);
+      _scope = s?..tints.add(this);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scope?.tints.remove(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+class _NavTints extends InheritedWidget {
+  const _NavTints({required this.tints, required super.child});
+  final Set<_NavTintState> tints;
+
+  @override
+  bool updateShouldNotify(_NavTints old) => false;
+}
+
+/// Struttura comune delle pagine pubbliche: barra fissa in alto con il logo
+/// a sinistra (senza uno sfondo suo: prende quello della pagina), contenuto
+/// e footer.
 class SiteScaffold extends StatefulWidget {
   const SiteScaffold({
     super.key,
     required this.location,
     required this.children,
     this.overlay,
+    this.photoUnderNav,
   });
 
   final String location;
@@ -46,23 +90,53 @@ class SiteScaffold extends StatefulWidget {
   /// Elemento fisso sopra al contenuto.
   final Widget? overlay;
 
+  /// Altezza della foto d'apertura che parte dal bordo in alto, sotto la
+  /// barra trasparente (home in orizzontale); null = nessuna.
+  final double? photoUnderNav;
+
   @override
   State<SiteScaffold> createState() => _SiteScaffoldState();
 }
 
 class _SiteScaffoldState extends State<SiteScaffold> {
   final _scroll = ScrollController();
-  bool _scrolled = false;
+  final _tints = <_NavTintState>{};
+  Color _under = Palette.paper;
+  bool _overPhoto = false;
 
   @override
   void initState() {
     super.initState();
     _scroll.addListener(_update);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _update());
   }
 
+  @override
+  void didUpdateWidget(SiteScaffold old) {
+    super.didUpdateWidget(old);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _update());
+  }
+
+  /// Colore della parte di pagina appena sotto la barra.
   void _update() {
-    final scrolled = _scroll.offset > 10;
-    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    if (!mounted) return;
+    final navH = context.navH;
+    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+    final photo = widget.photoUnderNav;
+    final overPhoto = photo != null && offset < photo - navH;
+    var under = Palette.paper;
+    for (final t in _tints) {
+      final box = t.context.findRenderObject();
+      if (box is! RenderBox || !box.attached || !box.hasSize) continue;
+      final top = box.localToGlobal(Offset.zero).dy;
+      if (top <= navH && top + box.size.height > navH) under = t.widget.color;
+    }
+    if (under != _under || overPhoto != _overPhoto) {
+      setState(() {
+        _under = under;
+        _overPhoto = overPhoto;
+      });
+    }
   }
 
   @override
@@ -75,44 +149,57 @@ class _SiteScaffoldState extends State<SiteScaffold> {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final navH = context.navH;
+    final light = _overPhoto;
     return Scaffold(
       backgroundColor: Palette.paper,
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            controller: _scroll,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: navH),
-                ...widget.children,
-                SiteFooter(content: state.content),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            // Niente sfocatura dello sfondo: è costosa da disegnare sul web e
-            // rende lo scorrimento meno fluido. Basta un fondo pieno.
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: navH,
-              padding: EdgeInsets.symmetric(horizontal: context.gutter),
-              decoration: BoxDecoration(
-                color: Palette.paper.withValues(alpha: 0.97),
-                border: Border(
-                  bottom: BorderSide(
-                    color: _scrolled ? Palette.line : Colors.transparent,
-                  ),
+      body: _NavTints(
+        tints: _tints,
+        child: Stack(
+          children: [
+            NotificationListener<ScrollMetricsNotification>(
+              onNotification: (_) {
+                WidgetsBinding.instance.addPostFrameCallback((_) => _update());
+                return false;
+              },
+              child: SingleChildScrollView(
+                controller: _scroll,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.photoUnderNav == null) SizedBox(height: navH),
+                    ...widget.children,
+                    SiteFooter(content: state.content),
+                  ],
                 ),
               ),
-              child: _NavBar(location: widget.location),
             ),
-          ),
-          if (widget.overlay != null) widget.overlay!,
-        ],
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              // Niente sfocatura: è costosa da disegnare. La barra prende il
+              // colore pieno della parte di pagina sotto di lei, e sopra la
+              // foto d'apertura è trasparente con una velatura leggera.
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 450),
+                height: navH,
+                padding: EdgeInsets.symmetric(horizontal: context.gutter),
+                decoration: BoxDecoration(
+                  color: light ? Colors.transparent : _under,
+                  gradient: light
+                      ? const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0x61000000), Color(0x00000000)],
+                        )
+                      : null,
+                ),
+                child: _NavBar(location: widget.location, light: light),
+              ),
+            ),
+            if (widget.overlay != null) widget.overlay!,
+          ],
+        ),
       ),
     );
   }
@@ -120,8 +207,9 @@ class _SiteScaffoldState extends State<SiteScaffold> {
 
 /// Il logo in alto a sinistra, che riporta alla home.
 class _HomeLogo extends StatelessWidget {
-  const _HomeLogo({required this.onTap});
+  const _HomeLogo({required this.onTap, this.light = false});
   final VoidCallback onTap;
+  final bool light;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -131,25 +219,29 @@ class _HomeLogo extends StatelessWidget {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: onTap,
-        child: BrandLogo(height: context.navH * 0.7),
+        child: BrandLogo(height: context.navH * 0.7, light: light),
       ),
     ),
   );
 }
 
 class _NavBar extends StatelessWidget {
-  const _NavBar({required this.location});
+  const _NavBar({required this.location, this.light = false});
   final String location;
+
+  /// Chiara sopra la foto d'apertura.
+  final bool light;
 
   @override
   Widget build(BuildContext context) {
     final compact = context.w < 900;
+    final fg = light ? Palette.paper : Palette.ink;
     return Row(
       children: [
         Expanded(
           child: Align(
             alignment: Alignment.centerLeft,
-            child: _HomeLogo(onTap: () => context.go('/')),
+            child: _HomeLogo(onTap: () => context.go('/'), light: light),
           ),
         ),
         const SizedBox(width: 16),
@@ -159,20 +251,21 @@ class _NavBar extends StatelessWidget {
             HoverLink(
               _navItems[i].$1.toUpperCase(),
               active: location == _navItems[i].$2,
-              style: label(11.5, color: Palette.ink),
+              style: label(11.5, color: fg),
               onTap: () => context.go(_navItems[i].$2),
             ),
           ],
         ] else
-          _MenuButton(onTap: () => _openMenu(context, location)),
+          _MenuButton(color: fg, onTap: () => _openMenu(context, location)),
       ],
     );
   }
 }
 
 class _MenuButton extends StatelessWidget {
-  const _MenuButton({required this.onTap});
+  const _MenuButton({required this.onTap, this.color = Palette.ink});
   final VoidCallback onTap;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -187,15 +280,15 @@ class _MenuButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('MENU', style: label(11.5)),
+              Text('MENU', style: label(11.5, color: color)),
               const SizedBox(width: 12),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Container(width: 26, height: 1.6, color: Palette.ink),
+                  Container(width: 26, height: 1.6, color: color),
                   const SizedBox(height: 6),
-                  Container(width: 16, height: 1.6, color: Palette.ink),
+                  Container(width: 16, height: 1.6, color: color),
                 ],
               ),
             ],
@@ -408,68 +501,71 @@ class SiteFooter extends StatelessWidget {
       ]),
     ];
 
-    return Container(
+    return NavTint(
       color: Palette.linen,
-      padding: EdgeInsets.fromLTRB(
-        context.gutter,
-        context.fluid(64, 110),
-        context.gutter,
-        28,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LayoutBuilder(
-            builder: (context, box) {
-              const gap = 32.0;
-              final wdt = (box.maxWidth - gap * (cols - 1)) / cols;
-              return Wrap(
-                spacing: gap,
-                runSpacing: 40,
-                children: [
-                  for (final w in columns) SizedBox(width: wdt, child: w),
-                ],
-              );
-            },
-          ),
-          SizedBox(height: context.fluid(56, 90)),
-          // Firma: il logo al centro.
-          Center(child: BrandLogo(width: context.fluid(150, 200))),
-          SizedBox(height: context.fluid(36, 56)),
-          Container(height: 1, color: Palette.line),
-          const SizedBox(height: 18),
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            runSpacing: 10,
-            spacing: 20,
-            children: [
-              Text(
-                '© ${DateTime.now().year} ${content.studioName}'
-                '${c.vat.isEmpty ? '' : '  ·  ${c.vat}'}',
-                style: body(12.5, color: Palette.stone),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: context.accent,
-                      shape: BoxShape.circle,
+      child: Container(
+        color: Palette.linen,
+        padding: EdgeInsets.fromLTRB(
+          context.gutter,
+          context.fluid(64, 110),
+          context.gutter,
+          28,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LayoutBuilder(
+              builder: (context, box) {
+                const gap = 32.0;
+                final wdt = (box.maxWidth - gap * (cols - 1)) / cols;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: 40,
+                  children: [
+                    for (final w in columns) SizedBox(width: wdt, child: w),
+                  ],
+                );
+              },
+            ),
+            SizedBox(height: context.fluid(56, 90)),
+            // Firma: il logo al centro.
+            Center(child: BrandLogo(width: context.fluid(150, 200))),
+            SizedBox(height: context.fluid(36, 56)),
+            Container(height: 1, color: Palette.line),
+            const SizedBox(height: 18),
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              runSpacing: 10,
+              spacing: 20,
+              children: [
+                Text(
+                  '© ${DateTime.now().year} ${content.studioName}'
+                  '${c.vat.isEmpty ? '' : '  ·  ${c.vat}'}',
+                  style: body(12.5, color: Palette.stone),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: context.accent,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  HoverLink(
-                    'Area riservata',
-                    style: body(12.5, color: Palette.stone),
-                    onTap: () => context.go('/admin'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+                    const SizedBox(width: 8),
+                    HoverLink(
+                      'Area riservata',
+                      style: body(12.5, color: Palette.stone),
+                      onTap: () => context.go('/admin'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

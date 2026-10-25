@@ -1365,7 +1365,8 @@ void main() {
       await pumpApp(tester, s, location: '/');
       await settle(tester, 9000);
       // La foto resta, senza contatore né frecce.
-      expect(find.text('Unica'), findsOneWidget);
+      // La foto c'è (tra le stampe sul tavolo).
+      expect(find.bySemanticsLabel('Unica'), findsWidgets);
       expect(find.text('01 / 01'), findsNothing);
       expect(find.bySemanticsLabel('Foto successiva'), findsNothing);
       await disposeApp(tester);

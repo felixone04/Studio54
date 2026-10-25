@@ -13,13 +13,16 @@ const brandLabel = 'Studio 54';
 /// si appoggia direttamente sui toni chiari del sito.
 /// (Il logo su fondo nero è quello del caricamento, in web/splash.jpg.)
 class BrandLogo extends StatelessWidget {
-  const BrandLogo({super.key, this.width, this.height});
+  const BrandLogo({super.key, this.width, this.height, this.light = false});
   final double? width;
   final double? height;
 
+  /// Versione chiara, per stare sopra una foto.
+  final bool light;
+
   @override
   Widget build(BuildContext context) => Image.asset(
-    'assets/brand/logo.png',
+    light ? 'assets/brand/logo_light.png' : 'assets/brand/logo.png',
     width: width,
     height: height,
     fit: BoxFit.contain,
