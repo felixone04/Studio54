@@ -75,6 +75,60 @@ CustomTransitionPage<void> _fade(GoRouterState s, Widget child) =>
       ),
     );
 
+/// Il tasto indietro (telefono, tablet) ripercorre le pagine viste fino alla
+/// home e lì si ferma: l'app non si chiude mai da sola. Finestre, menu e foto
+/// a schermo intero si chiudono come sempre.
+class _BackToHome extends RootBackButtonDispatcher {
+  _BackToHome(this.router) {
+    router.routerDelegate.addListener(_track);
+    _track();
+  }
+
+  final GoRouter router;
+  final List<String> _history = [];
+
+  String get _here => router.routerDelegate.currentConfiguration.uri.toString();
+
+  void _track() {
+    final here = _here;
+    if (here == '/') {
+      _history
+        ..clear()
+        ..add(here);
+      return;
+    }
+    // Una pagina già vista: si riparte da lì, senza giri a vuoto.
+    final i = _history.indexOf(here);
+    if (i >= 0) {
+      _history.removeRange(i + 1, _history.length);
+    } else {
+      _history.add(here);
+    }
+  }
+
+  @override
+  Future<bool> invokeCallback(Future<bool> defaultValue) async {
+    Route<dynamic>? top;
+    router.routerDelegate.navigatorKey.currentState?.popUntil((r) {
+      top = r;
+      return true;
+    });
+    final t = top;
+    if (t != null && (t.settings is! Page || t.willHandlePopInternally)) {
+      return super.invokeCallback(defaultValue);
+    }
+    if (_history.length > 1) {
+      _history.removeLast();
+      router.go(_history.last);
+    } else if (_here != '/') {
+      router.go('/');
+    }
+    return true;
+  }
+
+  void dispose() => router.routerDelegate.removeListener(_track);
+}
+
 class StudioApp extends StatefulWidget {
   const StudioApp({super.key});
 
@@ -136,6 +190,14 @@ class _StudioAppState extends State<StudioApp> {
     ],
     errorPageBuilder: (c, s) => _fade(s, const HomePage()),
   );
+  late final _back = _BackToHome(_router);
+
+  @override
+  void dispose() {
+    _back.dispose();
+    _router.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +220,10 @@ class _StudioAppState extends State<StudioApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      routerConfig: _router,
+      routerDelegate: _router.routerDelegate,
+      routeInformationParser: _router.routeInformationParser,
+      routeInformationProvider: _router.routeInformationProvider,
+      backButtonDispatcher: _back,
     );
   }
 }
