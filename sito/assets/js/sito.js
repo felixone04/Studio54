@@ -1,12 +1,203 @@
-/* Studio 54 · comportamento del sito pubblico (senza librerie). */
+/* Studio 54 · il sito pubblico (senza librerie).
+   Disegna le pagine con i dati di S54 (assets/js/dati.js) e ne gestisce il
+   comportamento: logo d'apertura, barra, menu, carosello, filtri, foto a
+   schermo intero e modulo preventivo. */
 (function () {
   'use strict';
 
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = S54.esc;
+  var D = S54.pubblici();
+  var C = D.content;
+  var K = C.contacts;
   var due = function (n) { return (n < 10 ? '0' : '') + n; };
+  var cifre = function (t) { return (t || '').replace(/[^0-9+]/g, ''); };
+  var maiuscolo = function (t) { return (t || '').toLocaleUpperCase('it-IT'); };
+  var FRECCIA_S = '<svg viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg>';
+  var FRECCIA_D = '<svg viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg>';
 
-  /* ------------------------------------------------------ logo d'apertura */
+  /* ================================================= PARTI COMUNI A TUTTE */
+
+  var menuContatti = $('[data-menu-contatti]');
+  if (menuContatti) {
+    menuContatti.innerHTML =
+      (K.phone ? '<a href="tel:' + esc(cifre(K.phone)) + '">' + esc(K.phone) + '</a>' : '') +
+      (K.email ? '<a href="mailto:' + esc(K.email) + '">' + esc(K.email) + '</a>' : '');
+  }
+
+  var piede = $('[data-piede]');
+  if (piede) {
+    var link = function (t, h, fuori) { return '<a class="link" href="' + esc(h) + '"' + (fuori ? ' target="_blank" rel="noopener"' : '') + '>' + esc(t) + '</a>'; };
+    var wa = (K.whatsapp || '').replace(/\D/g, '');
+    piede.innerHTML = '<div class="piede-dentro"><div class="piede-colonne">' +
+      '<div><h3>SCRIVICI</h3>' + (K.email ? link(K.email, 'mailto:' + K.email) : '') + (K.phone ? link(K.phone, 'tel:' + cifre(K.phone)) : '') + (wa ? link('WhatsApp', 'https://wa.me/' + wa, true) : '') + '</div>' +
+      '<div><h3>STUDIO</h3>' + (K.address ? link(K.address, 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(K.address), true) : '') + (K.hours ? '<p>' + esc(K.hours) + '</p>' : '') + '</div>' +
+      '<div><h3>SOCIAL</h3>' + (K.instagram ? link('Instagram', K.instagram, true) : '') + (K.facebook ? link('Facebook', K.facebook, true) : '') + '</div>' +
+      '<div><h3>ESPLORA</h3>' + link('Home', S54.url('index')) + link('Lavori', S54.url('lavori')) + link('Biografia', S54.url('biografia')) + link('Preventivo', S54.url('preventivo')) + '</div>' +
+      '</div><img class="piede-logo" src="assets/img/logo.png" alt="' + esc(C.studioName || 'Studio 54') + '">' +
+      '<div class="piede-fondo"><span>&copy; ' + new Date().getFullYear() + ' ' + esc(C.studioName || '') + (K.vat ? '  ·  ' + esc(K.vat) : '') + '</span>' +
+      '<span class="piede-link"><span class="punto"></span><a class="link" href="' + S54.url('riservata') + '">Area riservata</a></span></div></div>';
+  }
+
+  if (S54.inBozza()) {
+    // Il titolare vede subito le modifiche fatte dal gestionale (solo qui).
+    var avviso = document.createElement('div');
+    avviso.className = 'avviso-bozza';
+    avviso.innerHTML = '<span>Stai vedendo le modifiche del gestionale (solo in questo browser).</span><a href="' + S54.url('riservata') + '">Gestionale</a>';
+    document.body.appendChild(avviso);
+  }
+
+  /** La scheda di un lavoro: foto principale, nome, location e tipologia. */
+  function scheda(w) {
+    return '<a class="scheda-lavoro rivela" href="' + S54.url('lavoro', w.id) + '"' +
+      ' data-evento="' + esc((w.category || '').trim().toLowerCase()) + '"' +
+      ' data-stagione="' + esc(S54.stagione(w).toLowerCase()) + '"' +
+      ' data-location="' + esc((w.setting || '').trim().toLowerCase()) + '">' +
+      '<span class="scheda-foto"><img ' + S54.srcset(S54.copertina(w), '(max-width: 719px) 100vw, 50vw') + ' alt="" loading="lazy"></span>' +
+      '<span class="scheda-nome">' + esc(w.title) + '</span>' +
+      '<span class="scheda-info">' + esc(S54.unisci([w.location, w.category])) + '</span></a>';
+  }
+
+  /* ===================================================== DISEGNO PAGINE */
+
+  var pagina = document.body.getAttribute('data-pagina');
+
+  // Home: il carosello e i lavori in evidenza.
+  var carosello = $('[data-carosello]');
+  if (carosello) {
+    var foto = (D.carouselSite || []).filter(function (p) { return p.active !== false && (p.url || '').trim(); });
+    carosello.innerHTML = foto.map(function (p, i) {
+      return '<figure class="diapo' + (i === 0 ? ' attiva' : '') + '"><img ' + S54.srcset(p.url, '100vw') + ' alt=""' + (i > 1 ? ' loading="lazy"' : '') + '></figure>';
+    }).join('') + (foto.length > 1 ? '<div class="apertura-frecce"><button class="tondo chiaro ap-prec" type="button" aria-label="Foto precedente">' + FRECCIA_S + '</button><button class="tondo chiaro ap-succ" type="button" aria-label="Foto successiva">' + FRECCIA_D + '</button></div>' : '');
+    if (!foto.length) carosello.hidden = true;
+  }
+  var evidenza = $('[data-evidenza]');
+  if (evidenza) {
+    var scelti = S54.inEvidenza(D);
+    evidenza.innerHTML = scelti.length ? '<div class="lavori-griglia">' + scelti.map(scheda).join('') + '</div>' : '';
+    if (!scelti.length) evidenza.hidden = true;
+  }
+
+  // Lavori: i filtri e tutte le schede.
+  var lavoriBox = $('[data-lavori]');
+  if (lavoriBox) {
+    var lavori = S54.lavoriSito(D);
+    var valori = function (leggi, ordine) {
+      var v = {};
+      lavori.forEach(function (w) { var x = (leggi(w) || '').trim(); if (x && !v[x.toLowerCase()]) v[x.toLowerCase()] = x; });
+      var l = Object.keys(v).map(function (k) { return v[k]; });
+      if (ordine) l.sort(function (a, b) { return ordine.indexOf(a) - ordine.indexOf(b); });
+      return l;
+    };
+    var filtri = [
+      ['evento', 'Evento', valori(function (w) { return w.category; })],
+      ['stagione', 'Stagione', valori(S54.stagione, S54.STAGIONI)],
+      ['location', 'Location', valori(function (w) { return w.setting; })]
+    ].filter(function (f) { return f[2].length > 1; });
+    lavoriBox.innerHTML = (filtri.length ? '<div class="filtri" data-filtri><div class="filtri-voci">' + filtri.map(function (f) {
+      var opz = f[2].map(function (v) { return '<li role="option" data-v="' + esc(v.toLowerCase()) + '">' + esc(v) + '</li>'; }).join('');
+      var testi = f[2].map(function (v) { return '<span data-v="' + esc(v.toLowerCase()) + '">' + esc(v) + '</span>'; }).join('');
+      return '<div class="filtro" data-filtro="' + f[0] + '"><button type="button" class="filtro-voce" aria-haspopup="listbox" aria-expanded="false">' +
+        '<span class="filtro-nome">' + maiuscolo(f[1]) + '</span><span class="filtro-valore"><span class="visibile" data-v="">Tutti</span>' + testi + '</span><span class="filtro-freccia" aria-hidden="true"></span></button>' +
+        '<ul class="filtro-menu" role="listbox" hidden><li role="option" data-v="" aria-selected="true">Tutti</li>' + opz + '</ul></div>';
+    }).join('') + '</div><div class="filtri-esito" hidden><span class="contatore filtri-conto"></span><button type="button" class="link filtri-azzera">AZZERA</button></div></div>' : '') +
+      (lavori.length ? '<div class="lavori-griglia">' + lavori.map(scheda).join('') + '</div>' : '<p class="vuoto">Presto qui i nostri lavori.</p>') +
+      '<p class="vuoto filtri-nessuno" hidden>Nessun lavoro con questi filtri.</p>';
+  }
+
+  // Un lavoro: solo le sue foto.
+  var collageBox = $('[data-collage]');
+  if (collageBox) {
+    var id = new URLSearchParams(location.search).get('id');
+    var w = S54.lavoriSito(D).filter(function (x) { return x.id === id; })[0];
+    if (!w || !(w.photos || []).length) {
+      collageBox.classList.add('lavoro-assente');
+      collageBox.innerHTML = '<p>Questo lavoro non è più in mostra.</p><a class="link etichetta" href="' + S54.url('lavori') + '">&larr; TUTTI I LAVORI</a>';
+    } else {
+      document.title = w.title + ' · ' + (C.studioName || 'Studio 54');
+      collageBox.innerHTML = w.photos.map(function (p, i) {
+        return '<figure class="tavola" data-foto="' + esc(S54.foto(p.url, 2400)) + '" tabindex="0" role="button" aria-label="' + esc(p.caption || 'Foto ' + (i + 1)) + '">' +
+          '<img ' + S54.srcset(p.url, '(max-width: 599px) 100vw, 60vw') + ' alt="' + esc(p.caption || '') + '"></figure>';
+      }).join('');
+    }
+  }
+
+  // Biografia.
+  var bioBox = $('[data-biografia]');
+  if (bioBox) {
+    var paragrafi = (C.bioStory || '').split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
+    var metodo = C.timeline || [];
+    bioBox.innerHTML = '<section class="sezione bio"><div class="bio-griglia"><div class="bio-testo">' +
+      '<p class="etichetta entra"><span class="trattino"></span>' + esc(maiuscolo(C.tagline || 'Chi siamo')) + '</p>' +
+      '<h1 class="titolo-grande entra">' + esc(maiuscolo(C.bioTitle || '')) + '</h1>' +
+      (C.bioIntro ? '<p class="sottotitolo grande entra">' + esc(C.bioIntro).replace(/\n/g, '<br>') + '</p>' : '') +
+      (paragrafi.length ? '<span class="linea-corta"></span>' + paragrafi.map(function (p, i) { return '<p class="rivela ' + (i ? 'bio-paragrafo' : 'bio-attacco') + '">' + esc(p) + '</p>'; }).join('') : '') +
+      '</div>' + (C.bioImage ? '<div class="bio-foto rivela"><img ' + S54.srcset(C.bioImage, '(max-width: 1023px) 100vw, 45vw') + ' alt=""></div>' : '') + '</div></section>' +
+      (metodo.length ? '<section class="sezione metodo"><div class="contenitore-stretto"><p class="etichetta"><span class="trattino"></span>IL METODO</p><div class="metodo-passi">' +
+        metodo.map(function (m) { return '<div class="passo rivela"><p class="passo-numero">' + esc(m.year) + '</p><p class="passo-titolo">' + esc(maiuscolo(m.title)) + '</p>' + (m.text ? '<p class="passo-testo">' + esc(m.text) + '</p>' : '') + '</div>'; }).join('') +
+        '</div></div></section>' : '');
+  }
+
+  // Preventivo: tutto in una pagina, con le parti accese dal gestionale.
+  var prevBox = $('[data-preventivo]');
+  var F = D.quoteForm;
+  var attive = function (l) { return (l || []).filter(function (o) { return o.active !== false && (o.label || '').trim(); }); };
+  var tipi = attive(F.eventTypes), richieste = attive(F.requests);
+  var acceso = function (k) { return F[k] !== false; };
+  var conTipo = acceso('showEvent') && tipi.length > 0;
+  var conData = acceso('showDate'), conLuogo = acceso('showLocation');
+  var conRichieste = acceso('showRequests') && richieste.length > 0;
+  var conMessaggio = acceso('showMessage');
+  var conCognome = acceso('askLastName'), conTelefono = acceso('askPhone');
+  var conEmail = acceso('askEmail') || !conTelefono;
+  if (prevBox) {
+    var n = 0;
+    var titolo = function (t) { return '<h2><span>' + (++n) + '</span>' + t + '</h2>'; };
+    var testo = function (id, etichetta, extra) {
+      extra = extra || {};
+      return '<div class="campo' + (extra.classe ? ' ' + extra.classe : '') + '" data-campo="' + id + '">' +
+        '<input id="' + id + '" name="' + id + '" placeholder=" "' + (extra.attr || '') + '>' +
+        '<label for="' + id + '">' + etichetta + '</label>' + (extra.aiuto ? '<span class="suggerimento">' + extra.aiuto + '</span>' : '') +
+        (extra.dopo || '') + '<p class="errore"></p></div>';
+    };
+    var html = '';
+    if (conTipo || conData || conLuogo) {
+      html += '<section class="passo-modulo" data-passo="evento">' + titolo('IL TUO EVENTO');
+      if (conTipo) {
+        html += '<div class="campo" data-campo="tipo"><div class="scelte" role="radiogroup" aria-label="Tipo di evento">' + tipi.map(function (t) {
+          return '<button type="button" class="scelta-voce" role="radio" data-tipo="' + esc(t.label) + '" aria-pressed="' + (tipi.length === 1) + '" aria-checked="' + (tipi.length === 1) + '">' + esc(t.label) + '</button>';
+        }).join('') + '</div><p class="errore"></p></div>';
+      }
+      var coppia = [];
+      if (conData) coppia.push(testo('data', "Data dell'evento *", { classe: 'data', attr: ' inputmode="numeric" autocomplete="off" maxlength="10"', aiuto: 'gg/mm/aaaa', dopo: '<button type="button" class="calendario" aria-label="Scegli dal calendario"></button><input type="date" class="calendario-nativo" tabindex="-1" aria-hidden="true">' }));
+      if (conLuogo) coppia.push(testo('luogo', 'Luogo *', { attr: ' maxlength="80"', aiuto: 'Città o nome della location' }));
+      if (coppia.length) html += coppia.length === 2 ? '<div class="coppia">' + coppia.join('') + '</div>' : coppia[0];
+      html += '</section>';
+    }
+    if (conRichieste) {
+      html += '<section class="passo-modulo" data-passo="richieste">' + titolo('LE TUE RICHIESTE') + '<p class="nota">Tocca le voci che ti interessano.</p><div class="scelte">' +
+        richieste.map(function (r) { return '<button type="button" class="scelta-voce" data-richiesta="' + esc(r.label) + '" aria-pressed="false">' + esc(r.label) + '</button>'; }).join('') + '</div></section>';
+    }
+    var nome = [testo('nome', 'Nome *', { attr: ' autocomplete="given-name" maxlength="40"' })];
+    if (conCognome) nome.push(testo('cognome', 'Cognome *', { attr: ' autocomplete="family-name" maxlength="40"' }));
+    var recapiti = [];
+    if (conTelefono) recapiti.push(testo('telefono', 'Telefono *', { classe: 'icona-tel', attr: ' type="tel" inputmode="tel" autocomplete="tel" maxlength="20"', aiuto: 'Es. 333 123 4567' }));
+    if (conEmail) recapiti.push(testo('email', 'Email *', { classe: 'icona-mail', attr: ' type="email" inputmode="email" autocomplete="email" maxlength="80"', aiuto: 'nome@email.it' }));
+    var riga = function (l) { return l.length === 2 ? '<div class="coppia">' + l.join('') + '</div>' : l.join(''); };
+    html += '<section class="passo-modulo" data-passo="contatti">' + titolo('I TUOI CONTATTI') + riga(nome) + riga(recapiti) + '</section>';
+    if (conMessaggio) {
+      html += '<section class="passo-modulo" data-passo="messaggio">' + titolo('IL TUO MESSAGGIO') +
+        '<div class="campo area" data-campo="note"><textarea id="note" name="note" rows="4" maxlength="500" placeholder=" "></textarea><label for="note">Scrivici pure per qualsiasi altra informazione</label><span class="conta-caratteri">0/500</span></div></section>';
+    }
+    prevBox.innerHTML = '<form class="modulo" novalidate data-modulo>' + html +
+      '<label class="consenso" data-campo="privacy"><input type="checkbox" name="privacy" value="1"><span class="spunta" aria-hidden="true"></span><span>Acconsento al trattamento dei miei dati per essere ricontattato. *</span></label><p class="errore errore-privacy"></p>' +
+      '<div class="modulo-invio"><button type="submit" class="pillola grande">INVIA LA RICHIESTA <i>&rarr;</i></button><span class="nota">* campi obbligatori</span></div></form>' +
+      '<div class="grazie" data-grazie hidden><img src="assets/img/mark.png" alt=""><p class="etichetta"><span class="trattino"></span>RICHIESTA INVIATA</p><h1 class="grazie-titolo">Grazie</h1><p class="grazie-testo"></p>' +
+      '<div class="grazie-azioni"><a class="pillola" href="' + S54.url('index') + '">TORNA ALLA HOME <i>&#8599;</i></a><button type="button" class="link grazie-nuova">Nuova richiesta</button></div></div>';
+  }
+
+  /* ====================================================== LOGO D'APERTURA */
 
   // Quando il logo d'apertura sparisce la pagina è "pronta": partono le
   // animazioni e il carosello (così la prima foto dura davvero 4 secondi).
@@ -37,29 +228,15 @@
     requestAnimationFrame(avvia);
   }
 
-  /* ---------------------------------------------------------- barra e menu */
+  /* ========================================================= BARRA E MENU */
 
   var barra = $('#barra');
-  var aperturaHome = $('.pagina-home .apertura');
+  var aperturaHome = $('.pagina-index .apertura:not([hidden])');
   var orizzontale = window.matchMedia('(min-aspect-ratio: 1/1)');
-  // La barra non ha uno sfondo suo: prende quello della sezione che le passa
-  // sotto (crema, lino...), così non si vede mai uno stacco.
-  var coloreSotto = function () {
-    var y = barra.offsetHeight + 1, x = window.innerWidth / 2;
-    // Solo la pagina vera: niente logo d'apertura, menu o foto a schermo intero.
-    var sotto = document.elementsFromPoint(x, Math.min(y, window.innerHeight - 1));
-    var blocco = null;
-    for (var k = 0; k < sotto.length && !blocco; k++) blocco = sotto[k].closest('main > *, .piede');
-    var c = blocco ? getComputedStyle(blocco).backgroundColor : '';
-    if (!c || c === 'transparent' || /rgba\(.*,\s*0\)$/.test(c)) c = '';
-    barra.style.setProperty('--sotto', c || 'var(--carta)');
-  };
+  // Sopra la foto d'apertura (home, schermo in orizzontale) la barra è
+  // trasparente; altrove ha il bianco della pagina, senza riga di stacco.
   var aggiornaBarra = function () {
     if (!barra) return;
-    coloreSotto();
-    barra.classList.toggle('scorsa', window.scrollY > 10);
-    // Nella home in orizzontale la barra è trasparente finché sta sopra la
-    // foto d'apertura; poi prende il colore del sito.
     var suFoto = !!aperturaHome && orizzontale.matches &&
       window.scrollY < aperturaHome.offsetHeight - barra.offsetHeight;
     barra.classList.toggle('su-foto', suFoto);
@@ -100,43 +277,6 @@
     $$('.rivela').forEach(function (el) { el.classList.add('visto'); });
   }
 
-  /* ------------------------------------------------- foto a schermo intero */
-
-  var lb = $('#lightbox');
-  var lbFoto = [], lbI = 0;
-  function lbMostra() {
-    var p = lbFoto[lbI];
-    var img = $('figure img', lb);
-    img.style.opacity = 0;
-    img.onload = function () { img.style.opacity = 1; };
-    img.src = p.src;
-    img.alt = p.titolo || '';
-    $('.lb-titolo', lb).textContent = p.titolo || '';
-    $('.lb-meta', lb).textContent = p.meta || '';
-    $('.lb-conto', lb).textContent = due(lbI + 1) + ' / ' + due(lbFoto.length);
-  }
-  function lbApri(foto, i) {
-    lbFoto = foto; lbI = i;
-    lb.hidden = false;
-    document.body.style.overflow = 'hidden';
-    lbMostra();
-    $('.lb-chiudi', lb).focus();
-  }
-  function lbChiudi() { lb.hidden = true; document.body.style.overflow = ''; }
-  function lbVai(d) { lbI = (lbI + d + lbFoto.length) % lbFoto.length; lbMostra(); }
-  if (lb) {
-    $('.lb-chiudi', lb).addEventListener('click', lbChiudi);
-    $('.lb-prec', lb).addEventListener('click', function () { lbVai(-1); });
-    $('.lb-succ', lb).addEventListener('click', function () { lbVai(1); });
-    document.addEventListener('keydown', function (e) {
-      if (lb.hidden) return;
-      if (e.key === 'Escape') lbChiudi();
-      if (e.key === 'ArrowRight') lbVai(1);
-      if (e.key === 'ArrowLeft') lbVai(-1);
-    });
-    sfoglia(lb, function (d) { lbVai(d); });
-  }
-
   /** Sfoglia con il dito: chiama fn(+1) verso sinistra, fn(-1) verso destra. */
   function sfoglia(el, fn) {
     var x0 = null, y0 = 0;
@@ -149,23 +289,51 @@
     }, { passive: true });
   }
 
-  function apribile(el, fn) {
-    el.addEventListener('click', fn);
-    el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } });
+  /* ================================================= FOTO A SCHERMO INTERO */
+
+  // Solo la foto, grande, con le frecce e la X: nessuna scritta.
+  var visore = $('#visore');
+  var vFoto = [], vI = 0;
+  function vMostra() {
+    var img = $('figure img', visore);
+    img.style.opacity = 0;
+    img.onload = function () { img.style.opacity = 1; };
+    img.src = vFoto[vI];
+    $$('.visore-prec, .visore-succ', visore).forEach(function (b) { b.hidden = vFoto.length < 2; });
+  }
+  function vApri(foto, i) {
+    vFoto = foto; vI = i;
+    visore.hidden = false;
+    document.body.style.overflow = 'hidden';
+    vMostra();
+    $('.visore-chiudi', visore).focus();
+  }
+  function vChiudi() { visore.hidden = true; document.body.style.overflow = ''; }
+  function vVai(d) { vI = (vI + d + vFoto.length) % vFoto.length; vMostra(); }
+  if (visore) {
+    $('.visore-chiudi', visore).addEventListener('click', vChiudi);
+    $('.visore-prec', visore).addEventListener('click', function () { vVai(-1); });
+    $('.visore-succ', visore).addEventListener('click', function () { vVai(1); });
+    document.addEventListener('keydown', function (e) {
+      if (visore.hidden) return;
+      if (e.key === 'Escape') vChiudi();
+      if (e.key === 'ArrowRight' && vFoto.length > 1) vVai(1);
+      if (e.key === 'ArrowLeft' && vFoto.length > 1) vVai(-1);
+    });
+    sfoglia(visore, function (d) { if (vFoto.length > 1) vVai(d); });
   }
 
-  /* ============================================================= APERTURA */
+  /* ============================================================ CAROSELLO */
 
   $$('[data-carosello]').forEach(function (car) {
     var intervallo = +car.getAttribute('data-intervallo') || 4000;
     var tutte = $$('.diapo', car);
     var mostrate = tutte.slice();
-    var i = 0, timer = null;
+    var i = 0, timer = null, tUscita = null;
+    if (!tutte.length) return;
 
-    var tUscita = null;
     function disegna() {
-      var n = mostrate.length;
-      if (!n) { tutte.forEach(function (x) { x.classList.remove('attiva', 'uscente'); }); return; }
+      if (!mostrate.length) return;
       var d = mostrate[i];
       var prima = $('.diapo.attiva', car);
       // Dissolvenza incrociata: la foto che esce resta sotto finché la nuova
@@ -175,50 +343,29 @@
       clearTimeout(tUscita);
       tUscita = setTimeout(function () { $$('.diapo.uscente', car).forEach(function (x) { x.classList.remove('uscente'); }); }, 1500);
       if (prima !== d) {
-        // Riavvia la leggera "avvicinata" della foto che entra.
         var img = $('img', d); img.style.animation = 'none'; void img.offsetWidth; img.style.animation = '';
         d.classList.add('attiva');
       }
-      car.classList.add('cambio');
-      setTimeout(function () {
-        $$('.ap-titolo', car).forEach(function (e) { e.textContent = d.getAttribute('data-titolo'); });
-        $$('.ap-meta', car).forEach(function (e) { e.textContent = d.getAttribute('data-meta'); });
-        $$('.ap-didascalia', car).forEach(function (e) { e.textContent = d.getAttribute('data-didascalia'); });
-        $$('.ap-numero', car).forEach(function (e) { e.textContent = n > 1 ? due(i + 1) : ''; });
-        car.classList.remove('cambio');
-      }, 350);
-      $$('.ap-conto', car).forEach(function (e) { e.textContent = n > 1 ? due(i + 1) + ' / ' + due(n) : ''; });
-      $$('.ap-prec, .ap-succ', car).forEach(function (b) { b.hidden = n < 2; });
-      $$('.avanzamento', car).forEach(function (a) {
-        a.style.setProperty('--durata', intervallo + 'ms');
-        a.innerHTML = '';
-        if (n < 2) return;
-        for (var k = 0; k < n; k++) {
-          var s = document.createElement('span');
-          s.className = k < i ? 'fatto' : (k === i ? 'ora' : '');
-          a.appendChild(s);
-        }
-      });
+      $$('.ap-prec, .ap-succ', car).forEach(function (b) { b.hidden = mostrate.length < 2; });
+    }
+    function riparti() {
+      clearInterval(timer);
+      if (!partito || document.hidden) return;
+      if (mostrate.length > 1) timer = setInterval(function () { i = (i + 1) % mostrate.length; disegna(); }, intervallo);
     }
     function vai(k) {
       var n = mostrate.length;
-      if (!n) return;
+      if (n < 2) return;
       i = ((k % n) + n) % n;
       disegna();
       riparti();
     }
-    function riparti() {
-      clearInterval(timer);
-      if (!partito) return;
-      if (mostrate.length > 1) timer = setInterval(function () { i = (i + 1) % mostrate.length; disegna(); }, intervallo);
-    }
-
-    // Nel carosello solo foto orizzontali: le verticali si tolgono appena
-    // se ne conoscono le proporzioni.
+    // Nel carosello del sito solo foto orizzontali: una verticale caricata
+    // per sbaglio si salta.
     tutte.forEach(function (d) {
       var img = $('img', d);
       var controlla = function () {
-        if (img.naturalWidth && img.naturalWidth <= img.naturalHeight) {
+        if (img.naturalWidth && img.naturalWidth <= img.naturalHeight && mostrate.length > 1) {
           var corrente = mostrate[i];
           mostrate = mostrate.filter(function (x) { return x !== d; });
           var k = mostrate.indexOf(corrente);
@@ -229,63 +376,20 @@
       };
       if (img.complete) controlla(); else img.addEventListener('load', controlla);
     });
-
     $$('.ap-prec', car).forEach(function (b) { b.addEventListener('click', function () { vai(i - 1); }); });
     $$('.ap-succ', car).forEach(function (b) { b.addEventListener('click', function () { vai(i + 1); }); });
     sfoglia(car, function (d) { vai(i + d); });
-    document.addEventListener('visibilitychange', function () {
-      if (!partito) return;
-      if (document.hidden) clearInterval(timer); else riparti();
-    });
-    // La prima foto si vede già sotto il logo; il conto dei 4 secondi e la
-    // linea di avanzamento partono quando il logo sparisce.
+    document.addEventListener('visibilitychange', function () { if (document.hidden) clearInterval(timer); else riparti(); });
     disegna();
-    quandoPronto(function () { disegna(); riparti(); });
+    // Il conto dei 4 secondi parte quando sparisce il logo d'apertura.
+    quandoPronto(riparti);
   });
 
-  /* ==================================================== STAMPE SUL TAVOLO */
-
-  $$('[data-tavolo]').forEach(function (tavolo) {
-    var stampe = $$('.stampa', tavolo), sopra = 100;
-    var foto = stampe.map(function (s) { return { src: s.getAttribute('data-foto'), titolo: s.getAttribute('data-titolo'), meta: s.getAttribute('data-meta') }; });
-    stampe.forEach(function (s, k) {
-      var x0, y0, l0, t0, presa = false, mossa = false;
-      s.addEventListener('pointerdown', function (e) {
-        presa = true; mossa = false;
-        s.setPointerCapture(e.pointerId);
-        s.classList.add('presa');
-        s.style.zIndex = ++sopra;
-        x0 = e.clientX; y0 = e.clientY;
-        l0 = s.offsetLeft; t0 = s.offsetTop;
-      });
-      s.addEventListener('pointermove', function (e) {
-        if (!presa) return;
-        var dx = e.clientX - x0, dy = e.clientY - y0;
-        if (!mossa && Math.abs(dx) + Math.abs(dy) < 6) return;
-        mossa = true;
-        var maxL = tavolo.clientWidth - s.offsetWidth * 0.4, maxT = tavolo.clientHeight - s.offsetHeight * 0.4;
-        s.style.left = Math.min(maxL, Math.max(-s.offsetWidth * 0.6, l0 + dx)) + 'px';
-        s.style.top = Math.min(maxT, Math.max(-s.offsetHeight * 0.4, t0 + dy)) + 'px';
-      });
-      var lascia = function () {
-        if (!presa) return;
-        presa = false;
-        s.classList.remove('presa');
-        // Se non è stata spostata è un tocco: si guarda la foto.
-        if (!mossa) { lbApri(foto, k); return; }
-        // Posata di nuovo, un po' storta in modo diverso.
-        s.style.setProperty('--r', (Math.random() * 14 - 7).toFixed(1) + 'deg');
-      };
-      s.addEventListener('pointerup', lascia);
-      s.addEventListener('pointercancel', function () { presa = false; s.classList.remove('presa'); });
-      s.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); lbApri(foto, k); } });
-    });
-  });
   /* ======================================================== FILTRI LAVORI */
 
   $$('[data-filtri]').forEach(function (box) {
     var scelte = {};
-    var lavori = $$('.lavoro');
+    var lavori = $$('.scheda-lavoro');
     var esito = $('.filtri-esito', box);
     var nessuno = $('.filtri-nessuno');
 
@@ -294,14 +398,13 @@
       lavori.forEach(function (w) {
         var ok = Object.keys(scelte).every(function (k) { return !scelte[k] || w.getAttribute('data-' + k) === scelte[k]; });
         w.hidden = !ok;
-        if (ok) visibili++;
+        if (ok) { visibili++; w.classList.add('visto'); }
       });
       var attivi = Object.keys(scelte).some(function (k) { return scelte[k]; });
       esito.hidden = !attivi;
       $('.filtri-conto', box).textContent = due(visibili) + (visibili === 1 ? ' TROVATO' : ' TROVATI');
       if (nessuno) nessuno.hidden = visibili > 0;
     }
-
     function chiudiTutti(tranne) {
       $$('.filtro', box).forEach(function (f) {
         if (f === tranne) return;
@@ -309,7 +412,6 @@
         $('.filtro-voce', f).setAttribute('aria-expanded', 'false');
       });
     }
-
     $$('.filtro', box).forEach(function (f) {
       var id = f.getAttribute('data-filtro');
       var voce = $('.filtro-voce', f), lista = $('.filtro-menu', f);
@@ -343,11 +445,8 @@
       });
     });
     document.addEventListener('click', function () { chiudiTutti(null); });
-    $('.filtri-azzera', box).addEventListener('click', function () {
-      $$('.filtro', box).forEach(function (f) { f.scegli(''); });
-    });
-    // Arrivando con un filtro nell'indirizzo (es. ?evento=matrimonio dal
-    // mosaico della home) la scelta è già fatta.
+    $('.filtri-azzera', box).addEventListener('click', function () { $$('.filtro', box).forEach(function (f) { f.scegli(''); }); });
+    // Con un filtro nell'indirizzo (es. ?evento=matrimonio) la scelta è già fatta.
     var qs = new URLSearchParams(location.search);
     $$('.filtro', box).forEach(function (f) {
       var v = (qs.get(f.getAttribute('data-filtro')) || '').toLowerCase();
@@ -359,9 +458,8 @@
 
   $$('[data-collage]').forEach(function (box) {
     var tavole = $$('.tavola', box);
-    var CAP = 36; // spazio della didascalia
+    if (!tavole.length) return;
     var rapporti = tavole.map(function () { return 1.5; });
-
     function rapporto(k) { return Math.min(3, Math.max(0.4, rapporti[k])); }
 
     // La prima orizzontale in apertura; poi ritmi diversi in base alle
@@ -369,7 +467,6 @@
     // coppie, foto singole. Nessuna foto viene tagliata.
     function piano(oriz) {
       var n = oriz.length, righe = [], k = 1, giro = 0;
-      if (!n) return righe;
       righe.push({ tipo: 'una', ids: [0] });
       var o = function (d) { return k + d < n ? oriz[k + d] : null; };
       while (k < n) {
@@ -390,36 +487,25 @@
       }
       return righe;
     }
-
-    function misura(t, w, h) {
-      t.style.width = w + 'px';
-      $('.tavola-foto', t).style.height = h + 'px';
-      $('.tavola-foto', t).style.aspectRatio = 'auto';
-      return t;
-    }
-
+    function misura(t, w, h) { t.style.width = w + 'px'; t.style.height = h + 'px'; return t; }
+    var ordine = [];
     function componi() {
       // In apertura la prima orizzontale; le altre restano in ordine.
       var prima = -1;
       for (var q = 0; q < tavole.length; q++) { if (rapporti[q] > 1) { prima = q; break; } }
-      var ordine = tavole.map(function (_, q) { return q; });
+      ordine = tavole.map(function (_, q) { return q; });
       if (prima > 0) { ordine.splice(prima, 1); ordine.unshift(prima); }
-      ordine.forEach(function (q, pos) { $('.n', tavole[q]).textContent = due(pos + 1); tavole[q].setAttribute('data-pos', pos); });
       var r = function (pos) { return rapporto(ordine[pos]); };
       var t = function (pos) { return tavole[ordine[pos]]; };
-
       box.innerHTML = '';
-      var piena = Math.floor(box.clientWidth) - 1;
       var stile = getComputedStyle(box);
-      piena -= parseFloat(stile.paddingLeft) + parseFloat(stile.paddingRight);
+      var piena = Math.floor(box.clientWidth - parseFloat(stile.paddingLeft) - parseFloat(stile.paddingRight)) - 1;
       var spazio = Math.max(10, Math.min(22, piena * 0.018));
       box.style.setProperty('--spazio', spazio + 'px');
       var maxH = window.innerHeight * 0.9;
-      var telefono = window.innerWidth < 600;
       var riga = function () { var d = document.createElement('div'); d.className = 'collage-riga'; box.appendChild(d); return d; };
-
-      if (telefono) {
-        // Una sotto l'altra, intere.
+      if (window.innerWidth < 600) {
+        // Telefono: una sotto l'altra, intere.
         ordine.forEach(function (_, pos) { riga().appendChild(misura(t(pos), piena, piena / r(pos))); });
       } else {
         piano(ordine.map(function (_, pos) { return r(pos) > 1; })).forEach(function (p) {
@@ -436,8 +522,8 @@
             // La colonna delle due orizzontali è larga quanto basta perché
             // finisca alla stessa altezza della verticale.
             var av = r(p.alta), kk = 1 / r(p.su) + 1 / r(p.giu);
-            var c = (piena - spazio - av * (CAP + spazio)) / (av * kk + 1);
-            var hp = c * kk + CAP + spazio;
+            var c = (piena - spazio - av * spazio) / (av * kk + 1);
+            var hp = c * kk + spazio;
             var col = document.createElement('div');
             col.className = 'collage-colonna';
             col.appendChild(misura(t(p.su), c, c / r(p.su)));
@@ -449,7 +535,6 @@
       }
       box.classList.add('composto');
     }
-
     // Si compone quando si conoscono le proporzioni di tutte le foto (al
     // massimo dopo 3 secondi, con quelle note fino ad allora).
     var mancanti = tavole.length, fatto = false;
@@ -468,30 +553,26 @@
       };
       if (img.complete && img.naturalWidth) letta();
       else { img.addEventListener('load', letta, { once: true }); img.addEventListener('error', letta, { once: true }); }
+      var apri = function () {
+        var seq = (ordine.length ? ordine : tavole.map(function (_, q) { return q; }));
+        vApri(seq.map(function (q) { return tavole[q].getAttribute('data-foto'); }), Math.max(0, seq.indexOf(k)));
+      };
+      tv.addEventListener('click', apri);
+      tv.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apri(); } });
     });
     setTimeout(pronta, 3000);
-
-    var titolo = box.getAttribute('data-titolo'), meta = box.getAttribute('data-meta');
-    tavole.forEach(function (tv) {
-      apribile(tv, function () {
-        var ordinate = tavole.slice().sort(function (a, b) { return (+a.getAttribute('data-pos') || 0) - (+b.getAttribute('data-pos') || 0); });
-        var foto = ordinate.map(function (x) { return { src: x.getAttribute('data-foto'), titolo: x.getAttribute('data-didascalia') || titolo, meta: meta }; });
-        lbApri(foto, ordinate.indexOf(tv));
-      });
-    });
   });
 
   /* ============================================================ PREVENTIVO */
 
   $$('[data-modulo]').forEach(function (form) {
     var campo = function (n) { return $('[data-campo="' + n + '"]', form); };
-    var input = function (n) { var c = campo(n); return c && $('input, select, textarea', c); };
-    var toccati = {};
+    var input = function (n) { var c = campo(n); return c && $('input, textarea', c); };
     var provato = false;
+    var tipo = tipi.length === 1 ? tipi[0].label : '';
 
     /* Controlli, uguali a quelli dell'app. */
     var regole = {
-      tipo: function (v) { return !v && input('tipo').required ? 'Scegli il tipo di evento' : ''; },
       data: function (v) {
         if (!v) return "Inserisci la data dell'evento";
         var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v);
@@ -504,7 +585,6 @@
         if (d > limite) return 'Scegli una data entro 5 anni';
         return '';
       },
-      altro: function (v) { return input('tipo').value === 'Altro' && !v ? 'Scrivi di che evento si tratta' : ''; },
       luogo: function (v) { return v.length < 2 ? "Indica la città o la location dell'evento" : ''; },
       nome: function (v) { return nomeOk(v, 'nome'); },
       cognome: function (v) { return nomeOk(v, 'cognome'); },
@@ -522,20 +602,23 @@
       if (!v) return 'Inserisci il ' + cosa;
       return v.replace(/['\s\-]/g, '').length < 2 ? 'Il ' + cosa + ' deve avere almeno 2 lettere' : '';
     }
-
     function controlla(n, mostra) {
       var c = campo(n);
-      if (!c || c.hidden) return '';
+      if (!c) return '';
       var msg = regole[n](input(n).value.trim());
-      if (mostra) {
-        c.classList.toggle('sbagliato', !!msg);
-        $('.errore', c).textContent = msg;
-      }
+      if (mostra) { c.classList.toggle('sbagliato', !!msg); $('.errore', c).textContent = msg; }
+      return msg;
+    }
+    function controllaTipo(mostra) {
+      var c = campo('tipo');
+      if (!c) return '';
+      var msg = tipo ? '' : 'Scegli il tipo di evento';
+      if (mostra) $('.errore', c).textContent = msg;
       return msg;
     }
 
     /* Caratteri ammessi mentre si scrive. */
-    var filtri = {
+    var filtriTesto = {
       telefono: function (v) {
         v = v.replace(/[^0-9+ ]/g, '');
         var l = v.replace(/^\s+/, ''), piu = l.charAt(0) === '+';
@@ -553,61 +636,47 @@
     Object.keys(regole).forEach(function (n) {
       var el = input(n);
       if (!el) return;
-      var evento = el.tagName === 'SELECT' ? 'change' : 'input';
-      el.addEventListener(evento, function () {
-        if (filtri[n]) { var p = filtri[n](el.value); if (p !== el.value) el.value = p; }
-        if (n === 'tipo') {
-          campo('tipo').classList.toggle('pieno', !!el.value);
-          campo('altro').hidden = el.value !== 'Altro';
-        }
-        toccati[n] = true;
+      el.addEventListener('input', function () {
+        if (filtriTesto[n]) { var p = filtriTesto[n](el.value); if (p !== el.value) el.value = p; }
         controlla(n, true);
       });
-      el.addEventListener('blur', function () { if (el.value || provato) { toccati[n] = true; controlla(n, true); } });
+      el.addEventListener('blur', function () { if (el.value || provato) controlla(n, true); });
+    });
+
+    /* Tipo di evento: una sola scelta. */
+    $$('[data-tipo]', form).forEach(function (b) {
+      b.addEventListener('click', function () {
+        tipo = b.getAttribute('data-tipo');
+        $$('[data-tipo]', form).forEach(function (x) { var on = x === b; x.setAttribute('aria-pressed', on); x.setAttribute('aria-checked', on); });
+        controllaTipo(true);
+      });
+    });
+    /* Richieste: una o più, facoltative. */
+    $$('[data-richiesta]', form).forEach(function (b) {
+      b.addEventListener('click', function () { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); });
     });
 
     /* Data dal calendario. */
     var nativo = $('.calendario-nativo', form), testoData = input('data');
-    var oggi = new Date();
-    var iso = function (d) { return d.getFullYear() + '-' + due(d.getMonth() + 1) + '-' + due(d.getDate()); };
-    nativo.min = iso(oggi);
-    var fra5 = new Date(oggi); fra5.setFullYear(oggi.getFullYear() + 5); nativo.max = iso(fra5);
-    $('.calendario', form).addEventListener('click', function () {
-      try { nativo.showPicker(); } catch (e) { nativo.focus(); nativo.click(); }
-    });
-    nativo.addEventListener('change', function () {
-      if (!nativo.value) return;
-      var p = nativo.value.split('-');
-      testoData.value = p[2] + '/' + p[1] + '/' + p[0];
-      testoData.dispatchEvent(new Event('input'));
-    });
-
-    /* Note: caratteri usati. */
-    var note = input('note'), conto = $('.conta-caratteri', form);
-    note.addEventListener('input', function () { conto.textContent = note.value.length + '/500'; });
-
-    /* Servizi. */
-    var voci = $$('.scelta-voce', form);
-    var erroreServizi = $('.errore-servizi', form);
-    function servizi() { return voci.filter(function (b) { return b.getAttribute('aria-pressed') === 'true'; }).map(function (b) { return b.getAttribute('data-servizio'); }); }
-    function controllaServizi(mostra) {
-      var msg = voci.length && !servizi().length ? 'Scegli almeno una voce' : '';
-      if (mostra && erroreServizi) erroreServizi.textContent = msg;
-      return msg;
-    }
-    voci.forEach(function (b) {
-      b.addEventListener('click', function () {
-        b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
-        if (provato) controllaServizi(true);
+    if (nativo && testoData) {
+      var oggi = new Date();
+      var iso = function (d) { return d.getFullYear() + '-' + due(d.getMonth() + 1) + '-' + due(d.getDate()); };
+      nativo.min = iso(oggi);
+      var fra5 = new Date(oggi); fra5.setFullYear(oggi.getFullYear() + 5); nativo.max = iso(fra5);
+      $('.calendario', form).addEventListener('click', function () {
+        try { nativo.showPicker(); } catch (e) { nativo.focus(); nativo.click(); }
       });
-    });
-    // Arrivando da un link con un pacchetto o un servizio, le voci sono già scelte.
-    var qs = new URLSearchParams(location.search);
-    var pacchetti = JSON.parse(form.getAttribute('data-pacchetti') || '{}');
-    var pre = (qs.get('p') && pacchetti[qs.get('p')]) || (qs.get('s') ? [qs.get('s')] : []);
-    voci.forEach(function (b) { if (pre.indexOf(b.getAttribute('data-servizio')) >= 0) b.setAttribute('aria-pressed', 'true'); });
+      nativo.addEventListener('change', function () {
+        if (!nativo.value) return;
+        var p = nativo.value.split('-');
+        testoData.value = p[2] + '/' + p[1] + '/' + p[0];
+        testoData.dispatchEvent(new Event('input'));
+      });
+    }
 
-    /* Consenso. */
+    var note = input('note'), conto = $('.conta-caratteri', form);
+    if (note) note.addEventListener('input', function () { conto.textContent = note.value.length + '/500'; });
+
     var consenso = $('.consenso', form), spunta = $('input', consenso), errorePrivacy = $('.errore-privacy', form);
     function controllaConsenso(mostra) {
       var msg = spunta.checked ? '' : 'Serve il consenso per inviare la richiesta.';
@@ -616,154 +685,53 @@
     }
     spunta.addEventListener('change', function () { if (provato) controllaConsenso(true); });
 
-    /* Invio. */
+    var valore = function (n) { var el = input(n); return el ? el.value.trim() : ''; };
+
     form.addEventListener('submit', function (e) {
+      e.preventDefault();
       provato = true;
       var primo = null;
-      ['tipo', 'data', 'altro', 'luogo'].forEach(function (n) { if (controlla(n, true) && !primo) primo = campo(n); });
-      if (controllaServizi(true) && !primo) primo = $('[data-passo="servizi"]', form);
-      ['nome', 'cognome', 'telefono', 'email'].forEach(function (n) { if (controlla(n, true) && !primo) primo = campo(n); });
+      if (controllaTipo(true)) primo = campo('tipo');
+      ['data', 'luogo', 'nome', 'cognome', 'telefono', 'email'].forEach(function (n) { if (controlla(n, true) && !primo) primo = campo(n); });
       if (controllaConsenso(true) && !primo) primo = consenso;
-      $('input[name="servizi"]', form).value = servizi().join(',');
       if (primo) {
-        e.preventDefault();
-        var y = primo.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.15;
+        var y = primo.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.2;
         window.scrollTo({ top: y, behavior: 'smooth' });
         return;
       }
-      // Anteprima senza database: la richiesta non si invia, si mostra il
-      // ringraziamento. Con il database il modulo andrà al server (PHP).
-      if (!form.hasAttribute('data-invia')) {
-        e.preventDefault();
-        var grazie = $('[data-grazie][hidden]');
-        $('.grazie-titolo', grazie).textContent = 'Grazie, ' + input('nome').value.trim();
-        $('.grazie-testo', grazie).textContent = 'Ti richiameremo al ' + input('telefono').value.trim() + ' per parlarne insieme.';
-        form.hidden = true;
-        $('.preventivo-testa').hidden = true;
-        grazie.hidden = false;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        $('.grazie-nuova', grazie).onclick = function () {
-          form.reset(); provato = false;
-          voci.forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
-          $$('.campo', form).forEach(function (c) { c.classList.remove('sbagliato', 'pieno'); var er = $('.errore', c); if (er) er.textContent = ''; });
-          campo('altro').hidden = true;
-          conto.textContent = '0/500';
-          grazie.hidden = true; form.hidden = false; $('.preventivo-testa').hidden = false;
-        };
-      }
-    });
-  });
-
-  /* ========================================================== AREA CLIENTI */
-
-  // Accesso. Con PHP il modulo va al server, che controlla email e password;
-  // nell'anteprima statica si entra solo con i clienti d'esempio.
-  $$('[data-accesso-cliente]').forEach(function (form) {
-    var demo = form.getAttribute('data-demo');
-    var errore = $('.errore-accesso', form);
-    form.addEventListener('submit', function (e) {
-      var email = $('#c-email', form).value.trim().toLowerCase(), pw = $('#c-password', form).value;
-      if (!email || !pw) { e.preventDefault(); errore.textContent = 'Inserite email e password.'; return; }
-      if (!demo) return;
-      e.preventDefault();
-      var id = JSON.parse(demo)[email];
-      if (!id || pw !== 'studio54') { errore.textContent = 'Email o password non corrette.'; return; }
-      location.href = 'cliente-' + encodeURIComponent(id) + '.html';
-    });
-  });
-
-  // Album da sfogliare: due pagine affiancate su schermi larghi, una pagina
-  // alla volta su telefono. I fogli girano come in un libro vero.
-  $$('[data-album]').forEach(function (album) {
-    var foto = JSON.parse(album.getAttribute('data-foto') || '[]');
-    var libro = $('.album-libro', album), conto = $('.album-conto', album);
-    var titolo = album.getAttribute('data-titolo'), data = album.getAttribute('data-data');
-    var fogli = [], girati = 0, singolo = null;
-    function pagina(classe, html) { var d = document.createElement('div'); d.className = classe; d.innerHTML = html; return d; }
-    function testoCopertina() {
-      var t = document.createElement('div');
-      t.className = 'copertina-dentro';
-      t.innerHTML = '<img src="assets/img/mark.png" alt=""><p></p><small></small>';
-      $('p', t).textContent = titolo; $('small', t).textContent = data;
-      return t;
-    }
-    function faccia(classe, p) {
-      var f = pagina('faccia ' + classe, '');
-      if (!p) { f.appendChild(testoCopertina()); return f; }
-      var img = document.createElement('img'); img.src = p.src; img.alt = p.didascalia || ''; img.loading = 'lazy';
-      f.appendChild(img);
-      if (p.didascalia) { var c = document.createElement('figcaption'); c.textContent = p.didascalia; f.appendChild(c); }
-      return f;
-    }
-    function costruisci() {
-      var s = window.innerWidth < 720;
-      if (s === singolo) return;
-      singolo = s; girati = 0; fogli = [];
-      album.classList.toggle('singolo', s);
-      libro.innerHTML = '';
-      var fine = pagina('pagina-fissa destra', '<div class="copertina-dentro"><p>FINE</p><small>' + foto.length + ' foto</small></div>');
-      if (s) {
-        // Una pagina alla volta: la copertina, poi le foto una sopra l'altra.
-        libro.appendChild(fine);
-        var pagine = [null].concat(foto);
-        pagine.forEach(function (p) {
-          var f = pagina('foglio', '');
-          f.appendChild(faccia('fronte', p));
-          fogli.push(f);
-        });
-      } else {
-        var sx = pagina('pagina-fissa sinistra', ''); sx.appendChild(testoCopertina());
-        libro.appendChild(sx); libro.appendChild(fine);
-        for (var k = 0; k < foto.length; k += 2) {
-          var f = pagina('foglio', '');
-          f.appendChild(faccia('fronte', foto[k]));
-          var dietro = foto[k + 1] ? faccia('retro', foto[k + 1]) : pagina('faccia retro', '');
-          f.appendChild(dietro);
-          fogli.push(f);
-        }
-      }
-      fogli.forEach(function (f, k) {
-        libro.appendChild(f);
-        f.addEventListener('click', function () { vai(k < girati ? -1 : 1); });
-      });
-      mostra();
-    }
-    function mostra() {
-      var n = fogli.length;
-      fogli.forEach(function (f, k) {
-        var g = k < girati;
-        f.classList.toggle('girato', g);
-        f.style.zIndex = g ? k + 1 : n - k + 10;
-      });
-      if (singolo) conto.textContent = girati === 0 ? 'COPERTINA' : (girati >= n ? 'FINE' : due(girati) + ' / ' + due(foto.length));
-      else conto.textContent = girati === 0 ? 'COPERTINA' : (girati >= n ? 'FINE' : 'PAGINE ' + due(girati * 2 - 1) + '–' + due(Math.min(foto.length, girati * 2)));
-    }
-    function vai(d) { girati = Math.min(fogli.length, Math.max(0, girati + d)); mostra(); }
-    $$('[data-pagina]', album).forEach(function (b) { b.addEventListener('click', function () { vai(+b.getAttribute('data-pagina')); }); });
-    sfoglia(libro, vai);
-    var grande = $('.album-grande', album);
-    if (grande) grande.addEventListener('click', function () {
-      var i = singolo ? Math.max(0, girati - 1) : Math.max(0, girati * 2 - 1);
-      lbApri(foto.map(function (p) { return { src: p.grande, titolo: p.didascalia || titolo, meta: '' }; }), Math.min(i, foto.length - 1));
-    });
-    costruisci();
-    var t0; window.addEventListener('resize', function () { clearTimeout(t0); t0 = setTimeout(costruisci, 150); });
-  });
-
-  // Cambio password del cliente: per ora solo i controlli (il salvataggio
-  // arriverà con il database).
-  $$('[data-cambia-password]').forEach(function (form) {
-    var err = $('.errore-password', form);
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var a = $('#p-nuova', form).value, b = $('#p-ripeti', form).value;
-      var vecchio = $('.messaggio-ok', form); if (vecchio) vecchio.remove();
-      if (a.length < 8) { err.textContent = 'La password deve avere almeno 8 caratteri.'; return; }
-      if (a !== b) { err.textContent = 'Le due password non coincidono.'; return; }
-      err.textContent = '';
-      var ok = document.createElement('p'); ok.className = 'messaggio-ok';
-      ok.textContent = 'Anteprima: la nuova password verrà salvata quando il sito sarà collegato al database.';
-      form.appendChild(ok); form.reset();
+      var d = valore('data').split('/');
+      var richiesta = {
+        id: 'web-' + Date.now().toString(36),
+        createdAt: new Date().toISOString(),
+        firstName: valore('nome'), lastName: valore('cognome'),
+        phone: valore('telefono'), email: valore('email'),
+        eventType: tipo,
+        eventDate: d.length === 3 ? d[2] + '-' + d[1] + '-' + d[0] : null,
+        location: valore('luogo'),
+        requests: $$('[data-richiesta][aria-pressed="true"]', form).map(function (b) { return b.getAttribute('data-richiesta'); }),
+        message: valore('note'),
+        source: 'sito', status: 'nuova', appointmentId: null
+      };
+      // Senza database la richiesta resta in questo browser: il gestionale,
+      // aperto qui, la mostra tra le Richieste.
+      S54.nuovaRichiesta(richiesta);
+      var grazie = $('[data-grazie]');
+      $('.grazie-titolo', grazie).textContent = 'Grazie, ' + richiesta.firstName;
+      $('.grazie-testo', grazie).textContent = richiesta.phone
+        ? 'Ti richiameremo al ' + richiesta.phone + ' per parlarne insieme.'
+        : 'Ti scriveremo a ' + richiesta.email + ' per parlarne insieme.';
+      form.hidden = true;
+      grazie.hidden = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      $('.grazie-nuova', grazie).onclick = function () {
+        form.reset(); provato = false;
+        tipo = tipi.length === 1 ? tipi[0].label : '';
+        $$('[data-tipo]', form).forEach(function (x) { var on = x.getAttribute('data-tipo') === tipo; x.setAttribute('aria-pressed', on); x.setAttribute('aria-checked', on); });
+        $$('[data-richiesta]', form).forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+        $$('.campo', form).forEach(function (c) { c.classList.remove('sbagliato'); var er = $('.errore', c); if (er) er.textContent = ''; });
+        if (conto) conto.textContent = '0/500';
+        grazie.hidden = true; form.hidden = false;
+      };
     });
   });
 })();

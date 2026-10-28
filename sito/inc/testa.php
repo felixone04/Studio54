@@ -12,21 +12,20 @@ $voci = [
     ['Preventivo', 'preventivo'],
 ];
 ?><!DOCTYPE html>
-<html lang="it">
+<html lang="it" data-ext="<?= STATICO ? 'html' : 'php' ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($titolo_pagina) ?></title>
-  <meta name="description" content="<?= e($nome) ?> · Fotografia di matrimoni ed eventi. Guarda i nostri lavori e richiedi un preventivo gratuito.">
-  <meta name="theme-color" content="#FFFAF0">
-  <?php if (!empty($noindex)): ?><meta name="robots" content="noindex"><?php endif; ?>
+  <meta name="description" content="<?= e($nome) ?> · Fotografia di matrimoni ed eventi. Guarda i nostri lavori e chiedi informazioni.">
+  <meta name="theme-color" content="#FFFFFF">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
   <link rel="apple-touch-icon" href="assets/img/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://images.unsplash.com">
   <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= e(risorsa('assets/css/sito.css')) ?>">
-  <?php foreach ($css_extra ?? [] as $x): ?><link rel="stylesheet" href="<?= e(risorsa($x)) ?>"><?php endforeach; ?>
   <script>
     // Il logo d'apertura si vede entrando nel sito (o ricaricando la pagina);
     // passando da una pagina all'altra del sito no.
@@ -37,7 +36,7 @@ $voci = [
     } catch (e) {}
   </script>
 </head>
-<body class="<?= e($classe_body ?? '') ?>">
+<body class="pagina-<?= e($pagina) ?>" data-pagina="<?= e($pagina) ?>">
   <div id="intro" aria-hidden="true">
     <img src="assets/img/logo.png" alt="">
     <div class="intro-barra"><b></b></div>
@@ -69,18 +68,11 @@ $voci = [
     <nav class="menu-voci">
       <?php foreach ($voci as $i => [$t, $p]): ?>
         <a class="<?= $pagina === $p ? 'attivo' : '' ?>" href="<?= e(url($p)) ?>">
-          <small><?= due($i + 1) ?></small><?= e(maiuscolo($t)) ?>
+          <small>0<?= $i + 1 ?></small><?= e(maiuscolo($t)) ?>
         </a>
       <?php endforeach; ?>
     </nav>
-    <div class="menu-contatti">
-      <?php if (!empty($c['contacts']['phone'])): ?>
-        <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $c['contacts']['phone'])) ?>"><?= e($c['contacts']['phone']) ?></a>
-      <?php endif; ?>
-      <?php if (!empty($c['contacts']['email'])): ?>
-        <a href="mailto:<?= e($c['contacts']['email']) ?>"><?= e($c['contacts']['email']) ?></a>
-      <?php endif; ?>
-    </div>
+    <div class="menu-contatti" data-menu-contatti></div>
   </div>
 
   <main id="contenuto">

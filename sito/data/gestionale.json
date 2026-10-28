@@ -1,0 +1,290 @@
+{
+  "quotes": [
+    {
+      "id": "q1",
+      "createdAt": "2026-10-27T21:44:54.780690",
+      "firstName": "Martina",
+      "lastName": "Esposito",
+      "phone": "+39 333 482 1190",
+      "email": "martina.esposito@example.com",
+      "eventType": "Matrimonio",
+      "eventDate": "2027-06-12T00:00:00.000",
+      "location": "Masseria in Valle d'Itria",
+      "requests": [
+        "Reportage fotografico",
+        "Secondo fotografo",
+        "Album fine art"
+      ],
+      "message": "Circa 120 invitati, cerimonia all'aperto al tramonto.",
+      "source": "sito",
+      "status": "nuova",
+      "appointmentId": null
+    },
+    {
+      "id": "q2",
+      "createdAt": "2026-10-26T22:44:54.780690",
+      "firstName": "Luca",
+      "lastName": "Ferri",
+      "phone": "+39 347 220 9815",
+      "email": "luca.ferri@example.com",
+      "eventType": "Matrimonio",
+      "eventDate": "2027-09-21T00:00:00.000",
+      "location": "Lago di Como",
+      "requests": [
+        "Reportage fotografico",
+        "Video del matrimonio"
+      ],
+      "message": "",
+      "source": "app",
+      "status": "contattata",
+      "appointmentId": null
+    },
+    {
+      "id": "q3",
+      "createdAt": "2026-10-24T01:44:54.780690",
+      "firstName": "Giorgia",
+      "lastName": "Conti",
+      "phone": "+39 320 771 4402",
+      "email": "giorgia.conti@example.com",
+      "eventType": "Matrimonio",
+      "eventDate": "2027-05-05T00:00:00.000",
+      "location": "Roma",
+      "requests": [
+        "Servizio pre-matrimonio",
+        "Riprese con drone"
+      ],
+      "message": "Vorremmo qualche informazione sui tempi di consegna.",
+      "source": "sito",
+      "status": "confermata",
+      "appointmentId": "a1"
+    }
+  ],
+  "appointments": [
+    {
+      "id": "a1",
+      "title": "Incontro con Giorgia Conti · Matrimonio",
+      "start": "2026-10-30T10:00:00.000",
+      "end": "2026-10-30T11:00:00.000",
+      "allDay": false,
+      "location": "Studio",
+      "notes": "",
+      "quoteId": "q3",
+      "googleEventId": null
+    },
+    {
+      "id": "a2",
+      "title": "Sopralluogo in masseria",
+      "start": "2026-11-03T15:00:00.000",
+      "end": "2026-11-03T17:00:00.000",
+      "allDay": false,
+      "location": "Valle d'Itria",
+      "notes": "",
+      "quoteId": null,
+      "googleEventId": null
+    },
+    {
+      "id": "a3",
+      "title": "Consegna album · Anna e Paolo",
+      "start": "2026-11-10T18:00:00.000",
+      "end": "2026-11-10T18:30:00.000",
+      "allDay": false,
+      "location": "Studio",
+      "notes": "",
+      "quoteId": null,
+      "googleEventId": null
+    }
+  ],
+  "clients": [
+    {
+      "id": "cl-anna",
+      "name": "Anna Ricci",
+      "email": "anna.ricci@example.com",
+      "username": "anna.paolo",
+      "phone": "+39 333 555 0101",
+      "passwordHash": "092264d616847c3cfe568b7f5f6eee13380813bd9a9826271d306c056a1378b2",
+      "passwordSalt": "demo-cl-anna",
+      "active": true,
+      "eventTitle": "Il matrimonio di Anna e Paolo",
+      "eventDate": "18 maggio 2024",
+      "location": "Masseria in Valle d'Itria",
+      "welcome": "Ecco le foto e il video del vostro giorno: scaricateli quando volete, in alta qualità.",
+      "media": [
+        {
+          "id": "cl-anna-m1",
+          "url": "https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1591604466107-ec97de577aff?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "anna-001.jpg"
+        },
+        {
+          "id": "cl-anna-m2",
+          "url": "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "anna-002.jpg"
+        },
+        {
+          "id": "cl-anna-m3",
+          "url": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "anna-003.jpg"
+        },
+        {
+          "id": "cl-anna-m4",
+          "url": "https://images.unsplash.com/photo-1606490208247-b65be3d94cd1?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1606490208247-b65be3d94cd1?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "anna-004.jpg"
+        },
+        {
+          "id": "cl-anna-m5",
+          "url": "https://images.unsplash.com/photo-1629219219925-ea8de62f2d68?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1629219219925-ea8de62f2d68?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "anna-005.jpg"
+        },
+        {
+          "id": "cl-anna-m6",
+          "url": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "anna-006.jpg"
+        },
+        {
+          "id": "cl-anna-m7",
+          "url": "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "anna-007.jpg"
+        },
+        {
+          "id": "cl-anna-m8",
+          "url": "https://images.unsplash.com/photo-1574871786514-46e1680ea587?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1574871786514-46e1680ea587?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "anna-008.jpg"
+        },
+        {
+          "id": "cl-anna-v1",
+          "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+          "original": "",
+          "isVideo": true,
+          "poster": "https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&q=80",
+          "name": "anna-video.mp4"
+        }
+      ],
+      "files": [
+        {
+          "id": "cl-anna-f1",
+          "name": "Scheda del servizio",
+          "url": "https://felixone04.github.io/Studio54/assets/demo/scheda-servizio.pdf",
+          "isLink": false,
+          "note": "Riepilogo di servizi, tempi di consegna e album.",
+          "addedAt": "2024-04-02T00:00:00.000"
+        }
+      ],
+      "createdAt": "2024-06-02T00:00:00.000",
+      "lastLogin": null
+    },
+    {
+      "id": "cl-elena",
+      "name": "Elena Bianchi",
+      "email": "elena.bianchi@example.com",
+      "username": "elena.davide",
+      "phone": "+39 347 555 0202",
+      "passwordHash": "ac3757ff20a82a56fd0c9c17d0de0ba0714ab43d4cfa0bd6973ce88e56bcd7db",
+      "passwordSalt": "demo-cl-elena",
+      "active": true,
+      "eventTitle": "Il matrimonio di Elena e Davide",
+      "eventDate": "9 dicembre 2023",
+      "location": "Dolomiti",
+      "welcome": "Il vostro inverno in quota, foto dopo foto.",
+      "media": [
+        {
+          "id": "cl-elena-m1",
+          "url": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "elena-001.jpg"
+        },
+        {
+          "id": "cl-elena-m2",
+          "url": "https://images.unsplash.com/photo-1492175742197-ed20dc5a6bed?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1492175742197-ed20dc5a6bed?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "elena-002.jpg"
+        },
+        {
+          "id": "cl-elena-m3",
+          "url": "https://images.unsplash.com/photo-1591700331354-f7eea65d1ce8?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1591700331354-f7eea65d1ce8?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "elena-003.jpg"
+        },
+        {
+          "id": "cl-elena-m4",
+          "url": "https://images.unsplash.com/photo-1561287495-a3fe1fd28504?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1561287495-a3fe1fd28504?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "elena-004.jpg"
+        },
+        {
+          "id": "cl-elena-m5",
+          "url": "https://images.unsplash.com/photo-1523521803700-b3bcaeab0150?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1523521803700-b3bcaeab0150?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "elena-005.jpg"
+        },
+        {
+          "id": "cl-elena-m6",
+          "url": "https://images.unsplash.com/photo-1551890946-3e5446d3a71b?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1551890946-3e5446d3a71b?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "elena-006.jpg"
+        },
+        {
+          "id": "cl-elena-m7",
+          "url": "https://images.unsplash.com/photo-1607357910286-1ff94ac13c24?auto=format&fit=crop&q=80",
+          "original": "https://images.unsplash.com/photo-1607357910286-1ff94ac13c24?q=100&fm=jpg",
+          "isVideo": false,
+          "poster": "",
+          "name": "elena-007.jpg"
+        },
+        {
+          "id": "cl-elena-v1",
+          "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+          "original": "",
+          "isVideo": true,
+          "poster": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80",
+          "name": "elena-video.mp4"
+        }
+      ],
+      "files": [],
+      "createdAt": "2024-06-02T00:00:00.000",
+      "lastLogin": null
+    }
+  ],
+  "admin": {
+    "username": "titolare",
+    "passwordHash": "22249893983dfb7cf1755d4172ae8ee4c0941f85ddff9921e831be7d5a95f0e3",
+    "passwordSalt": "demo-admin",
+    "googleClientId": "",
+    "googleWasConnected": false,
+    "sessionUntil": null
+  }
+}

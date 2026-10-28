@@ -2,26 +2,10 @@
   "content": {
     "studioName": "Studio 54",
     "tagline": "Fotografia di matrimoni ed eventi",
-    "heroKicker": "Matrimoni · Eventi · Ritratti",
-    "heroTitle": "Ogni scatto, un'opera.",
-    "heroSubtitle": "",
-    "marquee": "Matrimoni, Ritratti, Cerimonie, Eventi, Famiglie, Fine Art",
-    "manifestoTitle": "Non fotografiamo momenti.\nFotografiamo emozioni.",
-    "manifestoText": "",
-    "highlights": [],
-    "galleryKicker": "Portfolio",
-    "galleryTitle": "Opere",
-    "galleryIntro": "",
-    "servicesTitle": "Cosa facciamo",
-    "servicesIntro": "",
-    "bannerTitle": "Parliamone.",
-    "bannerText": "Ti richiamiamo noi.",
-    "bannerButton": "Richiedi un preventivo",
-    "bannerImage": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2400&q=80",
     "bioTitle": "Chi siamo",
     "bioIntro": "Uno sguardo discreto.\nUna sola ossessione: la luce.",
     "bioStory": "Raccontiamo matrimoni ed eventi come se ogni giornata fosse una mostra da allestire: con calma, attenzione e rispetto.\n\nPrima ascoltiamo. Poi cerchiamo la luce. Infine stampiamo: perché una foto vera si tocca.",
-    "bioImage": "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=1800&q=80",
+    "bioImage": "https://images.unsplash.com/photo-1596457221755-b96bc3a6df18?auto=format&fit=crop&q=80",
     "timeline": [
       {
         "year": "01",
@@ -41,11 +25,9 @@
       {
         "year": "04",
         "title": "Consegniamo",
-        "text": "Galleria online, album e stampe fine art."
+        "text": "Foto e video in alta qualità, album e stampe fine art."
       }
     ],
-    "team": [],
-    "teamTitle": "Il team",
     "contacts": {
       "phone": "+39 06 1234 5678",
       "whatsapp": "+39 333 123 4567",
@@ -56,310 +38,70 @@
       "facebook": "https://facebook.com/",
       "vat": "P.IVA 00000000000"
     },
-    "footerNote": "",
-    "accent": 4290288498,
-    "eventTypes": [
-      "Matrimonio",
-      "Battesimo",
-      "Comunione / Cresima",
-      "Compleanno / 18 anni",
-      "Laurea",
-      "Festa privata",
-      "Evento aziendale",
-      "Ritratti / famiglia",
-      "Altro"
-    ]
+    "accent": 4290288498
   },
-  "services": [
+  "carouselSite": [
     {
-      "id": "svc-wedding",
-      "name": "Reportage di matrimonio",
-      "description": "La giornata intera raccontata in modo naturale, dai preparativi al taglio della torta.",
-      "category": "Fotografia",
-      "image": "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 1400.0,
+      "id": "cs1",
+      "url": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80",
       "active": true
     },
     {
-      "id": "svc-engagement",
-      "name": "Servizio pre-matrimonio",
-      "description": "Una sessione rilassata a due, per sciogliere la tensione e avere le prime foto insieme.",
-      "category": "Fotografia",
-      "image": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 250.0,
+      "id": "cs2",
+      "url": "https://images.unsplash.com/photo-1600270237614-d20aef1c8b14?auto=format&fit=crop&q=80",
       "active": true
     },
     {
-      "id": "svc-ceremony",
-      "name": "Cerimonie",
-      "description": "Battesimi, comunioni e cresime: i momenti in famiglia, senza perdere un sorriso.",
-      "category": "Fotografia",
-      "image": "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 450.0,
+      "id": "cs3",
+      "url": "https://images.unsplash.com/photo-1604017011826-d3b4c23f8914?auto=format&fit=crop&q=80",
       "active": true
     },
     {
-      "id": "svc-party",
-      "name": "Feste e compleanni",
-      "description": "18 anni, lauree, anniversari e feste a sorpresa: l'energia della festa, catturata dal vivo.",
-      "category": "Fotografia",
-      "image": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 380.0,
+      "id": "cs4",
+      "url": "https://images.unsplash.com/photo-1519379169146-d4b170447caa?auto=format&fit=crop&q=80",
       "active": true
     },
     {
-      "id": "svc-portrait",
-      "name": "Ritratti e book",
-      "description": "Sessioni in studio o in esterna, per te, per la famiglia o per il tuo lavoro.",
-      "category": "Fotografia",
-      "image": "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 180.0,
+      "id": "cs5",
+      "url": "https://images.unsplash.com/photo-1520886272478-69aed2b3685b?auto=format&fit=crop&q=80",
       "active": true
     },
     {
-      "id": "svc-newborn",
-      "name": "Neonati e famiglia",
-      "description": "Servizi dolci e senza fretta per i primi mesi, a casa o in studio.",
-      "category": "Fotografia",
-      "image": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 200.0,
-      "active": true
-    },
-    {
-      "id": "svc-events",
-      "name": "Eventi e concerti",
-      "description": "Eventi aziendali, serate e spettacoli: tutta l'atmosfera, consegnata in tempi rapidi.",
-      "category": "Fotografia",
-      "image": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 500.0,
-      "active": true
-    },
-    {
-      "id": "svc-video",
-      "name": "Film dell'evento",
-      "description": "Un montaggio cinematografico con le immagini e i suoni più belli della giornata.",
-      "category": "Video",
-      "image": "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 900.0,
-      "active": true
-    },
-    {
-      "id": "svc-drone",
-      "name": "Riprese con drone",
-      "description": "Vedute dall'alto di location, cerimonie e ricevimenti.",
-      "category": "Video",
-      "image": "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 250.0,
-      "active": true
-    },
-    {
-      "id": "svc-album",
-      "name": "Album fine art",
-      "description": "Un libro cucito a mano, con carte pregiate e copertina personalizzata.",
-      "category": "Prodotti",
-      "image": "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 350.0,
-      "active": true
-    },
-    {
-      "id": "svc-prints",
-      "name": "Stampe e cornici",
-      "description": "Stampe su carta cotone, tele e cornici per dare spazio ai ricordi sulle vostre pareti.",
-      "category": "Prodotti",
-      "image": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 120.0,
-      "active": true
-    },
-    {
-      "id": "svc-gallery",
-      "name": "Galleria online privata",
-      "description": "Tutte le foto in alta risoluzione, da scaricare e condividere con parenti e amici.",
-      "category": "Prodotti",
-      "image": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 60.0,
-      "active": true
-    },
-    {
-      "id": "svc-second",
-      "name": "Secondo fotografo",
-      "description": "Due punti di vista per non perdere nulla, soprattutto nelle cerimonie più affollate.",
-      "category": "Extra",
-      "image": "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 300.0,
-      "active": true
-    },
-    {
-      "id": "svc-booth",
-      "name": "Photo booth con stampa",
-      "description": "Divertimento per gli ospiti e un ricordo da portare a casa, stampato al momento.",
-      "category": "Extra",
-      "image": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=80",
-      "internalPrice": 350.0,
+      "id": "cs6",
+      "url": "https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&q=80",
       "active": true
     }
   ],
-  "packages": [
+  "carouselApp": [
     {
-      "id": "pkg-essential",
-      "name": "Essenziale",
-      "tagline": "Per chi vuole l'essenziale, fatto bene",
-      "description": "Il reportage della giornata con tutte le foto in galleria online privata.",
-      "serviceIds": [
-        "svc-wedding",
-        "svc-gallery"
-      ],
-      "image": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=900&q=80",
-      "featured": false,
+      "id": "ca1",
+      "url": "https://images.unsplash.com/photo-1607190074257-dd4b7af0309f?auto=format&fit=crop&q=80",
       "active": true
     },
     {
-      "id": "pkg-story",
-      "name": "Racconto",
-      "tagline": "Il più scelto dalle coppie",
-      "description": "Dal servizio pre-matrimonio al libro finito: la storia completa, con due punti di vista.",
-      "serviceIds": [
-        "svc-engagement",
-        "svc-wedding",
-        "svc-second",
-        "svc-album",
-        "svc-gallery"
-      ],
-      "image": "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=900&q=80",
-      "featured": true,
+      "id": "ca2",
+      "url": "https://images.unsplash.com/photo-1599142296733-1c1f2073e6de?auto=format&fit=crop&q=80",
       "active": true
     },
     {
-      "id": "pkg-cinema",
-      "name": "Cinema",
-      "tagline": "Foto, video e ricordi da toccare",
-      "description": "Un'esperienza completa: fotografie, film con riprese aeree e stampe da incorniciare.",
-      "serviceIds": [
-        "svc-wedding",
-        "svc-video",
-        "svc-drone",
-        "svc-album",
-        "svc-prints",
-        "svc-gallery"
-      ],
-      "image": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=900&q=80",
-      "featured": false,
+      "id": "ca3",
+      "url": "https://images.unsplash.com/photo-1606490194859-07c18c9f0968?auto=format&fit=crop&q=80",
       "active": true
     },
     {
-      "id": "pkg-party",
-      "name": "Festa",
-      "tagline": "Per compleanni, 18 anni e lauree",
-      "description": "La festa dal vivo con photo booth, per divertirvi e portarvi a casa i sorrisi.",
-      "serviceIds": [
-        "svc-party",
-        "svc-booth",
-        "svc-gallery"
-      ],
-      "image": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=900&q=80",
-      "featured": false,
+      "id": "ca4",
+      "url": "https://images.unsplash.com/photo-1546032996-6dfacbacbf3f?auto=format&fit=crop&q=80",
       "active": true
-    }
-  ],
-  "gallery": [
-    {
-      "id": "g1",
-      "url": "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=2200&q=80",
-      "title": "Il velo e il mare",
-      "caption": "Il vento solleva il velo, loro non sentono altro che il rumore dell'acqua.",
-      "category": "Matrimonio",
-      "location": "Costa tirrenica",
-      "year": "2023",
-      "inHero": false
     },
     {
-      "id": "g2",
-      "url": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=2200&q=80",
-      "title": "Pioggia di petali",
-      "caption": "Il momento in cui tutta la festa respira insieme.",
-      "category": "Matrimonio",
-      "location": "Toscana",
-      "year": "2024",
-      "inHero": false
+      "id": "ca5",
+      "url": "https://images.unsplash.com/photo-1550713450-94c9b4fc9f25?auto=format&fit=crop&q=80",
+      "active": true
     },
     {
-      "id": "g3",
-      "url": "https://images.unsplash.com/photo-1460978812857-470ed1c77af0?auto=format&fit=crop&w=2200&q=80",
-      "title": "Sotto il velo",
-      "caption": "Un istante di silenzio, in bianco e nero.",
-      "category": "Matrimonio",
-      "location": "Umbria",
-      "year": "2022",
-      "inHero": true
-    },
-    {
-      "id": "g4",
-      "url": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=2200&q=80",
-      "title": "Il volo dei desideri",
-      "caption": "Cento palloncini, cento desideri affidati al cielo.",
-      "category": "Cerimonia",
-      "location": "Lago di Bracciano",
-      "year": "2023",
-      "inHero": true
-    },
-    {
-      "id": "g5",
-      "url": "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=2200&q=80",
-      "title": "Due mani, una promessa",
-      "caption": "Piccoli gesti che dicono tutto.",
-      "category": "Dettagli",
-      "location": "Roma",
-      "year": "2024",
-      "inHero": true
-    },
-    {
-      "id": "g6",
-      "url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=2200&q=80",
-      "title": "Luce d'oro",
-      "caption": "L'ultima ora del giorno regala i ritratti più sinceri.",
-      "category": "Ritratto",
-      "location": "Campagna romana",
-      "year": "2024",
-      "inHero": false
-    },
-    {
-      "id": "g7",
-      "url": "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=2200&q=80",
-      "title": "Sguardo",
-      "caption": "Uno sguardo che racconta più di mille pose.",
-      "category": "Ritratto",
-      "location": "Studio",
-      "year": "2023",
-      "inHero": false
-    },
-    {
-      "id": "g8",
-      "url": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=2200&q=80",
-      "title": "Primi giochi",
-      "caption": "Il mondo visto da chi lo scopre per la prima volta.",
-      "category": "Famiglia",
-      "location": "A casa",
-      "year": "2024",
-      "inHero": true
-    },
-    {
-      "id": "g9",
-      "url": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=2200&q=80",
-      "title": "La notte è nostra",
-      "caption": "Luci, voci e mani al cielo: l'energia di una serata.",
-      "category": "Eventi",
-      "location": "Milano",
-      "year": "2023",
-      "inHero": true
-    },
-    {
-      "id": "g10",
-      "url": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=2200&q=80",
-      "title": "Un cuore al tramonto",
-      "caption": "Il sole ha scelto di stare in mezzo a noi.",
-      "category": "Coppia",
-      "location": "Puglia",
-      "year": "2022",
-      "inHero": false
+      "id": "ca6",
+      "url": "https://images.unsplash.com/photo-1606216836537-eea72a939072?auto=format&fit=crop&q=80",
+      "active": true
     }
   ],
   "works": [
@@ -367,206 +109,159 @@
       "id": "w-giulia-marco",
       "title": "Giulia & Marco",
       "category": "Matrimonio",
-      "location": "Costa tirrenica",
+      "location": "Sperlonga",
       "date": "Giugno 2024",
       "season": "",
       "setting": "Mare",
-      "story": "Una giornata di vento e di sale. Dai preparativi in una casa affacciata sul mare fino all'ultimo ballo sulla spiaggia, abbiamo seguito la luce senza mai interrompere la festa.",
-      "credits": "Reportage · Secondo fotografo · Album fine art",
       "cover": "",
       "photos": [
         {
-          "id": "hnikp49ndh0ihz1",
-          "url": "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Il velo e il mare"
+          "id": "w-giulia-marco-1",
+          "url": "https://images.unsplash.com/photo-1600270237614-d20aef1c8b14?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ndh1g8qt",
-          "url": "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Le fedi"
+          "id": "w-giulia-marco-2",
+          "url": "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ndh2bluh",
-          "url": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Pioggia di petali"
+          "id": "w-giulia-marco-3",
+          "url": "https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ndh35m4c",
-          "url": "https://images.unsplash.com/photo-1460978812857-470ed1c77af0?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Un istante di silenzio"
+          "id": "w-giulia-marco-4",
+          "url": "https://images.unsplash.com/photo-1606216794079-73f85bbd57d5?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ndh4bw3f",
-          "url": "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Tra gli invitati"
+          "id": "w-giulia-marco-5",
+          "url": "https://images.unsplash.com/photo-1510076857177-7470076d4098?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ndh579y9",
-          "url": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2200&q=80",
-          "caption": "L'ultima luce"
+          "id": "w-giulia-marco-6",
+          "url": "https://images.unsplash.com/photo-1473652502225-6b6af0664e32?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-giulia-marco-7",
+          "url": "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&q=80",
+          "caption": ""
         }
       ],
       "published": true,
-      "seasonLabel": "Estate"
+      "featured": true,
+      "onSite": true,
+      "onApp": true
     },
     {
       "id": "w-sofia-luca",
       "title": "Sofia & Luca",
       "category": "Matrimonio",
-      "location": "Toscana",
+      "location": "Val d'Orcia",
       "date": "Settembre 2023",
       "season": "",
       "setting": "Campagna",
-      "story": "Un casale tra le colline, cento palloncini e una promessa detta sottovoce. Un racconto tenero, fatto di sguardi e di piccoli gesti.",
-      "credits": "Reportage · Film dell'evento · Galleria online",
       "cover": "",
       "photos": [
         {
-          "id": "hnikp49ndh6jm9i",
-          "url": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Il volo dei desideri"
+          "id": "w-sofia-luca-1",
+          "url": "https://images.unsplash.com/photo-1604017011826-d3b4c23f8914?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ndh7260e",
-          "url": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Un cuore al tramonto"
+          "id": "w-sofia-luca-2",
+          "url": "https://images.unsplash.com/photo-1631225893179-4d6e349189c2?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ndh8k2x2",
-          "url": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=2200&q=80",
-          "caption": "La tavola apparecchiata"
+          "id": "w-sofia-luca-3",
+          "url": "https://images.unsplash.com/photo-1529636798458-92182e662485?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ndh9exfb",
-          "url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Luce d'oro"
+          "id": "w-sofia-luca-4",
+          "url": "https://images.unsplash.com/photo-1596457221755-b96bc3a6df18?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-sofia-luca-5",
+          "url": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-sofia-luca-6",
+          "url": "https://images.unsplash.com/photo-1475721042966-f829c9b42aab?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-sofia-luca-7",
+          "url": "https://images.unsplash.com/photo-1563808599481-34a342e44508?auto=format&fit=crop&q=80",
+          "caption": ""
         }
       ],
       "published": true,
-      "seasonLabel": "Autunno"
-    },
-    {
-      "id": "w-battesimo-leo",
-      "title": "Il battesimo di Leo",
-      "category": "Cerimonia",
-      "location": "Roma",
-      "date": "Aprile 2024",
-      "season": "",
-      "setting": "Chiesa",
-      "story": "Una mattina di primavera in famiglia: la chiesa piena di luce, i nonni emozionati e un piccolo protagonista che non ha mai smesso di sorridere.",
-      "credits": "Reportage · Stampe e cornici",
-      "cover": "",
-      "photos": [
-        {
-          "id": "hnikp49ndhaa84m",
-          "url": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Primi giochi"
-        },
-        {
-          "id": "hnikp49ndhbciby",
-          "url": "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=2200&q=80",
-          "caption": "In famiglia"
-        },
-        {
-          "id": "hnikp49ndhcjyny",
-          "url": "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Album cucito a mano"
-        }
-      ],
-      "published": true,
-      "seasonLabel": "Primavera"
-    },
-    {
-      "id": "w-notte-estate",
-      "title": "Notte d'estate",
-      "category": "Evento",
-      "location": "Milano",
-      "date": "Luglio 2023",
-      "season": "",
-      "setting": "Città",
-      "story": "Una serata aziendale diventata concerto: luci, musica e mani al cielo. Foto consegnate la mattina dopo, pronte per i social.",
-      "credits": "Eventi e concerti · Photo booth con stampa",
-      "cover": "",
-      "photos": [
-        {
-          "id": "hnikp49ndhd652h",
-          "url": "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=2200&q=80",
-          "caption": "La notte è nostra"
-        },
-        {
-          "id": "hnikp49ox5e6jid",
-          "url": "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Il photo booth"
-        },
-        {
-          "id": "hnikp49ox5f2edp",
-          "url": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Colori di festa"
-        },
-        {
-          "id": "hnikp49ox5g2i5r",
-          "url": "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Dietro le quinte"
-        }
-      ],
-      "published": true,
-      "seasonLabel": "Estate"
+      "featured": true,
+      "onSite": true,
+      "onApp": true
     },
     {
       "id": "w-anna-paolo",
       "title": "Anna & Paolo",
       "category": "Matrimonio",
-      "location": "Valle d'Itria, Puglia",
+      "location": "Valle d'Itria",
       "date": "Maggio 2024",
       "season": "",
       "setting": "Masseria",
-      "story": "Pietra bianca, ulivi e una lunga tavolata sotto le stelle: una festa in masseria raccontata dalla mattina fino a notte.",
-      "credits": "Reportage · Film dell'evento · Album fine art",
       "cover": "",
       "photos": [
         {
-          "id": "hnikp49ox5h8v8m",
-          "url": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Tra gli ulivi"
+          "id": "w-anna-paolo-1",
+          "url": "https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5i8us2",
-          "url": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Petali"
+          "id": "w-anna-paolo-2",
+          "url": "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5jfieu",
-          "url": "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Le fedi"
+          "id": "w-anna-paolo-3",
+          "url": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5kbw28",
-          "url": "https://images.unsplash.com/photo-1460978812857-470ed1c77af0?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Il velo"
+          "id": "w-anna-paolo-4",
+          "url": "https://images.unsplash.com/photo-1606490208247-b65be3d94cd1?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5l8c6q",
-          "url": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Al tramonto"
+          "id": "w-anna-paolo-5",
+          "url": "https://images.unsplash.com/photo-1629219219925-ea8de62f2d68?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5md0qu",
-          "url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Luce d'oro"
+          "id": "w-anna-paolo-6",
+          "url": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5n2e64",
-          "url": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=2200&q=80",
-          "caption": "La tavolata"
+          "id": "w-anna-paolo-7",
+          "url": "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5ogbj6",
-          "url": "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Si balla"
+          "id": "w-anna-paolo-8",
+          "url": "https://images.unsplash.com/photo-1574871786514-46e1680ea587?auto=format&fit=crop&q=80",
+          "caption": ""
         }
       ],
       "published": true,
-      "seasonLabel": "Primavera"
+      "featured": true,
+      "onSite": true,
+      "onApp": true
     },
     {
       "id": "w-elena-davide",
@@ -576,302 +271,428 @@
       "date": "Dicembre 2023",
       "season": "",
       "setting": "Montagna",
-      "story": "Neve, legno e candele accese: un matrimonio d'inverno in quota, piccolo e caldissimo.",
-      "credits": "Reportage · Galleria online",
       "cover": "",
       "photos": [
         {
-          "id": "hnikp49ox5plvbg",
-          "url": "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=2200&q=80",
-          "caption": "In quota"
+          "id": "w-elena-davide-1",
+          "url": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5q49za",
-          "url": "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Il vento"
+          "id": "w-elena-davide-2",
+          "url": "https://images.unsplash.com/photo-1492175742197-ed20dc5a6bed?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5r51em",
-          "url": "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Uno sguardo"
+          "id": "w-elena-davide-3",
+          "url": "https://images.unsplash.com/photo-1591700331354-f7eea65d1ce8?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5sgt01",
-          "url": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=2200&q=80",
-          "caption": "I ricordi"
+          "id": "w-elena-davide-4",
+          "url": "https://images.unsplash.com/photo-1561287495-a3fe1fd28504?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5t1sep",
-          "url": "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=2200&q=80",
-          "caption": "L'album"
+          "id": "w-elena-davide-5",
+          "url": "https://images.unsplash.com/photo-1523521803700-b3bcaeab0150?auto=format&fit=crop&q=80",
+          "caption": ""
         },
         {
-          "id": "hnikp49ox5uliuq",
-          "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Lo sposo"
+          "id": "w-elena-davide-6",
+          "url": "https://images.unsplash.com/photo-1551890946-3e5446d3a71b?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-elena-davide-7",
+          "url": "https://images.unsplash.com/photo-1607357910286-1ff94ac13c24?auto=format&fit=crop&q=80",
+          "caption": ""
         }
       ],
       "published": true,
-      "seasonLabel": "Inverno"
-    }
-  ],
-  "quotes": [
-    {
-      "id": "q1",
-      "createdAt": "2026-10-24T07:00:00.000",
-      "firstName": "Martina",
-      "lastName": "Esposito",
-      "phone": "+39 333 482 1190",
-      "email": "martina.esposito@example.com",
-      "eventType": "Matrimonio",
-      "eventDate": "2027-06-12T00:00:00.000",
-      "location": "Masseria in Valle d'Itria",
-      "message": "Circa 120 invitati, cerimonia all'aperto al tramonto.",
-      "serviceIds": [
-        "svc-wedding",
-        "svc-second",
-        "svc-album"
-      ],
-      "packageId": null,
-      "status": "nuova",
-      "appointmentId": null
+      "featured": true,
+      "onSite": true,
+      "onApp": true
     },
     {
-      "id": "q2",
-      "createdAt": "2026-10-23T08:00:00.000",
-      "firstName": "Luca",
-      "lastName": "Ferri",
-      "phone": "+39 347 220 9815",
-      "email": "luca.ferri@example.com",
-      "eventType": "Battesimo",
-      "eventDate": "2027-03-21T00:00:00.000",
+      "id": "w-chiara-matteo",
+      "title": "Chiara & Matteo",
+      "category": "Matrimonio",
+      "location": "Lago di Como",
+      "date": "Luglio 2024",
+      "season": "",
+      "setting": "Lago",
+      "cover": "",
+      "photos": [
+        {
+          "id": "w-chiara-matteo-1",
+          "url": "https://images.unsplash.com/photo-1519379169146-d4b170447caa?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-chiara-matteo-2",
+          "url": "https://images.unsplash.com/photo-1606216836537-eea72a939072?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-chiara-matteo-3",
+          "url": "https://images.unsplash.com/photo-1545232979-8bf68ee9b1af?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-chiara-matteo-4",
+          "url": "https://images.unsplash.com/photo-1548313093-370cf4ba3892?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-chiara-matteo-5",
+          "url": "https://images.unsplash.com/photo-1524824267900-2fa9cbf7a506?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-chiara-matteo-6",
+          "url": "https://images.unsplash.com/photo-1523264114838-feca761983c4?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-chiara-matteo-7",
+          "url": "https://images.unsplash.com/photo-1550784718-990c6de52adf?auto=format&fit=crop&q=80",
+          "caption": ""
+        }
+      ],
+      "published": true,
+      "featured": false,
+      "onSite": true,
+      "onApp": true
+    },
+    {
+      "id": "w-martina-andrea",
+      "title": "Martina & Andrea",
+      "category": "Matrimonio",
       "location": "Roma",
-      "message": "",
-      "serviceIds": [
-        "svc-ceremony",
-        "svc-prints"
+      "date": "Ottobre 2023",
+      "season": "",
+      "setting": "Chiesa",
+      "cover": "",
+      "photos": [
+        {
+          "id": "w-martina-andrea-1",
+          "url": "https://images.unsplash.com/photo-1595407753234-0882f1e77954?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-martina-andrea-2",
+          "url": "https://images.unsplash.com/photo-1474867985807-96ca17098cc9?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-martina-andrea-3",
+          "url": "https://images.unsplash.com/photo-1606217239582-d9f72323bcd7?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-martina-andrea-4",
+          "url": "https://images.unsplash.com/photo-1507915977619-6ccfe8003ae6?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-martina-andrea-5",
+          "url": "https://images.unsplash.com/photo-1612599542558-f3022089fb38?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-martina-andrea-6",
+          "url": "https://images.unsplash.com/photo-1542764824-4cdbd6c92dbe?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-martina-andrea-7",
+          "url": "https://images.unsplash.com/photo-1525258946800-98cfd641d0de?auto=format&fit=crop&q=80",
+          "caption": ""
+        }
       ],
-      "packageId": null,
-      "status": "contattata",
-      "appointmentId": null
+      "published": true,
+      "featured": false,
+      "onSite": true,
+      "onApp": true
     },
     {
-      "id": "q3",
-      "createdAt": "2026-10-20T10:00:00.000",
-      "firstName": "Giorgia",
-      "lastName": "Conti",
-      "phone": "+39 320 771 4402",
-      "email": "giorgia.conti@example.com",
-      "eventType": "Compleanno / 18 anni",
-      "eventDate": "2026-12-05T00:00:00.000",
+      "id": "w-francesca-simone",
+      "title": "Francesca & Simone",
+      "category": "Matrimonio",
+      "location": "Colli Euganei",
+      "date": "Aprile 2024",
+      "season": "",
+      "setting": "Villa",
+      "cover": "",
+      "photos": [
+        {
+          "id": "w-francesca-simone-1",
+          "url": "https://images.unsplash.com/photo-1520886272478-69aed2b3685b?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-francesca-simone-2",
+          "url": "https://images.unsplash.com/photo-1618566864264-fb013f791da4?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-francesca-simone-3",
+          "url": "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-francesca-simone-4",
+          "url": "https://images.unsplash.com/photo-1544592732-83bbbfc46783?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-francesca-simone-5",
+          "url": "https://images.unsplash.com/photo-1525441273400-056e9c7517b3?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-francesca-simone-6",
+          "url": "https://images.unsplash.com/photo-1550005809-91ad75fb315f?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-francesca-simone-7",
+          "url": "https://images.unsplash.com/photo-1613089347756-366a788dacf6?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-francesca-simone-8",
+          "url": "https://images.unsplash.com/photo-1595467959776-8acfb0dc313f?auto=format&fit=crop&q=80",
+          "caption": ""
+        }
+      ],
+      "published": true,
+      "featured": false,
+      "onSite": true,
+      "onApp": true
+    },
+    {
+      "id": "w-serena-fabio",
+      "title": "Serena & Fabio",
+      "category": "Matrimonio",
+      "location": "Costiera Amalfitana",
+      "date": "Settembre 2024",
+      "season": "",
+      "setting": "Mare",
+      "cover": "",
+      "photos": [
+        {
+          "id": "w-serena-fabio-1",
+          "url": "https://images.unsplash.com/photo-1580824456266-c578703e13da?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-serena-fabio-2",
+          "url": "https://images.unsplash.com/photo-1607861884586-c7cfaed16290?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-serena-fabio-3",
+          "url": "https://images.unsplash.com/photo-1522413452208-996ff3f3e740?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-serena-fabio-4",
+          "url": "https://images.unsplash.com/photo-1561593367-66c79c2294e6?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-serena-fabio-5",
+          "url": "https://images.unsplash.com/photo-1587271407850-8d438ca9fdf2?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-serena-fabio-6",
+          "url": "https://images.unsplash.com/photo-1549488497-94b52bddac5d?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-serena-fabio-7",
+          "url": "https://images.unsplash.com/photo-1502635385003-ee1e6a1a742d?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-serena-fabio-8",
+          "url": "https://images.unsplash.com/photo-1529634597503-139d3726fed5?auto=format&fit=crop&q=80",
+          "caption": ""
+        }
+      ],
+      "published": true,
+      "featured": false,
+      "onSite": true,
+      "onApp": true
+    },
+    {
+      "id": "w-giorgia-18",
+      "title": "I 18 anni di Giorgia",
+      "category": "18 anni",
       "location": "Milano",
-      "message": "Festa a sorpresa, ci piacerebbe il photo booth.",
-      "serviceIds": [
-        "svc-party",
-        "svc-booth"
+      "date": "Marzo 2024",
+      "season": "",
+      "setting": "Città",
+      "cover": "",
+      "photos": [
+        {
+          "id": "w-giorgia-18-1",
+          "url": "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-giorgia-18-2",
+          "url": "https://images.unsplash.com/photo-1502035618526-6b2f1f5bca1b?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-giorgia-18-3",
+          "url": "https://images.unsplash.com/photo-1504196606672-aef5c9cefc92?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-giorgia-18-4",
+          "url": "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-giorgia-18-5",
+          "url": "https://images.unsplash.com/photo-1541020230467-e33e4f96f7fc?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-giorgia-18-6",
+          "url": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&q=80",
+          "caption": ""
+        }
       ],
-      "packageId": "pkg-party",
-      "status": "confermata",
-      "appointmentId": null
+      "published": true,
+      "featured": false,
+      "onSite": true,
+      "onApp": true
     },
     {
-      "id": "q4",
-      "createdAt": "2026-10-15T10:00:00.000",
-      "firstName": "Paolo",
-      "lastName": "Marino",
-      "phone": "+39 06 4433 2211",
-      "email": "paolo.marino@example.com",
-      "eventType": "Evento aziendale",
-      "eventDate": "2027-01-30T00:00:00.000",
-      "location": "Torino",
-      "message": "",
-      "serviceIds": [
-        "svc-events",
-        "svc-video"
+      "id": "w-battesimo-leo",
+      "title": "Il battesimo di Leo",
+      "category": "Battesimo",
+      "location": "Roma",
+      "date": "Febbraio 2025",
+      "season": "",
+      "setting": "Chiesa",
+      "cover": "",
+      "photos": [
+        {
+          "id": "w-battesimo-leo-1",
+          "url": "https://images.unsplash.com/photo-1566516171511-1c411a59c8ba?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-battesimo-leo-2",
+          "url": "https://images.unsplash.com/photo-1574957973698-418ac4c877af?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-battesimo-leo-3",
+          "url": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-battesimo-leo-4",
+          "url": "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&q=80",
+          "caption": ""
+        },
+        {
+          "id": "w-battesimo-leo-5",
+          "url": "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&q=80",
+          "caption": ""
+        }
       ],
-      "packageId": null,
-      "status": "nuova",
-      "appointmentId": null
+      "published": true,
+      "featured": false,
+      "onSite": true,
+      "onApp": true
     }
   ],
-  "appointments": [
-    {
-      "id": "a1",
-      "title": "Incontro con Martina Esposito · Matrimonio",
-      "start": "2026-10-28T10:00:00.000",
-      "end": "2026-10-28T11:00:00.000",
-      "allDay": false,
-      "location": "Studio",
-      "notes": "",
-      "quoteId": "q1",
-      "googleEventId": null
-    },
-    {
-      "id": "a2",
-      "title": "Sopralluogo masseria",
-      "start": "2026-11-03T15:00:00.000",
-      "end": "2026-11-03T17:00:00.000",
-      "allDay": false,
-      "location": "Valle d'Itria",
-      "notes": "",
-      "quoteId": null,
-      "googleEventId": null
-    },
-    {
-      "id": "a3",
-      "title": "Consegna album · Famiglia Ferri",
-      "start": "2026-11-12T18:00:00.000",
-      "end": "2026-11-12T18:30:00.000",
-      "allDay": false,
-      "location": "Studio",
-      "notes": "",
-      "quoteId": null,
-      "googleEventId": null
-    },
-    {
-      "id": "a4",
-      "title": "Festa di Giorgia",
-      "start": "2026-12-05T00:00:00.000",
-      "end": "2026-12-06T00:00:00.000",
-      "allDay": true,
-      "location": "Milano",
-      "notes": "",
-      "quoteId": "q3",
-      "googleEventId": null
-    }
-  ],
-  "clients": [
-    {
-      "id": "cl-anna",
-      "name": "Anna Ricci",
-      "email": "anna.ricci@example.com",
-      "phone": "+39 333 555 0101",
-      "passwordHash": "092264d616847c3cfe568b7f5f6eee13380813bd9a9826271d306c056a1378b2",
-      "passwordSalt": "demo-cl-anna",
-      "active": true,
-      "eventTitle": "Il matrimonio di Anna e Paolo",
-      "eventDate": "18 maggio 2024",
-      "location": "Masseria in Valle d'Itria",
-      "welcome": "Ecco le foto del vostro giorno: sfogliate l'album e scaricate i documenti quando volete.",
-      "album": [
-        {
-          "id": "cl-anna-hnikp49qgw1c6m1n",
-          "url": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Tra gli ulivi"
-        },
-        {
-          "id": "cl-anna-hnikp49qgw1dkgcs",
-          "url": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Petali"
-        },
-        {
-          "id": "cl-anna-hnikp49qgw1eaec",
-          "url": "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Le fedi"
-        },
-        {
-          "id": "cl-anna-hnikp49qgw1f558c",
-          "url": "https://images.unsplash.com/photo-1460978812857-470ed1c77af0?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Il velo"
-        },
-        {
-          "id": "cl-anna-hnikp49qgw1geb46",
-          "url": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Al tramonto"
-        },
-        {
-          "id": "cl-anna-hnikp49qgw1h940q",
-          "url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Luce d'oro"
-        },
-        {
-          "id": "cl-anna-hnikp49qgw1ieto2",
-          "url": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=2200&q=80",
-          "caption": "La tavolata"
-        },
-        {
-          "id": "cl-anna-hnikp49qgw1jcn9t",
-          "url": "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Si balla"
-        }
-      ],
-      "files": [
-        {
-          "id": "cl-anna-f1",
-          "name": "Scheda del servizio",
-          "url": "https://felixone04.github.io/Studio54/assets/demo/scheda-servizio.pdf",
-          "isLink": false,
-          "note": "Riepilogo di servizi, tempi di consegna e album.",
-          "addedAt": "2024-04-02T00:00:00.000"
-        },
-        {
-          "id": "cl-anna-f2",
-          "name": "Galleria completa in alta risoluzione",
-          "url": "https://drive.google.com/",
-          "isLink": true,
-          "note": "Tutte le foto da scaricare (link d'esempio).",
-          "addedAt": "2024-06-02T00:00:00.000"
-        }
-      ],
-      "createdAt": "2024-06-02T00:00:00.000",
-      "lastLogin": null
-    },
-    {
-      "id": "cl-elena",
-      "name": "Elena Bianchi",
-      "email": "elena.bianchi@example.com",
-      "phone": "+39 347 555 0202",
-      "passwordHash": "ac3757ff20a82a56fd0c9c17d0de0ba0714ab43d4cfa0bd6973ce88e56bcd7db",
-      "passwordSalt": "demo-cl-elena",
-      "active": true,
-      "eventTitle": "Il matrimonio di Elena e Davide",
-      "eventDate": "9 dicembre 2023",
-      "location": "Dolomiti",
-      "welcome": "Il vostro inverno in quota, pagina dopo pagina.",
-      "album": [
-        {
-          "id": "cl-elena-hnikp49qgw1k6ruq",
-          "url": "https://images.unsplash.com/photo-1554048612-b6a482bc67e5?auto=format&fit=crop&w=2200&q=80",
-          "caption": "In quota"
-        },
-        {
-          "id": "cl-elena-hnikp49qgw1lfmf2",
-          "url": "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Il vento"
-        },
-        {
-          "id": "cl-elena-hnikp49qgw1m6gn6",
-          "url": "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Uno sguardo"
-        },
-        {
-          "id": "cl-elena-hnikp49qgw1n4pm1",
-          "url": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=2200&q=80",
-          "caption": "I ricordi"
-        },
-        {
-          "id": "cl-elena-hnikp49qgw1oiyq8",
-          "url": "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=2200&q=80",
-          "caption": "L'album"
-        },
-        {
-          "id": "cl-elena-hnikp49qgw1p1y5x",
-          "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=2200&q=80",
-          "caption": "Lo sposo"
-        }
-      ],
-      "files": [
-        {
-          "id": "cl-elena-f1",
-          "name": "Scheda del servizio",
-          "url": "https://felixone04.github.io/Studio54/assets/demo/scheda-servizio.pdf",
-          "isLink": false,
-          "note": "Riepilogo del servizio.",
-          "addedAt": "2023-11-20T00:00:00.000"
-        }
-      ],
-      "createdAt": "2024-06-02T00:00:00.000",
-      "lastLogin": null
-    }
-  ]
+  "quoteForm": {
+    "showEvent": true,
+    "showDate": true,
+    "showLocation": true,
+    "showRequests": true,
+    "showMessage": true,
+    "askLastName": true,
+    "askPhone": true,
+    "askEmail": true,
+    "eventTypes": [
+      {
+        "id": "ev-matrimonio",
+        "label": "Matrimonio",
+        "active": true
+      },
+      {
+        "id": "ev-battesimo",
+        "label": "Battesimo",
+        "active": false
+      },
+      {
+        "id": "ev-comunione",
+        "label": "Comunione / Cresima",
+        "active": false
+      },
+      {
+        "id": "ev-18",
+        "label": "18 anni",
+        "active": false
+      },
+      {
+        "id": "ev-azienda",
+        "label": "Evento aziendale",
+        "active": false
+      }
+    ],
+    "requests": [
+      {
+        "id": "rq-reportage",
+        "label": "Reportage fotografico",
+        "active": true
+      },
+      {
+        "id": "rq-video",
+        "label": "Video del matrimonio",
+        "active": true
+      },
+      {
+        "id": "rq-prematrimonio",
+        "label": "Servizio pre-matrimonio",
+        "active": true
+      },
+      {
+        "id": "rq-album",
+        "label": "Album fine art",
+        "active": true
+      },
+      {
+        "id": "rq-drone",
+        "label": "Riprese con drone",
+        "active": true
+      },
+      {
+        "id": "rq-secondo",
+        "label": "Secondo fotografo",
+        "active": true
+      },
+      {
+        "id": "rq-stampe",
+        "label": "Stampe e cornici",
+        "active": true
+      },
+      {
+        "id": "rq-booth",
+        "label": "Photo booth",
+        "active": false
+      }
+    ]
+  }
 }

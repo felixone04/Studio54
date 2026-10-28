@@ -27,27 +27,10 @@ pagina() { # pagina <file php> <file html>
   echo "  $2"
 }
 
-echo "Pagine pubbliche"
-for p in index lavori biografia preventivo; do pagina "$p.php" "$p.html"; done
-
-echo "Lavori"
-for id in $(php -r '$d = json_decode(file_get_contents("data/contenuti.json"), true);
-  foreach ($d["works"] as $w) if ($w["published"] ?? true) echo $w["id"], "\n";'); do
-  ID="$id" pagina lavoro.php "lavoro-$id.html"
-done
-
-echo "Area clienti"
-pagina area-clienti.php area-clienti.html
-for id in $(php -r '$d = json_decode(file_get_contents("data/contenuti.json"), true);
-  foreach ($d["clients"] ?? [] as $c) echo $c["id"], "\n";'); do
-  ID="$id" pagina cliente.php "cliente-$id.html"
-done
-
-echo "Area riservata (anteprima grafica)"
-pagina riservata.php riservata.html
-for s in panoramica richieste calendario clienti servizi pacchetti lavori galleria home biografia contatti impostazioni; do
-  SEZ="$s" pagina riservata.php "riservata-$s.html"
-done
+# Le pagine disegnano i contenuti nel browser (assets/js/sito.js): un solo
+# lavoro.html vale per tutti i lavori (lavoro.html?id=...).
+echo "Pagine"
+for p in index lavori lavoro biografia preventivo riservata; do pagina "$p.php" "$p.html"; done
 
 # Indirizzi sconosciuti: la home.
 cp "$OUT/index.html" "$OUT/404.html"

@@ -1,9 +1,10 @@
 <?php
 // Base comune a tutte le pagine del sito: dati, indirizzi e piccoli aiuti.
 //
-// Oggi i contenuti arrivano da data/contenuti.json. Quando ci sarà il
-// database su Hostinger basterà cambiare dati() perché li legga da lì: le
-// pagine non cambiano.
+// Le pagine PHP preparano la struttura (barra, menu, footer) e consegnano i
+// dati al browser; foto, lavori e modulo li disegna assets/js/sito.js. Oggi
+// i dati arrivano da data/*.json; con il database su Cloudflare basterà
+// cambiare dati() e dati_gestionale() perché li chiedano all'API.
 
 declare(strict_types=1);
 
@@ -12,15 +13,24 @@ date_default_timezone_set('Europe/Rome');
 /** Vero quando il sito viene esportato in pagine HTML statiche (anteprima su GitHub Pages). */
 define('STATICO', getenv('STATICO') === '1');
 
-/** Tutti i contenuti del sito. */
+function leggi_json(string $nome): array
+{
+    $raw = @file_get_contents(__DIR__ . '/../data/' . $nome);
+    return json_decode($raw === false ? '{}' : $raw, true) ?: [];
+}
+
+/** I dati pubblici: testi, caroselli, lavori e modulo preventivo. */
 function dati(): array
 {
     static $d = null;
-    if ($d === null) {
-        $raw = file_get_contents(__DIR__ . '/../data/contenuti.json');
-        $d = json_decode($raw === false ? '{}' : $raw, true) ?: [];
-    }
-    return $d;
+    return $d ??= leggi_json('contenuti.json');
+}
+
+/** I dati del solo gestionale: richieste, calendario, clienti, accesso. */
+function dati_gestionale(): array
+{
+    static $d = null;
+    return $d ??= leggi_json('gestionale.json');
 }
 
 function contenuti(): array
@@ -34,54 +44,10 @@ function e(?string $s): string
     return htmlspecialchars((string) $s, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 }
 
-/** Valore di un parametro dell'indirizzo (?id=...), anche nell'esportazione statica. */
-function param(string $nome): string
+/** Indirizzo di una pagina: lavori.php con PHP, lavori.html nell'anteprima statica. */
+function url(string $pagina): string
 {
-    if (STATICO) {
-        return (string) getenv(strtoupper($nome));
-    }
-    return isset($_GET[$nome]) ? (string) $_GET[$nome] : '';
-}
-
-/**
- * Indirizzo di una pagina. Con PHP: lavoro.php?id=x; nell'anteprima
- * statica: lavoro-x.html.
- */
-function url(string $pagina, string $id = ''): string
-{
-    if (STATICO) {
-        if ($pagina === 'index') {
-            return 'index.html';
-        }
-        return $pagina . ($id !== '' ? '-' . rawurlencode($id) : '') . '.html';
-    }
-    $chiave = $pagina === 'riservata' ? 'sez' : 'id';
-    return $pagina . '.php' . ($id !== '' ? '?' . $chiave . '=' . rawurlencode($id) : '');
-}
-
-/** Le foto di Unsplash si chiedono alla larghezza che serve. */
-function foto(string $u, int $w): string
-{
-    if (strpos($u, 'images.unsplash.com') === false) {
-        return $u;
-    }
-    if (preg_match('/[?&]w=\d+/', $u)) {
-        return (string) preg_replace('/([?&])w=\d+/', '${1}w=' . $w, $u);
-    }
-    return $u . (strpos($u, '?') === false ? '?' : '&') . 'w=' . $w;
-}
-
-/** Attributi src e srcset per una foto, con le larghezze più utili. */
-function foto_attr(string $u, string $sizes = '100vw'): string
-{
-    if (strpos($u, 'images.unsplash.com') === false) {
-        return 'src="' . e($u) . '"';
-    }
-    $set = [];
-    foreach ([480, 800, 1200, 1600, 2200] as $w) {
-        $set[] = e(foto($u, $w)) . ' ' . $w . 'w';
-    }
-    return 'src="' . e(foto($u, 1200)) . '" srcset="' . implode(', ', $set) . '" sizes="' . e($sizes) . '"';
+    return $pagina . (STATICO ? '.html' : '.php');
 }
 
 /**
@@ -94,65 +60,14 @@ function risorsa(string $percorso): string
     return $percorso . (is_file($file) ? '?v=' . substr(md5_file($file), 0, 10) : '');
 }
 
-function due(int $n): string
+/** Dati consegnati al browser dentro la pagina, letti da assets/js/dati.js. */
+function dati_pagina(string $id, array $dati): string
 {
-    return str_pad((string) $n, 2, '0', STR_PAD_LEFT);
+    $json = json_encode($dati, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP);
+    return '<script type="application/json" id="' . e($id) . '">' . $json . '</script>';
 }
 
 function maiuscolo(string $s): string
 {
     return mb_strtoupper($s, 'UTF-8');
-}
-
-/** Solo i lavori visibili sul sito. */
-function lavori_pubblicati(): array
-{
-    return array_values(array_filter(dati()['works'] ?? [], fn($w) => $w['published'] ?? true));
-}
-
-/** Foto del carosello: quelle con la stella, altrimenti tutte. */
-function foto_apertura(): array
-{
-    $g = dati()['gallery'] ?? [];
-    $h = array_values(array_filter($g, fn($p) => $p['inHero'] ?? true));
-    return $h ?: $g;
-}
-
-function copertina(array $w): string
-{
-    $c = trim($w['cover'] ?? '');
-    return $c !== '' ? $c : ($w['photos'][0]['url'] ?? '');
-}
-
-function servizio(string $id): ?array
-{
-    foreach (dati()['services'] ?? [] as $s) {
-        if ($s['id'] === $id) {
-            return $s;
-        }
-    }
-    return null;
-}
-
-/** Riga di informazioni unite da un punto. */
-function unisci(array $parti, string $sep = ' · '): string
-{
-    return implode($sep, array_filter(array_map('trim', $parti), fn($p) => $p !== ''));
-}
-
-const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio',
-    'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
-
-/** Data in italiano, es. "12 giugno 2027". */
-function data_it(?string $iso, bool $breve = false): string
-{
-    if (!$iso) {
-        return '';
-    }
-    $t = strtotime($iso);
-    if ($t === false) {
-        return '';
-    }
-    $m = MESI[(int) date('n', $t) - 1];
-    return date('j', $t) . ' ' . ($breve ? mb_substr($m, 0, 3) : $m) . ' ' . date('Y', $t);
 }
