@@ -135,6 +135,8 @@ const screenSizes = <Size>[
   // Telefono girato in orizzontale.
   Size(844, 390),
   Size(820, 1180),
+  // Tablet piccolo in orizzontale: il menu passa in riga.
+  Size(960, 600),
   Size(1180, 820),
   Size(1440, 900),
   Size(1920, 1080),

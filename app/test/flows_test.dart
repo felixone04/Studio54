@@ -231,6 +231,34 @@ void main() {
       await disposeApp(tester);
     });
 
+    testWidgets('menu in riga solo sul tablet in orizzontale', (tester) async {
+      final s = await loadState();
+      for (final (size, inline) in [
+        (const Size(1180, 820), true),
+        (const Size(1366, 1024), true),
+        (const Size(820, 1180), false),
+        (const Size(844, 390), false),
+        (phone, false),
+      ]) {
+        await pumpApp(tester, s, location: '/lavori', size: size);
+        expect(
+          find.text('AREA CLIENTI'),
+          inline ? findsWidgets : findsNothing,
+          reason: '$size',
+        );
+        expect(
+          find.bySemanticsLabel('Menu'),
+          inline ? findsNothing : findsOneWidget,
+          reason: '$size',
+        );
+        if (inline) {
+          await tester.tap(find.text('BIOGRAFIA').first);
+          await settle(tester, 800);
+          expect(find.text('IL METODO'), findsOneWidget);
+        }
+        await disposeApp(tester);
+      }
+    });
     Future<(double, double)> tops(WidgetTester tester, Size size) async {
       final s = await loadState();
       await pumpApp(tester, s, location: '/lavori/w-anna-paolo', size: size);

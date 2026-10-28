@@ -256,10 +256,19 @@ class _NavBar extends StatelessWidget {
   /// Chiara sopra la foto d'apertura.
   final bool light;
 
+  /// Voci in riga, come sul sito: solo su un tablet in orizzontale, dove
+  /// stanno comode. Sui telefoni (anche girati) e sul tablet in verticale i
+  /// tre trattini del menu.
+  static bool inline(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return size.shortestSide >= 600 &&
+        size.width > size.height &&
+        size.width >= 900;
+  }
+
   @override
   Widget build(BuildContext context) {
     final fg = light ? Palette.paper : Palette.ink;
-    // Nell'app: il logo a sinistra e i tre trattini del menu a destra.
     return Row(
       children: [
         Expanded(
@@ -269,7 +278,18 @@ class _NavBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        _MenuButton(color: fg, onTap: () => _openMenu(context, location)),
+        if (inline(context))
+          for (var i = 0; i < _navItems.length; i++) ...[
+            if (i > 0) SizedBox(width: context.fluid(22, 34)),
+            HoverLink(
+              _navItems[i].$1.toUpperCase(),
+              active: location == _navItems[i].$2,
+              style: label(11.5, color: fg),
+              onTap: () => context.go(_navItems[i].$2),
+            ),
+          ]
+        else
+          _MenuButton(color: fg, onTap: () => _openMenu(context, location)),
       ],
     );
   }
