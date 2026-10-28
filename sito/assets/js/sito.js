@@ -487,13 +487,6 @@
         }
         giro++;
       }
-      // Righe a specchio: la foto più grande una volta a sinistra e una a
-      // destra (il visore segue l'ordine scelto nel gestionale).
-      var lato = 0;
-      righe.forEach(function (r) {
-        if (r.tipo === 'pila') r.sinistra = lato++ % 2 === 0;
-        else if (r.tipo === 'fila' && lato++ % 2) r.ids.reverse();
-      });
       return righe;
     }
     function misura(t, w, h) { t.style.width = w + 'px'; t.style.height = h + 'px'; return t; }
@@ -517,6 +510,18 @@
         // Telefono: una sotto l'altra, intere.
         ordine.forEach(function (_, pos) { riga().appendChild(misura(t(pos), piena, piena / r(pos))); });
       } else {
+        var lato = 0;
+        // Righe a specchio: la foto più larga una volta a sinistra e una a
+        // destra (il visore segue l'ordine scelto nel gestionale).
+        var specchio = function (d, pezzi) {
+          var larghe = pezzi.map(function (x) { return x[1]; });
+          var max = Math.max.apply(null, larghe), min = Math.min.apply(null, larghe);
+          if (max - min > 2) {
+            var i = larghe.indexOf(max), sinistra = lato++ % 2 === 0;
+            if (sinistra ? i > (pezzi.length - 1) / 2 : i < (pezzi.length - 1) / 2) pezzi.reverse();
+          }
+          pezzi.forEach(function (x) { d.appendChild(x[0]); });
+        };
         piano(ordine.map(function (_, pos) { return r(pos) > 1; })).forEach(function (p) {
           var d = riga();
           if (p.tipo === 'una') {
@@ -526,7 +531,7 @@
           } else if (p.tipo === 'fila') {
             var somma = p.ids.reduce(function (s, k) { return s + r(k); }, 0);
             var hf = Math.min((piena - spazio * (p.ids.length - 1)) / somma, maxH);
-            p.ids.forEach(function (k) { d.appendChild(misura(t(k), hf * r(k), hf)); });
+            specchio(d, p.ids.map(function (k) { return [misura(t(k), hf * r(k), hf), hf * r(k)]; }));
           } else {
             // La colonna delle due orizzontali è larga quanto basta perché
             // finisca alla stessa altezza della verticale.
@@ -537,8 +542,7 @@
             col.className = 'collage-colonna';
             col.appendChild(misura(t(p.su), c, c / r(p.su)));
             col.appendChild(misura(t(p.giu), c, c / r(p.giu)));
-            var alta = misura(t(p.alta), av * hp, hp);
-            if (p.sinistra) { d.appendChild(alta); d.appendChild(col); } else { d.appendChild(col); d.appendChild(alta); }
+            specchio(d, [[misura(t(p.alta), av * hp, hp), av * hp], [col, c]]);
           }
         });
       }

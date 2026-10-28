@@ -555,11 +555,10 @@ class _Side extends _Row {
 
 /// Una verticale accanto a due orizzontali una sopra l'altra.
 class _Stack extends _Row {
-  const _Stack(this.tall, this.top, this.bottom, {required this.tallLeft});
+  const _Stack(this.tall, this.top, this.bottom);
   final int tall;
   final int top;
   final int bottom;
-  final bool tallLeft;
 }
 
 /// Come sul sito: la prima orizzontale grande, poi ritmi diversi che si
@@ -577,7 +576,7 @@ List<_Row> _plan(List<bool> landscape) {
     final a = o(0)!, b = o(1), c = o(2);
     if (!a) {
       if (b == true && c == true) {
-        rows.add(_Stack(k, k + 1, k + 2, tallLeft: true));
+        rows.add(_Stack(k, k + 1, k + 2));
         k += 3;
       } else if (b == false && c != null) {
         rows.add(_Side([k, k + 1, k + 2]));
@@ -594,7 +593,7 @@ List<_Row> _plan(List<bool> landscape) {
         rows.add(_Side([k, k + 1, k + 2]));
         k += 3;
       } else if (b == true && c == false) {
-        rows.add(_Stack(k + 2, k, k + 1, tallLeft: false));
+        rows.add(_Stack(k + 2, k, k + 1));
         k += 3;
       } else if (b == true && c == true && variant.isOdd) {
         rows.add(_Single(k));
@@ -609,19 +608,20 @@ List<_Row> _plan(List<bool> landscape) {
     }
     variant++;
   }
-  // Righe a specchio: la foto più grande una volta a sinistra e una a
-  // destra (l'ordine del visore resta quello scelto nel gestionale).
-  var side = 0;
-  return [
-    for (final r in rows)
-      switch (r) {
-        _Stack() => _Stack(r.tall, r.top, r.bottom, tallLeft: (side++).isEven),
-        _Side(:final ids) => _Side(
-          (side++).isOdd ? ids.reversed.toList() : ids,
-        ),
-        _ => r,
-      },
-  ];
+  return rows;
+}
+
+/// Righe a specchio: la foto più larga una volta a sinistra e una a destra
+/// (l'ordine del visore resta quello scelto nel gestionale). [side] conta le
+/// righe con foto di larghezze diverse.
+List<(Widget, double)> _mirror(List<(Widget, double)> parts, List<int> side) {
+  final widths = [for (final p in parts) p.$2];
+  final max = widths.reduce(math.max), min = widths.reduce(math.min);
+  if (max - min <= 2) return parts;
+  final i = widths.indexOf(max);
+  final left = side[0]++ % 2 == 0;
+  final mid = (parts.length - 1) / 2;
+  return (left ? i > mid : i < mid) ? parts.reversed.toList() : parts;
 }
 
 class _Scattered extends StatelessWidget {
@@ -660,6 +660,17 @@ class _Scattered extends StatelessWidget {
         // Un pixel di margine contro gli arrotondamenti.
         final full = box.maxWidth.floorToDouble() - 1;
         final rows = <Widget>[];
+        final side = [0];
+        Widget row(List<(Widget, double)> parts) => Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final (j, p) in _mirror(parts, side).indexed) ...[
+              if (j > 0) SizedBox(width: gap),
+              p.$1,
+            ],
+          ],
+        );
         for (final r in _plan([for (final a in ratios) a > 1])) {
           switch (r) {
             case _Single(:final i):
@@ -670,30 +681,18 @@ class _Scattered extends StatelessWidget {
               final sum = ids.fold<double>(0, (s, i) => s + ratios[i]);
               final h = math.min((full - gap * (ids.length - 1)) / sum, maxH);
               rows.add(
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (var j = 0; j < ids.length; j++) ...[
-                      if (j > 0) SizedBox(width: gap),
-                      tile(ids[j], h * ratios[ids[j]], h),
-                    ],
-                  ],
-                ),
+                row([
+                  for (final i in ids)
+                    (tile(i, h * ratios[i], h), h * ratios[i]),
+                ]),
               );
-            case _Stack(
-              :final tall,
-              :final top,
-              :final bottom,
-              :final tallLeft,
-            ):
+            case _Stack(:final tall, :final top, :final bottom):
               // La colonna delle due orizzontali è larga quanto basta perché
               // finisca alla stessa altezza della verticale.
               final av = ratios[tall];
               final k = 1 / ratios[top] + 1 / ratios[bottom];
               final c = (full - gap - av * gap) / (av * k + 1);
               final hp = c * k + gap;
-              final tallTile = tile(tall, av * hp, hp);
               final column = Column(
                 children: [
                   tile(top, c, c / ratios[top]),
@@ -701,14 +700,7 @@ class _Scattered extends StatelessWidget {
                   tile(bottom, c, c / ratios[bottom]),
                 ],
               );
-              rows.add(
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: tallLeft
-                      ? [tallTile, SizedBox(width: gap), column]
-                      : [column, SizedBox(width: gap), tallTile],
-                ),
-              );
+              rows.add(row([(tile(tall, av * hp, hp), av * hp), (column, c)]));
           }
         }
         return Column(
