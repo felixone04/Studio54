@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../models/models.dart';
+import '../services/back_handlers.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -28,6 +30,13 @@ extension on _Step {
 }
 
 final _date = DateFormat('d MMMM y', 'it_IT');
+
+// Come sul sito: nei nomi solo lettere, spazi, apostrofi e trattini; nel
+// telefono solo cifre, spazi e il +.
+final _onlyName = FilteringTextInputFormatter.allow(
+  RegExp(r"[A-Za-zÀ-ÖØ-öø-ÿ' \-]"),
+);
+final _onlyPhone = FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]'));
 final _email = RegExp(
   r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$',
 );
@@ -56,11 +65,26 @@ class _QuotePageState extends State<QuotePage> {
   QuoteRequest? _sent;
 
   @override
+  void initState() {
+    super.initState();
+    BackHandlers.add(_onBack);
+  }
+
+  @override
   void dispose() {
+    BackHandlers.remove(_onBack);
     for (final c in [_location, _first, _last, _phone, _mail, _message]) {
       c.dispose();
     }
     super.dispose();
+  }
+
+  /// Il tasto indietro del telefono torna al passo precedente; dal primo
+  /// passo lascia il modulo.
+  bool _onBack() {
+    if (_sent != null || _i == 0) return false;
+    _back();
+    return true;
   }
 
   List<_Step> _steps(QuoteForm f) => [
@@ -239,27 +263,38 @@ class _QuotePageState extends State<QuotePage> {
           border: Border(top: BorderSide(color: Palette.line)),
         ),
         padding: EdgeInsets.fromLTRB(context.gutter, 12, context.gutter, 14),
-        child: Row(
-          children: [
-            if (_i > 0) ...[
-              Expanded(
-                child: PillButton(
-                  'Indietro',
-                  filled: false,
-                  icon: Icons.arrow_back_rounded,
-                  onTap: _back,
+        // Sul tablet i due bottoni restano larghi quanto il modulo.
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Row(
+              children: [
+                if (_i > 0) ...[
+                  Expanded(
+                    child: PillButton(
+                      'Indietro',
+                      filled: false,
+                      expand: true,
+                      icon: Icons.arrow_back_rounded,
+                      onTap: _back,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: PillButton(
+                    last ? 'Invia' : 'Avanti',
+                    expand: true,
+                    icon: last
+                        ? Icons.send_rounded
+                        : Icons.arrow_forward_rounded,
+                    onTap: () => _next(f, steps),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-            ],
-            Expanded(
-              child: PillButton(
-                last ? 'Invia' : 'Avanti',
-                icon: last ? Icons.send_rounded : Icons.arrow_forward_rounded,
-                onTap: () => _next(f, steps),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -424,6 +459,7 @@ class _QuotePageState extends State<QuotePage> {
               controller: _first,
               maxLength: 40,
               textCapitalization: TextCapitalization.words,
+              inputFormatters: [_onlyName],
               autofillHints: const [AutofillHints.givenName],
               onChanged: refresh,
               decoration: deco('Nome *', 'first'),
@@ -434,6 +470,7 @@ class _QuotePageState extends State<QuotePage> {
                 controller: _last,
                 maxLength: 40,
                 textCapitalization: TextCapitalization.words,
+                inputFormatters: [_onlyName],
                 autofillHints: const [AutofillHints.familyName],
                 onChanged: refresh,
                 decoration: deco('Cognome *', 'last'),
@@ -445,6 +482,7 @@ class _QuotePageState extends State<QuotePage> {
                 controller: _phone,
                 maxLength: 20,
                 keyboardType: TextInputType.phone,
+                inputFormatters: [_onlyPhone],
                 autofillHints: const [AutofillHints.telephoneNumber],
                 onChanged: refresh,
                 decoration: deco(
@@ -684,7 +722,8 @@ class _DateField extends StatelessWidget {
         errorText: error,
         suffixIcon: const Icon(Icons.calendar_month_outlined),
       ),
-      child: Text(value, style: body(16, height: 1.2)),
+      // Stesso testo dei campi scritti, così il riquadro è alto uguale.
+      child: Text(value, style: Theme.of(context).textTheme.bodyLarge),
     ),
   );
 }

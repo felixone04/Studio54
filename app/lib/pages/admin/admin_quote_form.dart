@@ -16,10 +16,16 @@ class AdminQuoteForm extends StatefulWidget {
   State<AdminQuoteForm> createState() => _AdminQuoteFormState();
 }
 
-class _AdminQuoteFormState extends State<AdminQuoteForm> {
+class _AdminQuoteFormState extends State<AdminQuoteForm> with UnsavedGuard {
   late QuoteForm _f = context.read<AppState>().quoteForm.copy();
   bool _dirty = false;
   int _rev = 0;
+
+  @override
+  bool get dirty => _dirty;
+
+  @override
+  void discardChanges() => _discard();
 
   void _changed(VoidCallback fn) => setState(() {
     fn();

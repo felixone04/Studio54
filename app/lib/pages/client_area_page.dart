@@ -427,10 +427,32 @@ class _ClientHomeState extends State<_ClientHome> {
               Row(
                 children: [
                   const Expanded(child: Tag('Area clienti')),
-                  HoverLink(
-                    'ESCI',
-                    style: label(10.5, color: Palette.stone),
-                    onTap: s.logoutClient,
+                  // Sulla stessa riga di "Area clienti" e allineato al
+                  // bordo destro delle foto, con un'area comoda da toccare.
+                  Semantics(
+                    button: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: s.logoutClient,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.logout_rounded,
+                              size: 15,
+                              color: Palette.stone,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'ESCI',
+                              style: label(10.5, color: Palette.stone),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

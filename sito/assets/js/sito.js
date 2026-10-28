@@ -28,12 +28,14 @@
 
   var piede = $('[data-piede]');
   if (piede) {
+    // Solo indirizzi web veri (http/https): mai "javascript:" o simili.
+    var web = function (u) { u = (u || '').trim(); if (/^www\./i.test(u)) u = 'https://' + u; return /^https?:\/\/\S+$/i.test(u) ? u : ''; };
     var link = function (t, h, fuori) { return '<a class="link" href="' + esc(h) + '"' + (fuori ? ' target="_blank" rel="noopener"' : '') + '>' + esc(t) + '</a>'; };
     var wa = (K.whatsapp || '').replace(/\D/g, '');
     piede.innerHTML = '<div class="piede-dentro"><div class="piede-colonne">' +
       '<div><h3>SCRIVICI</h3>' + (K.email ? link(K.email, 'mailto:' + K.email) : '') + (K.phone ? link(K.phone, 'tel:' + cifre(K.phone)) : '') + (wa ? link('WhatsApp', 'https://wa.me/' + wa, true) : '') + '</div>' +
       '<div><h3>STUDIO</h3>' + (K.address ? link(K.address, 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(K.address), true) : '') + (K.hours ? '<p>' + esc(K.hours) + '</p>' : '') + '</div>' +
-      '<div><h3>SOCIAL</h3>' + (K.instagram ? link('Instagram', K.instagram, true) : '') + (K.facebook ? link('Facebook', K.facebook, true) : '') + '</div>' +
+      '<div><h3>SOCIAL</h3>' + (web(K.instagram) ? link('Instagram', web(K.instagram), true) : '') + (web(K.facebook) ? link('Facebook', web(K.facebook), true) : '') + '</div>' +
       '<div><h3>ESPLORA</h3>' + link('Home', S54.url('index')) + link('Lavori', S54.url('lavori')) + link('Biografia', S54.url('biografia')) + link('Preventivo', S54.url('preventivo')) + '</div>' +
       '</div><img class="piede-logo" src="assets/img/logo.png" alt="' + esc(C.studioName || 'Studio 54') + '">' +
       '<div class="piede-fondo"><span>&copy; ' + new Date().getFullYear() + ' ' + esc(C.studioName || '') + (K.vat ? '  ·  ' + esc(K.vat) : '') + '</span>' +
@@ -569,7 +571,8 @@
     var campo = function (n) { return $('[data-campo="' + n + '"]', form); };
     var input = function (n) { var c = campo(n); return c && $('input, textarea', c); };
     var provato = false;
-    var tipo = tipi.length === 1 ? tipi[0].label : '';
+    // Un solo tipo acceso è già scelto; se la parte è spenta, nessun tipo.
+    var tipo = conTipo && tipi.length === 1 ? tipi[0].label : '';
 
     /* Controlli, uguali a quelli dell'app. */
     var regole = {
@@ -736,7 +739,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
       $('.grazie-nuova', grazie).onclick = function () {
         form.reset(); provato = false;
-        tipo = tipi.length === 1 ? tipi[0].label : '';
+        tipo = conTipo && tipi.length === 1 ? tipi[0].label : '';
         $$('[data-tipo]', form).forEach(function (x) { var on = x.getAttribute('data-tipo') === tipo; x.setAttribute('aria-pressed', on); x.setAttribute('aria-checked', on); });
         $$('[data-richiesta]', form).forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
         if (erroreRichieste) erroreRichieste.textContent = '';

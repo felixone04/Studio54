@@ -54,10 +54,16 @@ class DraftEditor extends StatefulWidget {
   State<DraftEditor> createState() => _DraftEditorState();
 }
 
-class _DraftEditorState extends State<DraftEditor> {
+class _DraftEditorState extends State<DraftEditor> with UnsavedGuard {
   late SiteContent _draft = context.read<AppState>().content.copy();
   bool _dirty = false;
   int _rev = 0;
+
+  @override
+  bool get dirty => _dirty;
+
+  @override
+  void discardChanges() => _discard();
 
   void _rebuild() => setState(() => _dirty = true);
 
@@ -263,9 +269,7 @@ class AdminIdentityEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return DraftEditor(
       title: 'Contatti',
-      subtitle:
-          'Nome, colore e recapiti: uguali sul sito e nell'
-          'app.',
+      subtitle: 'Nome, colore e recapiti: uguali sul sito e nell\'app.',
       builder: (context, d, changed) => [
         Panel(
           title: 'Identità',

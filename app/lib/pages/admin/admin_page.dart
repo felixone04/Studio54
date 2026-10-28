@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/models.dart';
+import '../../services/back_handlers.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/photo_ui.dart';
@@ -132,9 +133,10 @@ class _ShellState extends State<_Shell> {
     return KeyedSubtree(key: ValueKey(_current), child: page);
   }
 
-  void _select(String id) {
+  Future<void> _select(String id) async {
     _scaffoldKey.currentState?.closeDrawer();
-    if (id != _current) context.go('/admin/$id');
+    if (id == _current || !await LeaveGuards.canLeave()) return;
+    if (mounted) context.go('/admin/$id');
   }
 
   @override
@@ -246,6 +248,9 @@ class _NavPanel extends StatelessWidget {
                     icon: Icons.logout_rounded,
                     text: 'Esci',
                     onTap: () async {
+                      if (!await LeaveGuards.canLeave() || !context.mounted) {
+                        return;
+                      }
                       await context.read<AppState>().logout();
                       if (context.mounted) context.go('/admin');
                     },

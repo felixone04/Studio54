@@ -16,6 +16,7 @@ $c = contenuti();
   <meta name="robots" content="noindex">
   <title>Gestionale · <?= e($c['studioName'] ?? 'Studio 54') ?></title>
   <meta name="theme-color" content="#FFFFFF">
+  <meta name="color-scheme" content="light only">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,7 +35,13 @@ $c = contenuti();
   <div class="avviso-breve" id="avviso-breve" hidden role="status"></div>
 
   <?= dati_pagina('s54-dati', dati()) ?>
+  <?php
+  // Solo nell'anteprima statica (dati d'esempio): con PHP su Hostinger i dati
+  // riservati (richieste, clienti, accesso) NON vanno mai nella pagina, ma si
+  // chiedono all'API dopo l'accesso fatto sul server.
+  if (STATICO): ?>
   <?= dati_pagina('s54-gestionale', dati_gestionale()) ?>
+  <?php endif; ?>
   <script src="<?= e(risorsa('assets/js/dati.js')) ?>"></script>
   <script src="<?= e(risorsa('assets/js/riservata.js')) ?>"></script>
 </body>

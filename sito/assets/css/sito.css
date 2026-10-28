@@ -2,6 +2,8 @@
    Fondo bianco, testi neri: tutto lo spazio è per le fotografie. */
 
 :root {
+  /* Sempre chiaro: la modalità scura del telefono non deve invertire i colori. */
+  color-scheme: light only;
   --carta: #FFFFFF;   /* fondo del sito */
   --avorio: #FFFFFF;  /* schede e campi */
   --lino: #F4F4F2;    /* segnaposto delle foto */
@@ -172,18 +174,19 @@ main { padding-top: var(--barra); min-height: 60vh; }
 }
 .menu.aperto { clip-path: inset(0 0 0 0); }
 .menu-testa { height: var(--barra); display: flex; align-items: center; }
-.menu-chiudi { font-size: 34px; line-height: 1; padding: 8px; }
+.menu-chiudi { display: grid; place-items: center; width: 44px; height: 44px; margin-right: -6px; }
+.menu-chiudi svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.4; }
 .menu-voci { margin: auto 0; display: flex; flex-direction: column; }
-.menu-voci a { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; font: 300 21px/1.12 var(--display); letter-spacing: .12em; color: var(--cenere); }
+.menu-voci a { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; font: 300 21px/1.12 var(--display); letter-spacing: .12em; color: var(--pietra); }
 .menu-voci a.attivo { color: var(--inchiostro); }
-.menu-voci small { font: 600 7.5px/1 var(--display); letter-spacing: .24em; color: var(--accento-scuro); padding-top: 4px; }
+.menu-voci small { font: 600 10px/1 var(--display); letter-spacing: .24em; color: var(--accento-scuro); padding-top: 4px; }
 .menu-contatti { display: flex; flex-direction: column; gap: 6px; color: var(--pietra); font-size: 14.5px; }
 
 /* ----------------------------------------------------------------- sezioni */
 
 .sezione { padding: var(--sezione) var(--margine); }
 .contenitore { max-width: calc(var(--max) + 2 * var(--margine)); margin: 0 auto; padding: 0 var(--margine); }
-.contenitore-stretto { max-width: 1180px; margin: 0 auto; }
+.contenitore-stretto { max-width: var(--max); margin: 0 auto; }
 .vuoto { padding: 60px 0; font: italic 300 22px/1.4 var(--display); color: var(--pietra); }
 
 /* ================================================================ APERTURA */
@@ -203,7 +206,8 @@ main { padding-top: var(--barra); min-height: 60vh; }
 /* Schermo in orizzontale: a tutto schermo, sotto la barra trasparente. */
 @media (min-aspect-ratio: 1/1) {
   .pagina-index main { padding-top: 0; }
-  .apertura { height: max(100svh, 560px); }
+  /* Tutto lo schermo, anche quando è basso (telefono girato). */
+  .apertura { height: 100svh; min-height: 300px; }
 }
 /* In verticale (telefono): la foto orizzontale intera, a tutta larghezza. */
 @media (max-aspect-ratio: 1/1) {
@@ -274,7 +278,7 @@ main { padding-top: var(--barra); min-height: 60vh; }
 /* =============================================================== BIOGRAFIA */
 
 .bio { padding-top: clamp(40px, 6vw, 90px); }
-.bio-griglia { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 6fr 5fr; gap: clamp(40px, 7vw, 110px); align-items: start; }
+.bio-griglia { max-width: var(--max); margin: 0 auto; display: grid; grid-template-columns: 6fr 5fr; gap: clamp(40px, 7vw, 110px); align-items: start; }
 .bio-attacco { font: 300 clamp(20px, calc(20px + 5 * (100vw - 360px) / 1240), 25px)/1.5 var(--display); margin-bottom: 20px; }
 .bio-paragrafo { font-size: clamp(16px, 1.3vw, 18px); line-height: 1.75; color: var(--pietra); margin-bottom: 20px; }
 .bio-foto { aspect-ratio: 4 / 5; background: var(--lino); }
@@ -297,7 +301,7 @@ main { padding-top: var(--barra); min-height: 60vh; }
 .passo-modulo + .passo-modulo { margin-top: clamp(26px, 3vw, 36px); padding-top: clamp(26px, 3vw, 36px); border-top: 1px solid var(--linea); }
 .passo-modulo h2 { display: flex; align-items: center; gap: 12px; margin-bottom: clamp(16px, 2vw, 22px); font: 400 clamp(17px, 1.6vw, 20px)/1.2 var(--display); letter-spacing: .1em; }
 .passo-modulo h2 span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--inchiostro); color: var(--carta); font: 600 13px/1 var(--testo); letter-spacing: 0; }
-.nota { margin: -10px 0 16px 42px; font-size: 13.5px; color: var(--pietra); }
+.nota { margin: -10px 0 16px; font-size: 13.5px; color: var(--pietra); }
 .modulo-invio .nota { margin: 0; }
 .coppia { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 719px) { .coppia { grid-template-columns: 1fr; } }
@@ -315,6 +319,7 @@ main { padding-top: var(--barra); min-height: 60vh; }
 .campo input:focus + label, .campo input:not(:placeholder-shown) + label,
 .campo textarea:focus + label, .campo textarea:not(:placeholder-shown) + label { transform: translateY(-10px) scale(.8); color: var(--inchiostro); font-weight: 500; }
 .campo .suggerimento { position: absolute; left: 17px; top: 28px; font-size: 15px; color: var(--cenere); pointer-events: none; opacity: 0; transition: opacity .18s; }
+.campo .suggerimento { color: var(--pietra); }
 .campo input:focus:placeholder-shown ~ .suggerimento { opacity: 1; }
 .icona-tel input, .icona-mail input { padding-left: 44px; }
 .icona-tel label, .icona-mail label, .icona-tel .suggerimento, .icona-mail .suggerimento { left: 44px; }
@@ -360,7 +365,8 @@ main { padding-top: var(--barra); min-height: 60vh; }
 
 /* Una linea sottile lo separa dalla pagina, come quella in fondo. */
 .piede { padding: 0 var(--margine) 28px; }
-.piede-dentro { padding-top: clamp(56px, 7vw, 100px); border-top: 1px solid var(--linea); }
+/* Larga come i contenuti: i bordi coincidono con quelli delle pagine. */
+.piede-dentro { max-width: var(--max); margin: 0 auto; padding-top: clamp(56px, 7vw, 100px); border-top: 1px solid var(--linea); }
 .piede-colonne { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px 32px; }
 .piede h3 { margin-bottom: 16px; font: 600 10.5px/1.3 var(--display); letter-spacing: .24em; color: var(--pietra); }
 .piede-colonne > div { display: flex; flex-direction: column; align-items: flex-start; }

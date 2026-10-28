@@ -16,4 +16,27 @@ class BackHandlers {
     }
     return false;
   }
+
+  /// Torna alla pagina precedente come farebbe il tasto indietro (lo imposta
+  /// l'app): serve a chi ha fermato il tasto e poi decide di uscire.
+  static void Function()? back;
+}
+
+/// Pagine che prima di essere lasciate possono chiedere conferma (es. un
+/// editor del gestionale con modifiche non salvate).
+class LeaveGuards {
+  LeaveGuards._();
+
+  static final _guards = <Future<bool> Function()>[];
+
+  static void add(Future<bool> Function() f) => _guards.add(f);
+  static void remove(Future<bool> Function() f) => _guards.remove(f);
+
+  /// Vero se si può cambiare pagina.
+  static Future<bool> canLeave() async {
+    for (final f in _guards.reversed.toList()) {
+      if (!await f()) return false;
+    }
+    return true;
+  }
 }

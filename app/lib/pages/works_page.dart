@@ -470,15 +470,30 @@ class _WorkPageState extends State<WorkPage> {
                         for (var i = 0; i < urls.length; i++) ...[
                           if (i > 0) SizedBox(height: gap),
                           Reveal(
-                            child: _Photo(
-                              url: urls[i],
-                              label: 'Foto ${i + 1}',
-                              onTap: () => showPhotoViewer(context, urls, i),
-                              child: AspectRatio(
-                                // Proporzioni vere: la foto non si taglia.
-                                aspectRatio: ratio(urls[i]),
-                                child: PhotoImage(urls[i]),
-                              ),
+                            child: LayoutBuilder(
+                              builder: (context, c) {
+                                // Proporzioni vere: la foto non si taglia, e
+                                // non è mai più alta dello schermo (telefono
+                                // girato): in quel caso resta al centro.
+                                final r = ratio(urls[i]);
+                                final h = math.min(
+                                  c.maxWidth / r,
+                                  context.h * 0.9,
+                                );
+                                return Center(
+                                  child: _Photo(
+                                    url: urls[i],
+                                    label: 'Foto ${i + 1}',
+                                    onTap: () =>
+                                        showPhotoViewer(context, urls, i),
+                                    child: SizedBox(
+                                      width: h * r,
+                                      height: h,
+                                      child: PhotoImage(urls[i]),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],

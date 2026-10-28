@@ -19,6 +19,7 @@ $voci = [
   <title><?= e($titolo_pagina) ?></title>
   <meta name="description" content="<?= e($nome) ?> · Fotografia di matrimoni ed eventi. Guarda i nostri lavori e chiedi informazioni.">
   <meta name="theme-color" content="#FFFFFF">
+  <meta name="color-scheme" content="light only">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
   <link rel="apple-touch-icon" href="assets/img/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -63,7 +64,7 @@ $voci = [
       <a class="barra-logo" href="<?= e(url('index')) ?>" aria-label="Home">
         <img src="assets/img/logo.png" alt="<?= e($nome) ?>">
       </a>
-      <button class="menu-chiudi" type="button" aria-label="Chiudi">&times;</button>
+      <button class="menu-chiudi" type="button" aria-label="Chiudi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
     <nav class="menu-voci">
       <?php foreach ($voci as $i => [$t, $p]): ?>

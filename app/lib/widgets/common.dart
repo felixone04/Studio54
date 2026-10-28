@@ -306,6 +306,7 @@ class PillButton extends StatefulWidget {
     this.big = false,
     this.loading = false,
     this.icon = Icons.arrow_outward_rounded,
+    this.expand = false,
   });
   final String text;
   final VoidCallback? onTap;
@@ -313,6 +314,9 @@ class PillButton extends StatefulWidget {
   final bool big;
   final bool loading;
   final IconData icon;
+
+  /// Occupa tutta la larghezza: testo a sinistra, cerchio in fondo a destra.
+  final bool expand;
 
   @override
   State<PillButton> createState() => _PillButtonState();
@@ -355,9 +359,10 @@ class _PillButtonState extends State<PillButton> {
               border: Border.all(color: widget.filled ? bg : base, width: 1.2),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
               children: [
                 Flexible(
+                  fit: widget.expand ? FlexFit.tight : FlexFit.loose,
                   child: Text(
                     widget.text.toUpperCase(),
                     maxLines: 1,

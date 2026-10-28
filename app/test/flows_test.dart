@@ -346,5 +346,34 @@ void main() {
       );
       expect(s.works.length, n);
     });
+
+    test(
+      'legge anche la copia scaricata dal gestionale sul computer',
+      () async {
+        final s = await loadState();
+        final j = jsonDecode(s.exportBackup()) as Map<String, dynamic>;
+        final pc = {
+          'versione': 2,
+          'pubblici': {
+            for (final k in [
+              'content',
+              'carouselSite',
+              'carouselApp',
+              'works',
+              'quoteForm',
+            ])
+              k: j[k],
+          },
+          'privati': {
+            for (final k in ['quotes', 'appointments', 'clients']) k: j[k],
+            'admin': {'username': 'titolare'},
+          },
+        };
+        final other = await loadState({'works': [], 'clients': []});
+        await other.importBackup(jsonEncode(pc));
+        expect(other.works.length, s.works.length);
+        expect(other.clients.length, s.clients.length);
+      },
+    );
   });
 }

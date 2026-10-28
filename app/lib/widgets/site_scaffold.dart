@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -327,6 +328,39 @@ class _MenuButton extends StatelessWidget {
   }
 }
 
+/// La X del menu: tratti sottili come i tre trattini, e nello stesso punto.
+class _CloseButton extends StatelessWidget {
+  const _CloseButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget line(double turn) => Transform.rotate(
+      angle: turn * math.pi,
+      child: Container(width: 26, height: 1.6, color: Palette.ink),
+    );
+    return Semantics(
+      button: true,
+      label: 'Chiudi',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [line(0.25), line(-0.25)],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 void _openMenu(BuildContext context, String location) {
   final c = context.read<AppState>().content;
   showGeneralDialog(
@@ -383,15 +417,7 @@ class _FullMenu extends StatelessWidget {
                         ),
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      tooltip: 'Chiudi',
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        color: Palette.ink,
-                        size: 30,
-                      ),
-                    ),
+                    _CloseButton(onTap: () => Navigator.pop(context)),
                   ],
                 ),
               ),
@@ -412,7 +438,7 @@ class _FullMenu extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 3, right: 12),
                           child: Text(
                             '0${i + 1}',
-                            style: label(7.5, color: context.accentInk),
+                            style: label(10, color: context.accentInk),
                           ),
                         ),
                         Flexible(
@@ -427,7 +453,7 @@ class _FullMenu extends StatelessWidget {
                                 spacing: 0.12,
                                 color: location == _navItems[i].$2
                                     ? Palette.ink
-                                    : Palette.ash,
+                                    : Palette.stone,
                               ),
                             ),
                           ),

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:studio_fotografico/data/seed.dart';
 
+import 'flows_test.dart' show fill, tapText;
 import 'support/harness.dart';
 
 String _where(WidgetTester tester) =>
@@ -99,6 +101,70 @@ void main() {
 
     await _back(tester);
     expect(_where(tester), '/');
+    expect(chiusure, isEmpty);
+    await disposeApp(tester);
+  });
+
+  testWidgets('nel preventivo torna al passo precedente', (tester) async {
+    final s = await loadState();
+    final f = s.quoteForm.copy()
+      ..showDate = false
+      ..showRequests = false;
+    await s.setQuoteForm(f);
+    await pumpApp(tester, s, size: const Size(400, 860));
+    await goTo(tester, '/preventivo');
+    await fill(tester, 'Luogo *', 'Roma');
+    await tapText(tester, 'AVANTI');
+    expect(find.text('PASSO 2 DI 4'), findsOneWidget);
+
+    await _back(tester);
+    expect(find.text('PASSO 1 DI 4'), findsOneWidget);
+    expect(_where(tester), '/preventivo');
+    await _back(tester);
+    expect(_where(tester), '/');
+    expect(chiusure, isEmpty);
+    await disposeApp(tester);
+  });
+
+  testWidgets('nel gestionale chiede prima di perdere le modifiche', (
+    tester,
+  ) async {
+    final s = await loadState();
+    await s.loginAdmin(
+      Seed.demoAdminUser,
+      Seed.demoAdminPassword,
+      remember: false,
+    );
+    await pumpApp(tester, s, size: const Size(400, 860));
+    await goTo(tester, '/admin/biografia');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Titolo della pagina'),
+      'Nuovo titolo',
+    );
+    await settle(tester, 400);
+
+    await _back(tester);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Annulla'),
+      ),
+    );
+    await settle(tester, 800);
+    expect(_where(tester), '/admin/biografia');
+    expect(find.text('Nuovo titolo'), findsOneWidget);
+
+    await _back(tester);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Esci senza salvare'),
+      ),
+    );
+    await settle(tester, 800);
+    expect(_where(tester), '/');
+    expect(s.content.bioTitle, isNot('Nuovo titolo'));
     expect(chiusure, isEmpty);
     await disposeApp(tester);
   });

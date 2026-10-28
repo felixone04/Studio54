@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../config.dart';
+import '../../services/back_handlers.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/site_scaffold.dart' show openUrl;
@@ -58,6 +59,47 @@ Future<bool> confirmDialog(
     ),
   );
   return r ?? false;
+}
+
+/// Per gli editor a bozza: con modifiche non salvate, il tasto indietro e il
+/// cambio di sezione chiedono prima conferma (come sul computer).
+mixin UnsavedGuard<T extends StatefulWidget> on State<T> {
+  bool get dirty;
+  void discardChanges();
+
+  @override
+  void initState() {
+    super.initState();
+    BackHandlers.add(_onBack);
+    LeaveGuards.add(_canLeave);
+  }
+
+  @override
+  void dispose() {
+    BackHandlers.remove(_onBack);
+    LeaveGuards.remove(_canLeave);
+    super.dispose();
+  }
+
+  Future<bool> _canLeave() async {
+    if (!dirty) return true;
+    final ok = await confirmDialog(
+      context,
+      'Hai modifiche non salvate in questa sezione.',
+      confirm: 'Esci senza salvare',
+      title: 'Modifiche non salvate',
+    );
+    if (ok && mounted) discardChanges();
+    return ok;
+  }
+
+  bool _onBack() {
+    if (!dirty) return false;
+    _canLeave().then((ok) {
+      if (ok) BackHandlers.back?.call();
+    });
+    return true;
+  }
 }
 
 // ------------------------------------------------------------------ layout

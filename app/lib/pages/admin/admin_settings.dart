@@ -433,17 +433,12 @@ class _PasswordFormState extends State<_PasswordForm> {
               _again.clear();
               if (context.mounted) toast(context, 'Password aggiornata.');
             },
-            child: const Text(
-              'Salva l'
-              'accesso',
-            ),
+            child: const Text('Salva l\'accesso'),
           ),
           const SizedBox(height: 12),
           const Text(
-            'Nome utente e password del titolare valgono nell'
-            'Area clienti '
-            'dell'
-            'app e nel gestionale. Per ora restano su questo telefono: '
+            'Nome utente e password del titolare valgono nell\'Area clienti '
+            'dell\'app e nel gestionale. Per ora restano su questo telefono: '
             'con il database varranno ovunque.',
             style: TextStyle(color: Colors.black54, fontSize: 13),
           ),

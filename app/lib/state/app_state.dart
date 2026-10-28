@@ -514,11 +514,16 @@ class AppState extends ChangeNotifier {
     const invalid = FormatException(
       'Il testo incollato non è una copia di sicurezza valida.',
     );
-    final Object? j;
+    Object? j;
     try {
       j = jsonDecode(raw);
     } on FormatException {
       throw invalid;
+    }
+    // La copia scaricata dal gestionale sul computer divide i dati in
+    // "pubblici" e "privati": qui si leggono tutti allo stesso livello.
+    if (j is Map && j['pubblici'] is Map && j['privati'] is Map) {
+      j = {...j['pubblici'] as Map, ...j['privati'] as Map};
     }
     if (j is! Map || j['content'] is! Map) throw invalid;
     // Prima di sovrascrivere i dati attuali verifica che ogni sezione si possa

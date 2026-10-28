@@ -218,6 +218,14 @@
     });
   }
   function esci() {
+    if (sporco) {
+      finestra({
+        titolo: 'Modifiche non salvate', stretta: true,
+        corpo: '<p>Hai modifiche non salvate in questa sezione.</p>',
+        azioni: [{ t: 'Resta qui' }, { t: 'Esci senza salvare', cls: 'pieno', fn: function () { sporco = false; esci(); } }]
+      });
+      return;
+    }
     try { sessionStorage.removeItem(SESSIONE); localStorage.removeItem(SESSIONE); } catch (e) {}
     location.hash = '';
     disegna();
@@ -418,7 +426,7 @@
         Q.appointments = Q.appointments.filter(function (x) { return x.id !== a.id; });
         Q.quotes.forEach(function (q) { if (q.appointmentId === a.id) q.appointmentId = null; });
         salvaQ('Appuntamento eliminato.');
-        if (dopo) dopo(null);
+        if (dopo) dopo(null); else disegna();
       } }]).concat([{ t: 'Annulla' }, { t: 'Salva', cls: 'pieno', fn: function (c) {
         var titolo = val(c, 'ap-titolo'), giorno = val(c, 'ap-giorno'), tutto = $('#ap-tutto', c).checked;
         errore(c, 'ap-titolo', titolo ? '' : 'Scrivi un titolo');
@@ -691,7 +699,15 @@
       vecchia.replaceWith(img);
       imposta(u);
     };
-    $('#' + id, root).addEventListener('change', function (e) { if (e.target.value.trim()) aggiorna(e.target.value.trim()); });
+    $('#' + id, root).addEventListener('change', function (e) {
+      var u = e.target.value.trim();
+      if (u) { aggiorna(u); return; }
+      // Campo svuotato: la foto si toglie.
+      var vecchia = $('#' + id + '-anteprima', root), vuota = document.createElement('span');
+      vuota.className = 'segnaposto'; vuota.id = id + '-anteprima';
+      vecchia.replaceWith(vuota);
+      imposta('');
+    });
     suCaricamento(root, '#' + id + '-carica', function (files) { leggiImmagine(files[0], 1800).then(function (u) { $('#' + id, root).value = ''; aggiorna(u); }); });
   }
 
@@ -736,6 +752,12 @@
       campo('ct-vat', 'Partita IVA e dati legali', k.vat || '') + '</section>';
     barraSalva(p, function () {
       if (k.email && !EMAIL.test(k.email)) { errore(p, 'ct-email', 'Email non valida'); return false; }
+      var ok = true;
+      ['instagram', 'facebook'].forEach(function (n) {
+        if (/^www\./i.test(k[n] || '')) k[n] = 'https://' + k[n];
+        if (k[n] && !/^https?:\/\/\S+$/i.test(k[n])) { errore(p, 'ct-' + n, 'Scrivi un link che inizia con https://'); ok = false; }
+      });
+      if (!ok) return false;
       P.content = c;
       return salvaP('Contatti salvati.');
     }, function () { disegna(); });
@@ -1051,6 +1073,8 @@
       errore(p, 'im-utente', u.length < 3 || /\s/.test(u) ? 'Almeno 3 caratteri, senza spazi' : (Q.clients.some(function (c) { return [c.email, c.username].map(function (x) { return (x || '').toLowerCase(); }).indexOf(u.toLowerCase()) >= 0; }) ? 'È già usato da un cliente' : ''));
       errore(p, 'im-nuova', n && n.length < 8 ? 'Almeno 8 caratteri' : '');
       errore(p, 'im-ripeti', n !== r ? 'Le due password non coincidono' : '');
+      // L'errore sulla password attuale si ricontrolla a ogni invio.
+      errore(p, 'im-attuale', att ? '' : 'Scrivi la password attuale');
       if ($$('.campo.sbagliato', p).length) return;
       sha256((ad.passwordSalt || '') + '::' + att).then(function (h) {
         if (h !== ad.passwordHash) { errore(p, 'im-attuale', 'Password attuale non corretta'); return; }
@@ -1073,10 +1097,24 @@
       var r = new FileReader();
       r.onload = function () {
         try {
-          var j = JSON.parse(r.result);
-          if (!j.pubblici || !j.privati || !Array.isArray(j.pubblici.works) || !Array.isArray(j.privati.clients)) throw new Error();
+          var j = JSON.parse(r.result), pub, pri;
+          if (j && j.pubblici && j.privati) { pub = j.pubblici; pri = j.privati; }
+          // Copia fatta dall'app: tutte le sezioni allo stesso livello, senza l'accesso.
+          else if (j && j.content && Array.isArray(j.works)) { pub = j; pri = { quotes: j.quotes, appointments: j.appointments, clients: j.clients }; }
+          else throw new Error();
+          if (!Array.isArray(pub.works) || (pri.clients && !Array.isArray(pri.clients))) throw new Error();
+          var nuoviP = {
+            content: Object.assign({}, pub.content || P.content),
+            carouselSite: pub.carouselSite || P.carouselSite, carouselApp: pub.carouselApp || P.carouselApp,
+            works: pub.works, quoteForm: pub.quoteForm || P.quoteForm
+          };
+          nuoviP.content.contacts = nuoviP.content.contacts || {};
+          var nuoviQ = {
+            quotes: pri.quotes || [], appointments: pri.appointments || [], clients: pri.clients || [],
+            admin: pri.admin && pri.admin.passwordHash ? pri.admin : Q.admin
+          };
           conferma('Sostituire tutti i dati con quelli della copia?', 'Sostituisci', function () {
-            P = j.pubblici; Q = j.privati;
+            P = nuoviP; Q = nuoviQ;
             if (salvaP('Copia caricata.') && salvaQ(false)) disegna();
           });
         } catch (e) { avviso('Questo file non è una copia di sicurezza valida.', true); }

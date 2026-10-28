@@ -46,6 +46,9 @@ class _SystemBars extends StatelessWidget {
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
     final top = mq.padding.top, bottom = mq.padding.bottom;
+    // Telefono girato: la barra dei tasti o la fotocamera possono stare di
+    // lato.
+    final left = mq.padding.left, right = mq.padding.right;
     final bars = AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -62,12 +65,20 @@ class _SystemBars extends StatelessWidget {
     return ColoredBox(
       color: Palette.paper,
       child: Padding(
-        padding: EdgeInsets.only(top: top, bottom: bottom),
+        padding: EdgeInsets.fromLTRB(left, top, right, bottom),
         child: MediaQuery(
           data: mq.copyWith(
-            size: Size(mq.size.width, mq.size.height - top - bottom),
-            padding: mq.padding.copyWith(top: 0, bottom: 0),
-            viewPadding: mq.viewPadding.copyWith(top: 0, bottom: 0),
+            size: Size(
+              mq.size.width - left - right,
+              mq.size.height - top - bottom,
+            ),
+            padding: EdgeInsets.zero,
+            viewPadding: mq.viewPadding.copyWith(
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
+            ),
           ),
           child: bars,
         ),
@@ -94,6 +105,7 @@ class _BackToHome extends RootBackButtonDispatcher {
   _BackToHome(this.router) {
     router.routerDelegate.addListener(_track);
     _track();
+    BackHandlers.back = _goBack;
   }
 
   final GoRouter router;
@@ -132,16 +144,23 @@ class _BackToHome extends RootBackButtonDispatcher {
     // Una pagina che gestisce da sé il tasto (es. le cartelle dell'area
     // clienti).
     if (BackHandlers.handle()) return true;
+    _goBack();
+    return true;
+  }
+
+  void _goBack() {
     if (_history.length > 1) {
       _history.removeLast();
       router.go(_history.last);
     } else if (_here != '/') {
       router.go('/');
     }
-    return true;
   }
 
-  void dispose() => router.routerDelegate.removeListener(_track);
+  void dispose() {
+    router.routerDelegate.removeListener(_track);
+    if (BackHandlers.back == _goBack) BackHandlers.back = null;
+  }
 }
 
 class StudioApp extends StatefulWidget {

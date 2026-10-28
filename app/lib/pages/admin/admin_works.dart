@@ -60,9 +60,7 @@ class AdminWorks extends StatelessWidget {
                       w.date,
                       '${w.photos.length} foto',
                       if (!w.onSite) 'non sul sito',
-                      if (!w.onApp)
-                        'non nell'
-                            'app',
+                      if (!w.onApp) 'non nell\'app',
                     ].where((e) => e.trim().isNotEmpty).join(' · ');
                     return AdminListRow(
                       key: ValueKey(w.id),
@@ -491,8 +489,7 @@ class _WorkDialogState extends State<_WorkDialog> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('In evidenza nella home'),
                   subtitle: const Text(
-                    'Al massimo 4 lavori, sul sito e nell'
-                    'app.',
+                    'Al massimo 4 lavori, sul sito e nell\'app.',
                   ),
                   value: _d.featured,
                   onChanged: (v) => setState(() => _d.featured = v),
@@ -505,10 +502,7 @@ class _WorkDialogState extends State<_WorkDialog> {
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Nell'
-                    'app',
-                  ),
+                  title: const Text('Nell\'app'),
                   value: _d.onApp,
                   onChanged: (v) => setState(() => _d.onApp = v),
                 ),
