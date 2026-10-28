@@ -29,9 +29,9 @@ class HomePage extends StatelessWidget {
           Padding(
             padding: EdgeInsets.fromLTRB(
               context.gutter,
-              context.fluid(48, 100),
+              context.spaceSection,
               context.gutter,
-              context.fluid(56, 110),
+              context.spaceSection,
             ),
             child: WorkList(works: featured),
           ),

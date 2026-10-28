@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import '../theme/app_theme.dart';
+import 'line_icons.dart';
 import 'site_scaffold.dart' show NavTint;
 
 // ------------------------------------------------------------------ immagini
@@ -117,9 +118,7 @@ class PhotoImage extends StatelessWidget {
 
   Widget _placeholder() => const ColoredBox(
     color: Palette.linen,
-    child: Center(
-      child: Icon(Icons.photo_camera_outlined, color: Palette.ash, size: 28),
-    ),
+    child: Center(child: LineIcon(Ico.camera, color: Palette.ash, size: 28)),
   );
 
   /// Larghezze a "gradini": evitano di riscaricare la foto a ogni piccolo
@@ -250,7 +249,7 @@ class Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final v = context.fluid(72, 150);
+    final v = context.spaceSection;
     final box = Container(
       color: color,
       width: double.infinity,
@@ -305,7 +304,7 @@ class PillButton extends StatefulWidget {
     this.filled = true,
     this.big = false,
     this.loading = false,
-    this.icon = Icons.arrow_outward_rounded,
+    this.icon = Ico.arrowOutward,
     this.expand = false,
   });
   final String text;
@@ -313,7 +312,7 @@ class PillButton extends StatefulWidget {
   final bool filled;
   final bool big;
   final bool loading;
-  final IconData icon;
+  final Ico icon;
 
   /// Occupa tutta la larghezza: testo a sinistra, cerchio in fondo a destra.
   final bool expand;
@@ -390,7 +389,13 @@ class _PillButtonState extends State<PillButton> {
                       : AnimatedRotation(
                           turns: _hover ? 0.125 : 0,
                           duration: const Duration(milliseconds: 260),
-                          child: Icon(widget.icon, size: h * 0.38, color: fg),
+                          child: Center(
+                            child: LineIcon(
+                              widget.icon,
+                              size: h * 0.42,
+                              color: fg,
+                            ),
+                          ),
                         ),
                 ),
               ],

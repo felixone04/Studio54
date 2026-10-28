@@ -231,7 +231,7 @@ void main() {
         await tester.tap(find.bySemanticsLabel('Chiudi').last);
         await settle(tester, 800);
 
-        await tester.tap(find.text('← TUTTE LE CARTELLE'));
+        await tester.tap(find.text('TUTTE LE CARTELLE'));
         await settle(tester, 800);
         expect(find.text('LE CARTELLE'), findsOneWidget);
 
@@ -300,10 +300,10 @@ void main() {
         expect(find.text('SCARICA'), findsWidgets);
 
         await back(); // chiude la foto
-        expect(find.text('← TUTTE LE CARTELLE'), findsOneWidget);
+        expect(find.text('TUTTE LE CARTELLE'), findsOneWidget);
         await back(); // torna alle cartelle
         expect(find.text('LE CARTELLE'), findsOneWidget);
-        expect(find.text('← TUTTE LE CARTELLE'), findsNothing);
+        expect(find.text('TUTTE LE CARTELLE'), findsNothing);
         await back(); // resta nell'area clienti
         await back();
         expect(find.text('LE CARTELLE'), findsOneWidget);

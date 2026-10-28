@@ -33,7 +33,7 @@
     var link = function (t, h, fuori) { return '<a class="link" href="' + esc(h) + '"' + (fuori ? ' target="_blank" rel="noopener"' : '') + '>' + esc(t) + '</a>'; };
     var wa = (K.whatsapp || '').replace(/\D/g, '');
     piede.innerHTML = '<div class="piede-dentro"><div class="piede-colonne">' +
-      '<div><h3>SCRIVICI</h3>' + (K.email ? link(K.email, 'mailto:' + K.email) : '') + (K.phone ? link(K.phone, 'tel:' + cifre(K.phone)) : '') + (wa ? link('WhatsApp', 'https://wa.me/' + wa, true) : '') + '</div>' +
+      '<div><h3>SCRIVETECI</h3>' + (K.email ? link(K.email, 'mailto:' + K.email) : '') + (K.phone ? link(K.phone, 'tel:' + cifre(K.phone)) : '') + (wa ? link('WhatsApp', 'https://wa.me/' + wa, true) : '') + '</div>' +
       '<div><h3>STUDIO</h3>' + (K.address ? link(K.address, 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(K.address), true) : '') + (K.hours ? '<p>' + esc(K.hours) + '</p>' : '') + '</div>' +
       '<div><h3>SOCIAL</h3>' + (web(K.instagram) ? link('Instagram', web(K.instagram), true) : '') + (web(K.facebook) ? link('Facebook', web(K.facebook), true) : '') + '</div>' +
       '<div><h3>ESPLORA</h3>' + link('Home', S54.url('index')) + link('Lavori', S54.url('lavori')) + link('Biografia', S54.url('biografia')) + link('Preventivo', S54.url('preventivo')) + '</div>' +
@@ -165,7 +165,7 @@
     };
     var html = '';
     if (conTipo || conData || conLuogo) {
-      html += '<section class="passo-modulo" data-passo="evento">' + titolo('IL TUO EVENTO');
+      html += '<section class="passo-modulo" data-passo="evento">' + titolo('IL VOSTRO EVENTO');
       if (conTipo) {
         html += '<div class="campo" data-campo="tipo"><div class="scelte" role="radiogroup" aria-label="Tipo di evento">' + tipi.map(function (t) {
           return '<button type="button" class="scelta-voce" role="radio" data-tipo="' + esc(t.label) + '" aria-pressed="' + (tipi.length === 1) + '" aria-checked="' + (tipi.length === 1) + '">' + esc(t.label) + '</button>';
@@ -178,7 +178,7 @@
       html += '</section>';
     }
     if (conRichieste) {
-      html += '<section class="passo-modulo" data-passo="richieste">' + titolo('LE TUE RICHIESTE') + '<p class="nota">Tocca una o più voci. *</p><div class="scelte">' +
+      html += '<section class="passo-modulo" data-passo="richieste">' + titolo('LE VOSTRE RICHIESTE') + '<p class="nota">Toccate una o più voci. *</p><div class="scelte">' +
         richieste.map(function (r) { return '<button type="button" class="scelta-voce" data-richiesta="' + esc(r.label) + '" aria-pressed="false">' + esc(r.label) + '</button>'; }).join('') + '</div><p class="errore errore-richieste"></p></section>';
     }
     var nome = [testo('nome', 'Nome *', { attr: ' autocomplete="given-name" maxlength="40"' })];
@@ -187,10 +187,10 @@
     if (conTelefono) recapiti.push(testo('telefono', 'Telefono *', { classe: 'icona-tel', attr: ' type="tel" inputmode="tel" autocomplete="tel" maxlength="20"', aiuto: 'Es. 333 123 4567' }));
     if (conEmail) recapiti.push(testo('email', 'Email *', { classe: 'icona-mail', attr: ' type="email" inputmode="email" autocomplete="email" maxlength="80"', aiuto: 'nome@email.it' }));
     var riga = function (l) { return l.length === 2 ? '<div class="coppia">' + l.join('') + '</div>' : l.join(''); };
-    html += '<section class="passo-modulo" data-passo="contatti">' + titolo('I TUOI CONTATTI') + riga(nome) + riga(recapiti) + '</section>';
+    html += '<section class="passo-modulo" data-passo="contatti">' + titolo('I VOSTRI CONTATTI') + riga(nome) + riga(recapiti) + '</section>';
     if (conMessaggio) {
-      html += '<section class="passo-modulo" data-passo="messaggio">' + titolo('IL TUO MESSAGGIO') +
-        '<div class="campo area" data-campo="note"><textarea id="note" name="note" rows="4" maxlength="500" placeholder=" "></textarea><label for="note">Scrivici pure per qualsiasi altra informazione</label><span class="conta-caratteri">0/500</span></div></section>';
+      html += '<section class="passo-modulo" data-passo="messaggio">' + titolo('IL VOSTRO MESSAGGIO') +
+        '<div class="campo area" data-campo="note"><textarea id="note" name="note" rows="4" maxlength="500" placeholder=" "></textarea><label for="note">Scriveteci pure per qualsiasi altra informazione</label><span class="conta-caratteri">0/500</span></div></section>';
     }
     prevBox.innerHTML = '<form class="modulo" novalidate data-modulo>' + html +
       '<label class="consenso" data-campo="privacy"><input type="checkbox" name="privacy" value="1"><span class="spunta" aria-hidden="true"></span><span>Acconsento al trattamento dei miei dati per essere ricontattato. *</span></label><p class="errore errore-privacy"></p>' +
@@ -487,6 +487,13 @@
         }
         giro++;
       }
+      // Righe a specchio: la foto più grande una volta a sinistra e una a
+      // destra (il visore segue l'ordine scelto nel gestionale).
+      var lato = 0;
+      righe.forEach(function (r) {
+        if (r.tipo === 'pila') r.sinistra = lato++ % 2 === 0;
+        else if (r.tipo === 'fila' && lato++ % 2) r.ids.reverse();
+      });
       return righe;
     }
     function misura(t, w, h) { t.style.width = w + 'px'; t.style.height = h + 'px'; return t; }
@@ -577,32 +584,32 @@
     /* Controlli, uguali a quelli dell'app. */
     var regole = {
       data: function (v) {
-        if (!v) return "Inserisci la data dell'evento";
+        if (!v) return "Inserite la data dell'evento";
         var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v);
-        if (!m) return 'Scrivi la data come gg/mm/aaaa';
+        if (!m) return 'Scrivete la data come gg/mm/aaaa';
         var d = new Date(+m[3], +m[2] - 1, +m[1]);
         if (d.getFullYear() !== +m[3] || d.getMonth() !== +m[2] - 1 || d.getDate() !== +m[1]) return 'Questa data non esiste';
         var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
         if (d < oggi) return 'La data è già passata';
         var limite = new Date(oggi); limite.setFullYear(oggi.getFullYear() + 5);
-        if (d > limite) return 'Scegli una data entro 5 anni';
+        if (d > limite) return 'Scegliete una data entro 5 anni';
         return '';
       },
-      luogo: function (v) { return v.length < 2 ? "Indica la città o la location dell'evento" : ''; },
+      luogo: function (v) { return v.length < 2 ? "Indicate la città o la location dell'evento" : ''; },
       nome: function (v) { return nomeOk(v, 'nome'); },
       cognome: function (v) { return nomeOk(v, 'cognome'); },
       telefono: function (v) {
-        if (!v) return 'Inserisci il numero di telefono';
+        if (!v) return 'Inserite il numero di telefono';
         var c = v.replace(/\D/g, '').length;
         return c < 8 || c > 15 ? 'Numero non valido: servono da 8 a 15 cifre' : '';
       },
       email: function (v) {
-        if (!v) return "Inserisci l'indirizzo email";
+        if (!v) return "Inserite l'indirizzo email";
         return /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$/.test(v) ? '' : 'Email non valida (es. nome@email.it)';
       }
     };
     function nomeOk(v, cosa) {
-      if (!v) return 'Inserisci il ' + cosa;
+      if (!v) return 'Inserite il ' + cosa;
       return v.replace(/['\s\-]/g, '').length < 2 ? 'Il ' + cosa + ' deve avere almeno 2 lettere' : '';
     }
     function controlla(n, mostra) {
@@ -615,7 +622,7 @@
     function controllaTipo(mostra) {
       var c = campo('tipo');
       if (!c) return '';
-      var msg = tipo ? '' : 'Scegli il tipo di evento';
+      var msg = tipo ? '' : 'Scegliete il tipo di evento';
       if (mostra) $('.errore', c).textContent = msg;
       return msg;
     }
@@ -657,7 +664,7 @@
     /* Richieste: almeno una. */
     var erroreRichieste = $('.errore-richieste', form);
     function controllaRichieste(mostra) {
-      var msg = erroreRichieste && !$('[data-richiesta][aria-pressed="true"]', form) ? 'Scegli almeno una richiesta' : '';
+      var msg = erroreRichieste && !$('[data-richiesta][aria-pressed="true"]', form) ? 'Scegliete almeno una richiesta' : '';
       if (mostra && erroreRichieste) erroreRichieste.textContent = msg;
       return msg;
     }
@@ -732,8 +739,8 @@
       var grazie = $('[data-grazie]');
       $('.grazie-titolo', grazie).textContent = 'Grazie, ' + richiesta.firstName;
       $('.grazie-testo', grazie).textContent = richiesta.phone
-        ? 'Ti richiameremo al ' + richiesta.phone + ' per parlarne insieme.'
-        : 'Ti scriveremo a ' + richiesta.email + ' per parlarne insieme.';
+        ? 'Vi richiameremo al ' + richiesta.phone + ' per parlarne insieme.'
+        : 'Vi scriveremo a ' + richiesta.email + ' per parlarne insieme.';
       form.hidden = true;
       grazie.hidden = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });

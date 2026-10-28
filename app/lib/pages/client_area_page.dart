@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/line_icons.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
@@ -90,9 +93,9 @@ class _SignInViewState extends State<SignInView> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         context.gutter,
-        context.fluid(30, 70),
+        context.spaceTop,
         context.gutter,
-        context.fluid(70, 120),
+        context.spaceSection,
       ),
       child: Center(
         child: ConstrainedBox(
@@ -134,10 +137,7 @@ class _SignInViewState extends State<SignInView> {
                     labelText: widget.adminOnly
                         ? 'Nome utente'
                         : 'Email o nome utente',
-                    prefixIcon: const Icon(
-                      Icons.person_outline_rounded,
-                      size: 20,
-                    ),
+                    prefixIcon: const InputIcon(Ico.person),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -148,19 +148,11 @@ class _SignInViewState extends State<SignInView> {
                   onSubmitted: (_) => _submit(),
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon: const Icon(
-                      Icons.lock_outline_rounded,
-                      size: 20,
-                    ),
+                    prefixIcon: const InputIcon(Ico.lock),
                     suffixIcon: IconButton(
                       tooltip: _show ? 'Nascondi' : 'Mostra',
                       onPressed: () => setState(() => _show = !_show),
-                      icon: Icon(
-                        _show
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        size: 20,
-                      ),
+                      icon: LineIcon(_show ? Ico.eyeOff : Ico.eye, size: 20),
                     ),
                   ),
                 ),
@@ -173,7 +165,7 @@ class _SignInViewState extends State<SignInView> {
                   'Entra',
                   big: true,
                   loading: _busy,
-                  icon: Icons.arrow_forward_rounded,
+                  icon: Ico.arrowRight,
                   onTap: _submit,
                 ),
                 const SizedBox(height: 18),
@@ -332,10 +324,21 @@ class _ClientHomeState extends State<_ClientHome> {
       // Dentro una cartella: le sue foto, come sempre.
       final media = c.mediaIn(folder.id);
       content = [
-        HoverLink(
-          '← TUTTE LE CARTELLE',
-          style: label(10.5, color: Palette.stone),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: () => setState(() => _folder = null),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const LineIcon(Ico.arrowLeft, size: 15, color: Palette.stone),
+              const SizedBox(width: 8),
+              HoverLink(
+                'TUTTE LE CARTELLE',
+                style: label(10.5, color: Palette.stone),
+                onTap: () => setState(() => _folder = null),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 14),
         Text(
@@ -414,9 +417,9 @@ class _ClientHomeState extends State<_ClientHome> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         context.gutter,
-        context.fluid(20, 50),
+        context.spaceTop,
         context.gutter,
-        context.fluid(60, 110),
+        context.spaceSection,
       ),
       child: Center(
         child: ConstrainedBox(
@@ -439,8 +442,8 @@ class _ClientHomeState extends State<_ClientHome> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.logout_rounded,
+                            const LineIcon(
+                              Ico.logout,
                               size: 15,
                               color: Palette.stone,
                             ),
@@ -496,10 +499,8 @@ class _ClientHomeState extends State<_ClientHome> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            f.isLink
-                                ? Icons.link_rounded
-                                : Icons.picture_as_pdf_outlined,
+                          LineIcon(
+                            f.isLink ? Ico.link : Ico.document,
                             color: context.accentInk,
                           ),
                           const SizedBox(width: 14),
@@ -608,7 +609,7 @@ class _FolderCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.folder_outlined, size: 18, color: context.accentInk),
+                LineIcon(Ico.folder, size: 18, color: context.accentInk),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -655,10 +656,7 @@ class _Tile extends StatelessWidget {
                   color: Palette.ink.withValues(alpha: 0.55),
                   border: Border.all(color: const Color(0xB3FFFFFF)),
                 ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Colors.white,
-                ),
+                child: const LineIcon(Ico.play, color: Colors.white),
               ),
             ),
         ],
@@ -683,7 +681,7 @@ class _DownloadButtonState extends State<_DownloadButton> {
   Widget build(BuildContext context) => PillButton(
     'Scarica',
     loading: _busy,
-    icon: Icons.download_rounded,
+    icon: Ico.download,
     onTap: () async {
       setState(() => _busy = true);
       await widget.onTap();
@@ -786,12 +784,7 @@ class _VideoViewState extends State<_VideoView> {
         else if (c != null && !ready)
           const CircularProgressIndicator(color: Palette.ink)
         else if (!ready || !c.value.isPlaying)
-          RoundIconButton(
-            Icons.play_arrow_rounded,
-            _start,
-            'Guarda il video',
-            size: 64,
-          ),
+          RoundIconButton(Ico.play, _start, 'Guarda il video', size: 64),
         // Avanzamento e audio, sopra le frecce in basso.
         if (ready)
           Positioned(
@@ -826,10 +819,8 @@ class _VideoViewState extends State<_VideoView> {
                 IconButton(
                   tooltip: _muted ? 'Attiva l\'audio' : 'Togli l\'audio',
                   onPressed: _toggleAudio,
-                  icon: Icon(
-                    _muted
-                        ? Icons.volume_off_outlined
-                        : Icons.volume_up_outlined,
+                  icon: LineIcon(
+                    _muted ? Ico.volumeOff : Ico.volumeOn,
                     color: Palette.ink,
                   ),
                 ),

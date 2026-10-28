@@ -278,6 +278,13 @@ extension Responsive on BuildContext {
   /// Margine laterale delle sezioni.
   double get gutter => fluid(20, 72);
 
+  /// Spazi verticali, uguali a quelli del sito (--inizio, --blocco,
+  /// --sezione): in cima alla pagina sotto la barra, tra due blocchi della
+  /// stessa sezione, tra una sezione e l'altra (e in fondo alla pagina).
+  double get spaceTop => fluid(18, 36);
+  double get spaceBlock => fluid(26, 44);
+  double get spaceSection => fluid(56, 120);
+
   /// Altezza della barra di navigazione (con il logo in alto a sinistra).
   double get navH => fluid(72, 100);
 

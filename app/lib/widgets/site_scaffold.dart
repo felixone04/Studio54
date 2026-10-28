@@ -493,10 +493,14 @@ class SiteFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = content.contacts;
-    final cols = context.isPhone ? 1 : (context.isTablet ? 2 : 4);
+    // Telefono: due colonne compatte (metà altezza rispetto a una sola).
+    final cols = context.isTablet ? 2 : 4;
+    final gap = context.isPhone ? 20.0 : 32.0;
 
+    // Sul telefono le voci stanno più vicine.
+    final under = context.isPhone ? 0.0 : 8.0;
     Widget link(String text, String? url) => Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: under),
       child: url == null
           ? Text(text, style: body(15))
           : HoverLink(text, style: body(15), onTap: () => openUrl(url)),
@@ -512,7 +516,7 @@ class SiteFooter extends StatelessWidget {
     );
 
     final columns = <Widget>[
-      col('Scrivici', [
+      col('Scriveteci', [
         if (c.email.isNotEmpty) link(c.email, 'mailto:${c.email}'),
         if (c.phone.isNotEmpty) link(c.phone, 'tel:${digitsOf(c.phone)}'),
         if (c.whatsapp.isNotEmpty)
@@ -537,7 +541,7 @@ class SiteFooter extends StatelessWidget {
       col('Esplora', [
         for (final (t, p) in _navItems)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.only(bottom: under),
             child: HoverLink(t, style: body(15), onTap: () => context.go(p)),
           ),
       ]),
@@ -551,24 +555,23 @@ class SiteFooter extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(height: 1, color: Palette.line),
-          SizedBox(height: context.fluid(56, 100)),
+          SizedBox(height: context.spaceSection),
           LayoutBuilder(
             builder: (context, box) {
-              const gap = 32.0;
               final wdt = (box.maxWidth - gap * (cols - 1)) / cols;
               return Wrap(
                 spacing: gap,
-                runSpacing: 40,
+                runSpacing: context.isPhone ? 30 : 40,
                 children: [
                   for (final w in columns) SizedBox(width: wdt, child: w),
                 ],
               );
             },
           ),
-          SizedBox(height: context.fluid(56, 90)),
+          SizedBox(height: context.spaceSection),
           // Firma: il logo al centro.
           Center(child: BrandLogo(width: context.fluid(150, 200))),
-          SizedBox(height: context.fluid(36, 56)),
+          SizedBox(height: context.spaceBlock),
           Container(height: 1, color: Palette.line),
           const SizedBox(height: 18),
           Text(

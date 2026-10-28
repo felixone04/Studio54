@@ -31,7 +31,14 @@ Future<void> fill(WidgetTester tester, String label, String text) async {
 }
 
 Future<void> pickDate(WidgetTester tester) async {
-  await tester.tap(find.byIcon(Icons.calendar_month_outlined));
+  await tester.tap(
+    find
+        .ancestor(
+          of: find.text('Data dell\'evento *'),
+          matching: find.byType(InkWell),
+        )
+        .first,
+  );
   await settle(tester, 800);
   await tester.tap(find.text('OK'));
   await settle(tester, 800);
@@ -50,9 +57,9 @@ void main() {
       expect(find.text('PASSO 1 DI 5'), findsOneWidget);
       expect(find.text('IL VOSTRO EVENTO'), findsOneWidget);
       await tapText(tester, 'AVANTI');
-      expect(find.text('Scegli la data dell\'evento'), findsOneWidget);
-      expect(find.text('Indica la città o la location'), findsOneWidget);
-      expect(find.text('Scegli il tipo di evento'), findsNothing);
+      expect(find.text('Scegliete la data dell\'evento'), findsOneWidget);
+      expect(find.text('Indicate la città o la location'), findsOneWidget);
+      expect(find.text('Scegliete il tipo di evento'), findsNothing);
       await pickDate(tester);
       await fill(tester, 'Luogo *', 'Masseria in Puglia');
       await tapText(tester, 'AVANTI');
@@ -65,8 +72,8 @@ void main() {
 
       // Passo 3: contatti, con i controlli.
       await tapText(tester, 'AVANTI');
-      expect(find.text('Inserisci il nome'), findsOneWidget);
-      expect(find.text('Inserisci il numero di telefono'), findsOneWidget);
+      expect(find.text('Inserite il nome'), findsOneWidget);
+      expect(find.text('Inserite il numero di telefono'), findsOneWidget);
       await fill(tester, 'Nome *', 'Mario');
       await fill(tester, 'Cognome *', 'Rossi');
       await fill(tester, 'Telefono *', '12');
@@ -140,7 +147,7 @@ void main() {
       expect(find.text('Data dell\'evento *'), findsNothing);
       // Con due tipi accesi bisogna sceglierne uno.
       await tapText(tester, 'AVANTI');
-      expect(find.text('Scegli il tipo di evento'), findsOneWidget);
+      expect(find.text('Scegliete il tipo di evento'), findsOneWidget);
       await tapText(tester, 'Battesimo');
       await fill(tester, 'Luogo *', 'Roma');
       await tapText(tester, 'AVANTI');

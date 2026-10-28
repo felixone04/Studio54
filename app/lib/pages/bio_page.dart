@@ -69,9 +69,9 @@ class _Intro extends StatelessWidget {
           ),
         ],
         if (paragraphs.isNotEmpty) ...[
-          SizedBox(height: context.fluid(28, 44)),
+          SizedBox(height: context.spaceBlock),
           Container(width: 48, height: 1, color: Palette.ink),
-          SizedBox(height: context.fluid(28, 44)),
+          SizedBox(height: context.spaceBlock),
           for (var i = 0; i < paragraphs.length; i++)
             Reveal(
               delay: Duration(milliseconds: 80 * i),
@@ -102,7 +102,7 @@ class _Intro extends StatelessWidget {
           );
 
     return Section(
-      top: context.fluid(40, 90),
+      top: context.spaceTop,
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1180),
@@ -148,9 +148,9 @@ class _Method extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(height: 1, color: Palette.line),
-              SizedBox(height: context.fluid(56, 120)),
+              SizedBox(height: context.spaceSection),
               const Tag('Il metodo'),
-              SizedBox(height: context.fluid(30, 56)),
+              SizedBox(height: context.spaceBlock),
               LayoutBuilder(
                 builder: (context, box) {
                   final gap = context.fluid(16, 32);

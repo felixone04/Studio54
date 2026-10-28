@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../widgets/line_icons.dart';
+
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -24,7 +27,7 @@ extension on _Step {
     _Step.event => 'Il vostro evento',
     _Step.requests => 'Le vostre richieste',
     _Step.contacts => 'I vostri contatti',
-    _Step.message => 'Un messaggio',
+    _Step.message => 'Il vostro messaggio',
     _Step.summary => 'Riepilogo',
   };
 }
@@ -103,7 +106,7 @@ class _QuotePageState extends State<QuotePage> {
   String? _err(String field, QuoteForm f) {
     String name(String v, String what) {
       final t = v.trim();
-      if (t.isEmpty) return 'Inserisci il $what';
+      if (t.isEmpty) return 'Inserite il $what';
       return t.replaceAll(RegExp(r"['\s-]"), '').length < 2
           ? 'Il $what deve avere almeno 2 lettere'
           : '';
@@ -112,24 +115,24 @@ class _QuotePageState extends State<QuotePage> {
     final r = switch (field) {
       'type' =>
         f.showEvent && f.activeEventTypes.isNotEmpty && _type == null
-            ? 'Scegli il tipo di evento'
+            ? 'Scegliete il tipo di evento'
             : '',
       'date' =>
         !f.showDate
             ? ''
             : _when == null
-            ? 'Scegli la data dell\'evento'
+            ? 'Scegliete la data dell\'evento'
             : '',
       'location' =>
         f.showLocation && _location.text.trim().length < 2
-            ? 'Indica la città o la location'
+            ? 'Indicate la città o la location'
             : '',
       'first' => name(_first.text, 'nome'),
       'last' => f.askLastName ? name(_last.text, 'cognome') : '',
       'phone' => () {
         if (!f.phoneOn) return '';
         final n = _phone.text.replaceAll(RegExp(r'\D'), '').length;
-        if (n == 0) return 'Inserisci il numero di telefono';
+        if (n == 0) return 'Inserite il numero di telefono';
         return n < 8 || n > 15
             ? 'Numero non valido: servono da 8 a 15 cifre'
             : '';
@@ -137,7 +140,7 @@ class _QuotePageState extends State<QuotePage> {
       'email' => () {
         if (!f.emailOn) return '';
         final v = _mail.text.trim();
-        if (v.isEmpty) return 'Inserisci l\'indirizzo email';
+        if (v.isEmpty) return 'Inserite l\'indirizzo email';
         return _email.hasMatch(v) ? '' : 'Email non valida (es. nome@email.it)';
       }(),
       'requests' =>
@@ -276,7 +279,7 @@ class _QuotePageState extends State<QuotePage> {
                       'Indietro',
                       filled: false,
                       expand: true,
-                      icon: Icons.arrow_back_rounded,
+                      icon: Ico.arrowLeft,
                       onTap: _back,
                     ),
                   ),
@@ -286,9 +289,7 @@ class _QuotePageState extends State<QuotePage> {
                   child: PillButton(
                     last ? 'Invia' : 'Avanti',
                     expand: true,
-                    icon: last
-                        ? Icons.send_rounded
-                        : Icons.arrow_forward_rounded,
+                    icon: last ? Ico.send : Ico.arrowRight,
                     onTap: () => _next(f, steps),
                   ),
                 ),
@@ -307,7 +308,7 @@ class _QuotePageState extends State<QuotePage> {
         Padding(
           padding: EdgeInsets.fromLTRB(
             context.gutter,
-            context.fluid(10, 28),
+            context.spaceTop,
             context.gutter,
             40,
           ),
@@ -439,18 +440,14 @@ class _QuotePageState extends State<QuotePage> {
           ],
         );
       case _Step.contacts:
-        InputDecoration deco(
-          String l,
-          String k, {
-          IconData? icon,
-          String? hint,
-        }) => InputDecoration(
-          labelText: l,
-          hintText: hint,
-          counterText: '',
-          prefixIcon: icon == null ? null : Icon(icon, size: 20),
-          errorText: _shown(k, f),
-        );
+        InputDecoration deco(String l, String k, {Ico? icon, String? hint}) =>
+            InputDecoration(
+              labelText: l,
+              hintText: hint,
+              counterText: '',
+              prefixIcon: icon == null ? null : InputIcon(icon),
+              errorText: _shown(k, f),
+            );
         void refresh(String _) => _tried ? setState(() {}) : null;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -488,7 +485,7 @@ class _QuotePageState extends State<QuotePage> {
                 decoration: deco(
                   'Telefono *',
                   'phone',
-                  icon: Icons.phone_outlined,
+                  icon: Ico.phone,
                   hint: '333 123 4567',
                 ),
               ),
@@ -504,7 +501,7 @@ class _QuotePageState extends State<QuotePage> {
                 decoration: deco(
                   'Email *',
                   'email',
-                  icon: Icons.mail_outline_rounded,
+                  icon: Ico.mail,
                   hint: 'nome@email.it',
                 ),
               ),
@@ -589,11 +586,7 @@ class _QuotePageState extends State<QuotePage> {
                         ),
                       ),
                       Expanded(child: Text(v, style: body(15, height: 1.45))),
-                      const Icon(
-                        Icons.edit_outlined,
-                        size: 16,
-                        color: Palette.ash,
-                      ),
+                      const LineIcon(Ico.edit, size: 16, color: Palette.ash),
                     ],
                   ),
                 ),
@@ -679,7 +672,7 @@ class _Choice extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (selected) ...[
-              const Icon(Icons.check_rounded, size: 16, color: Palette.paper),
+              const LineIcon(Ico.check, size: 16, color: Palette.paper),
               const SizedBox(width: 6),
             ],
             // Una voce molto lunga va a capo invece di uscire dallo schermo.
@@ -720,7 +713,7 @@ class _DateField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: 'Data dell\'evento *',
         errorText: error,
-        suffixIcon: const Icon(Icons.calendar_month_outlined),
+        suffixIcon: const InputIcon(Ico.calendar),
       ),
       // Stesso testo dei campi scritti, così il riquadro è alto uguale.
       child: Text(value, style: Theme.of(context).textTheme.bodyLarge),

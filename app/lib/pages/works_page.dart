@@ -1,6 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import '../widgets/line_icons.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -117,8 +120,8 @@ class _WorksPageState extends State<WorksPage> {
       children: [
         if (options.isNotEmpty)
           _Wrap(
-            top: context.fluid(14, 32),
-            bottom: context.fluid(26, 44),
+            top: context.spaceTop,
+            bottom: context.spaceBlock,
             child: _Filters(
               groups: [
                 for (final f in _facets)
@@ -138,8 +141,8 @@ class _WorksPageState extends State<WorksPage> {
             ),
           ),
         _Wrap(
-          top: options.isEmpty ? context.fluid(14, 32) : 0,
-          bottom: context.fluid(70, 120),
+          top: options.isEmpty ? context.spaceTop : 0,
+          bottom: context.spaceSection,
           child: works.isEmpty
               ? Padding(
                   padding: const EdgeInsets.symmetric(vertical: 60),
@@ -268,7 +271,7 @@ class _FilterMenuState extends State<_FilterMenu> {
                 ),
               ),
               if (active)
-                const Icon(Icons.check_rounded, size: 16, color: Palette.ink),
+                const LineIcon(Ico.check, size: 16, color: Palette.ink),
             ],
           ),
         );
@@ -353,8 +356,8 @@ class _FilterMenuState extends State<_FilterMenu> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(
-                        Icons.expand_more_rounded,
+                      LineIcon(
+                        Ico.expandMore,
                         size: 18,
                         color: on ? Palette.ink : Palette.ash,
                       ),
@@ -452,8 +455,8 @@ class _WorkPageState extends State<WorkPage> {
       location: '/lavori',
       children: [
         _Wrap(
-          top: context.fluid(14, 32),
-          bottom: context.fluid(70, 120),
+          top: context.spaceTop,
+          bottom: context.spaceSection,
           child: scattered
               ? _Scattered(
                   urls: urls,
@@ -606,7 +609,19 @@ List<_Row> _plan(List<bool> landscape) {
     }
     variant++;
   }
-  return rows;
+  // Righe a specchio: la foto più grande una volta a sinistra e una a
+  // destra (l'ordine del visore resta quello scelto nel gestionale).
+  var side = 0;
+  return [
+    for (final r in rows)
+      switch (r) {
+        _Stack() => _Stack(r.tall, r.top, r.bottom, tallLeft: (side++).isEven),
+        _Side(:final ids) => _Side(
+          (side++).isOdd ? ids.reversed.toList() : ids,
+        ),
+        _ => r,
+      },
+  ];
 }
 
 class _Scattered extends StatelessWidget {

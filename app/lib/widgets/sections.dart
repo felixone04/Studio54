@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'line_icons.dart';
+
 import 'package:go_router/go_router.dart';
 
 import '../models/models.dart';
@@ -62,7 +65,7 @@ class RoundIconButton extends StatefulWidget {
     this.light = false,
     this.size = 42,
   });
-  final IconData icon;
+  final Ico icon;
   final VoidCallback onTap;
   final String tooltip;
 
@@ -105,10 +108,12 @@ class _RoundIconButtonState extends State<RoundIconButton> {
                     : Palette.lineStrong,
               ),
             ),
-            child: Icon(
-              widget.icon,
-              size: widget.size * 0.46,
-              color: _hover != widget.light ? Palette.paper : Palette.ink,
+            child: Center(
+              child: LineIcon(
+                widget.icon,
+                size: widget.size * 0.46,
+                color: _hover != widget.light ? Palette.paper : Palette.ink,
+              ),
             ),
           ),
         ),

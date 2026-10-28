@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'line_icons.dart';
+
 import 'package:flutter/services.dart';
 
 import '../services/system_bars.dart';
@@ -118,7 +121,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
               top: pad.top + 14,
               right: 14,
               child: RoundIconButton(
-                Icons.close_rounded,
+                Ico.close,
                 () => Navigator.pop(context),
                 'Chiudi',
               ),
@@ -133,7 +136,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
                   children: [
                     if (many)
                       RoundIconButton(
-                        Icons.chevron_left_rounded,
+                        Ico.chevronLeft,
                         () => _go(-1),
                         'Foto precedente',
                       ),
@@ -141,7 +144,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
                     if (many) ...[
                       const SizedBox(width: 12),
                       RoundIconButton(
-                        Icons.chevron_right_rounded,
+                        Ico.chevronRight,
                         () => _go(1),
                         'Foto successiva',
                       ),

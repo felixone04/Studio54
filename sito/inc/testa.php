@@ -17,7 +17,7 @@ $voci = [
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($titolo_pagina) ?></title>
-  <meta name="description" content="<?= e($nome) ?> · Fotografia di matrimoni ed eventi. Guarda i nostri lavori e chiedi informazioni.">
+  <meta name="description" content="<?= e($nome) ?> · Fotografia di matrimoni ed eventi. Guardate i nostri lavori e chiedeteci informazioni.">
   <meta name="theme-color" content="#FFFFFF">
   <meta name="color-scheme" content="light only">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
