@@ -216,11 +216,9 @@ main { padding-top: var(--barra); min-height: 60vh; }
 
 /* La stessa scheda nella home (lavori in evidenza) e nella pagina Lavori:
    la foto principale, il nome dei festeggiati, location e tipologia. */
-/* Due per riga, larghe al massimo 1140 px e centrate. Ogni foto (4:5) è alta
-   al massimo circa tre quarti dello schermo: su un telefono girato si vede
-   intera senza scorrere. Su schermi stretti (telefono in verticale) una per
-   riga. */
-.lavori-griglia { max-width: 1140px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 60svh)); justify-content: center; gap: clamp(40px, 5vw, 72px) clamp(20px, 3vw, 44px); }
+/* Due per riga, a tutta larghezza della pagina; una per riga sugli schermi
+   stretti (telefono in verticale). */
+.lavori-griglia { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(40px, 5vw, 72px) clamp(20px, 3vw, 44px); }
 @media (max-width: 599px) { .lavori-griglia { grid-template-columns: minmax(0, 1fr); gap: 44px; } }
 .scheda-lavoro { display: block; }
 .scheda-foto { display: block; position: relative; overflow: hidden; aspect-ratio: 4 / 5; background: var(--lino); }

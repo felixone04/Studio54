@@ -314,41 +314,30 @@ class WorkCard extends StatelessWidget {
 }
 
 /// I lavori come sul sito: uno per riga sul telefono in verticale, due per
-/// riga sugli schermi più larghi (telefono girato, tablet), in una griglia
-/// larga al massimo [maxWidth] e centrata. Ogni foto (4:5) è alta al massimo
-/// circa tre quarti dello schermo, così su un telefono girato si vede intera.
+/// riga sugli schermi più larghi (telefono girato, tablet), a tutta larghezza.
 class WorkList extends StatelessWidget {
   const WorkList({super.key, required this.works});
   final List<Work> works;
 
-  static const maxWidth = 1140.0;
-
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: maxWidth),
-        child: LayoutBuilder(
-          builder: (context, box) {
-            final cols = box.maxWidth >= 600 ? 2 : 1;
-            final gap = context.fluid(20, 44);
-            var w = (box.maxWidth - gap * (cols - 1)) / cols;
-            if (cols == 2) w = math.min(w, context.h * 0.6);
-            return Wrap(
-              alignment: WrapAlignment.center,
-              spacing: gap,
-              runSpacing: context.fluid(44, 72),
-              children: [
-                for (final work in works)
-                  SizedBox(
-                    width: w,
-                    child: Reveal(child: WorkCard(work: work)),
-                  ),
-              ],
-            );
-          },
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, box) {
+        final cols = box.maxWidth >= 600 ? 2 : 1;
+        final gap = context.fluid(20, 44);
+        final w = (box.maxWidth - gap * (cols - 1)) / cols;
+        return Wrap(
+          spacing: gap,
+          runSpacing: context.fluid(44, 72),
+          children: [
+            for (final work in works)
+              SizedBox(
+                width: w,
+                child: Reveal(child: WorkCard(work: work)),
+              ),
+          ],
+        );
+      },
     );
   }
 }
