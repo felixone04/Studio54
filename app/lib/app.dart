@@ -55,7 +55,9 @@ class _SystemBars extends StatelessWidget {
       ),
       child: child,
     );
-    if (top == 0 && bottom == 0) return bars;
+    // Sempre la stessa struttura, anche quando le barre sono nascoste
+    // (spazio zero): se cambiasse, Flutter ricostruirebbe l'app da capo e
+    // ripartirebbe il logo d'apertura.
     return ColoredBox(
       color: Palette.paper,
       child: Padding(
@@ -146,6 +148,7 @@ class StudioApp extends StatefulWidget {
 }
 
 class _StudioAppState extends State<StudioApp> {
+  final _content = GlobalKey();
   late final GoRouter _router = GoRouter(
     routes: [
       GoRoute(path: '/', pageBuilder: (c, s) => _fade(s, const HomePage())),
@@ -215,7 +218,13 @@ class _StudioAppState extends State<StudioApp> {
       theme: AppTheme.site(Color(state.content.accent)),
       builder: (context, child) => ScreenScale(
         child: _SystemBars(
-          child: introInApp ? AppIntro(child: child!) : child!,
+          // La chiave conserva l'app (pagine, scorrimento, logo d'apertura già
+          // visto) anche quando cambia la cornice intorno: barre del telefono
+          // che compaiono o spariscono, schermo che si gira.
+          child: KeyedSubtree(
+            key: _content,
+            child: introInApp ? AppIntro(child: child!) : child!,
+          ),
         ),
       ),
       scrollBehavior: _AppScrollBehavior(),
