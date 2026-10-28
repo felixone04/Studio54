@@ -56,11 +56,11 @@ class AdminDashboard extends StatelessWidget {
         () => context.go('/admin/calendario'),
       ),
       _Stat(
-        'Servizi attivi',
-        '${s.activeServices.length}',
-        Icons.design_services_outlined,
+        'Clienti con accesso',
+        '${s.clients.where((c) => c.active).length}',
+        Icons.people_alt_outlined,
         null,
-        () => context.go('/admin/servizi'),
+        () => context.go('/admin/clienti'),
       ),
     ];
 

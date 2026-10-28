@@ -1,10 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Le foto e i contenuti arrivano da internet. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- L'area clienti salva foto e video nella galleria: da Android 11
+         in poi non serve nessun permesso, prima sì. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <application
         android:label="Studio 54"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:requestLegacyExternalStorage="true"
         android:enableOnBackInvokedCallback="false">
         <activity
             android:name=".MainActivity"

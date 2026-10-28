@@ -26,11 +26,15 @@ Future<void> main(List<String> args) async {
   final port = int.tryParse(args.isNotEmpty ? args.first : '') ?? 8080;
   final root = Directory('build/web');
   if (!root.existsSync()) {
-    stderr.writeln('Manca build/web: esegui prima "flutter build web --release".');
+    stderr.writeln(
+      'Manca build/web: esegui prima "flutter build web --release".',
+    );
     exit(1);
   }
   final server = await HttpServer.bind(InternetAddress.anyIPv4, port);
-  stdout.writeln('[release] sito servito su http://0.0.0.0:$port (tutta la rete locale)');
+  stdout.writeln(
+    '[release] sito servito su http://0.0.0.0:$port (tutta la rete locale)',
+  );
   await for (final req in server) {
     var path = Uri.decodeComponent(req.uri.path);
     if (path.endsWith('/')) path += 'index.html';
@@ -41,7 +45,9 @@ Future<void> main(List<String> args) async {
     }
     final ext = file.path.split('.').last.toLowerCase();
     req.response.headers
-      ..contentType = ContentType.parse(_types[ext] ?? 'application/octet-stream')
+      ..contentType = ContentType.parse(
+        _types[ext] ?? 'application/octet-stream',
+      )
       ..set('Cache-Control', 'no-cache');
     await req.response.addStream(file.openRead());
     await req.response.close();

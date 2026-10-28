@@ -17,7 +17,9 @@ class LocalRepository implements Repository {
   LocalRepository(this._prefs);
   final SharedPreferences _prefs;
 
-  static const _prefix = 'studio.v3.';
+  // v4: nuovi dati (caroselli separati, lavori in evidenza, modulo
+  // preventivo, foto e video dei clienti). Si riparte dagli esempi.
+  static const _prefix = 'studio.v4.';
 
   static Future<LocalRepository> open() async =>
       LocalRepository(await SharedPreferences.getInstance());

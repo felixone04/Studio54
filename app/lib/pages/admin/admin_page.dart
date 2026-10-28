@@ -5,13 +5,15 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/common.dart';
 import '../../widgets/photo_ui.dart';
+import '../../widgets/site_scaffold.dart';
+import '../client_area_page.dart';
 import 'admin_calendar.dart';
 import 'admin_catalog.dart';
 import 'admin_clients.dart';
 import 'admin_content.dart';
 import 'admin_dashboard.dart';
+import 'admin_quote_form.dart';
 import 'admin_quotes.dart';
 import 'admin_settings.dart';
 import 'admin_widgets.dart';
@@ -24,7 +26,8 @@ class _Section {
   final IconData icon;
 }
 
-/// Voci del menu, raggruppate.
+/// Voci del menu, raggruppate per dove si vedono le modifiche (come nel
+/// gestionale da computer).
 const _groups = <(String, List<_Section>)>[
   (
     'Attività',
@@ -32,24 +35,36 @@ const _groups = <(String, List<_Section>)>[
       _Section('panoramica', 'Panoramica', Icons.space_dashboard_outlined),
       _Section('richieste', 'Richieste', Icons.mark_email_unread_outlined),
       _Section('calendario', 'Calendario', Icons.calendar_month_outlined),
-      _Section('clienti', 'Clienti', Icons.people_alt_outlined),
     ],
   ),
   (
-    'Catalogo',
+    'Sito e app',
     [
-      _Section('servizi', 'Servizi e prodotti', Icons.design_services_outlined),
-      _Section('pacchetti', 'Pacchetti', Icons.card_giftcard_rounded),
       _Section('lavori', 'Lavori', Icons.auto_stories_outlined),
-      _Section('galleria', 'Galleria', Icons.photo_library_outlined),
+      _Section('preventivo', 'Preventivo', Icons.edit_note_rounded),
+      _Section('biografia', 'Biografia', Icons.history_edu_outlined),
+      _Section('contatti', 'Contatti', Icons.badge_outlined),
     ],
   ),
   (
-    'Sito',
+    'Solo sito',
     [
-      _Section('home', 'Pagina Home', Icons.web_outlined),
-      _Section('biografia', 'Biografia', Icons.history_edu_outlined),
-      _Section('contatti', 'Identità e contatti', Icons.badge_outlined),
+      _Section(
+        'carosello-sito',
+        'Carosello orizzontale',
+        Icons.photo_library_outlined,
+      ),
+    ],
+  ),
+  (
+    'Solo app',
+    [
+      _Section(
+        'carosello-app',
+        'Carosello verticale',
+        Icons.stay_current_portrait_rounded,
+      ),
+      _Section('clienti', 'Area clienti', Icons.people_alt_outlined),
     ],
   ),
   ('Sistema', [_Section('impostazioni', 'Impostazioni', Icons.tune_rounded)]),
@@ -64,241 +79,17 @@ class AdminPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
-    return Theme(
-      data: AppTheme.admin(Color(s.content.accent)),
-      child: s.adminAuthenticated ? _Shell(section: section) : const _Login(),
-    );
-  }
-}
-
-// ======================================================================= LOGIN
-
-class _Login extends StatefulWidget {
-  const _Login();
-
-  @override
-  State<_Login> createState() => _LoginState();
-}
-
-class _LoginState extends State<_Login> {
-  final _pw = TextEditingController();
-  final _pw2 = TextEditingController();
-  bool _show = false;
-  bool _remember = true;
-  bool _busy = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _pw.dispose();
-    _pw2.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final s = context.read<AppState>();
-    setState(() => _error = null);
-    if (!s.hasAdminPassword) {
-      if (_pw.text.length < 8) {
-        setState(() => _error = 'La password deve avere almeno 8 caratteri.');
-        return;
-      }
-      if (_pw.text != _pw2.text) {
-        setState(() => _error = 'Le due password non coincidono.');
-        return;
-      }
-      setState(() => _busy = true);
-      await s.setAdminPassword(_pw.text, remember: _remember);
-    } else {
-      setState(() => _busy = true);
-      final ok = await s.login(_pw.text, remember: _remember);
-      if (!ok && mounted) {
-        setState(() {
-          _busy = false;
-          _error = 'Password non corretta.';
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.watch<AppState>();
-    final create = !s.hasAdminPassword;
-    final wide = MediaQuery.sizeOf(context).width >= 900;
-    final photo = s.heroPhotos.isNotEmpty ? s.heroPhotos.first.url : '';
-
-    final form = ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 380),
-      child: AutofillGroup(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Tag(create ? 'Primo accesso' : 'Area riservata'),
-            const SizedBox(height: 18),
-            Text(
-              create ? 'Scegli la\npassword.' : 'Bentornato.',
-              style: display(wide ? 54 : 44, height: 1.0),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              create
-                  ? 'Servirà per entrare nella gestione del sito.'
-                  : 'Inserisci la password per gestire il sito.',
-              style: body(14.5, color: Palette.stone),
-            ),
-            const SizedBox(height: 28),
-            TextField(
-              controller: _pw,
-              obscureText: !_show,
-              autofocus: true,
-              autofillHints: [
-                create ? AutofillHints.newPassword : AutofillHints.password,
-              ],
-              onSubmitted: (_) => create ? null : _submit(),
-              decoration: InputDecoration(
-                labelText: create
-                    ? 'Nuova password (min. 8 caratteri)'
-                    : 'Password',
-                suffixIcon: IconButton(
-                  tooltip: _show ? 'Nascondi' : 'Mostra',
-                  onPressed: () => setState(() => _show = !_show),
-                  icon: Icon(
-                    _show
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    size: 20,
-                  ),
-                ),
-              ),
-            ),
-            if (create) ...[
-              const SizedBox(height: 14),
-              TextField(
-                controller: _pw2,
-                obscureText: !_show,
-                autofillHints: const [AutofillHints.newPassword],
-                onSubmitted: (_) => _submit(),
-                decoration: const InputDecoration(
-                  labelText: 'Ripeti la password',
-                ),
-              ),
-            ],
-            const SizedBox(height: 6),
-            CheckboxListTile(
-              value: _remember,
-              onChanged: (v) => setState(() => _remember = v ?? true),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              title: Text('Ricordami su questo dispositivo', style: body(14)),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 4),
-              Text(_error!, style: body(14, color: const Color(0xFFB3261E))),
-            ],
-            const SizedBox(height: 18),
-            FilledButton(
-              onPressed: _busy ? null : _submit,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                shape: const StadiumBorder(),
-              ),
-              child: _busy
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Palette.paper,
-                      ),
-                    )
-                  : Text(
-                      create ? 'CREA E ENTRA' : 'ENTRA',
-                      style: label(12, color: Palette.paper),
-                    ),
-            ),
-            const SizedBox(height: 14),
-            Center(
-              child: TextButton.icon(
-                onPressed: () => context.go('/'),
-                icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                label: const Text('Torna al sito'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    final poster = Stack(
-      fit: StackFit.expand,
-      children: [
-        PhotoImage(photo),
-        Padding(
-          padding: EdgeInsets.all(wide ? 32 : 18),
-          child: const Viewfinder(
-            color: Color(0xCCFFFAF0),
-            length: 24,
-            stroke: 1,
-          ),
-        ),
-        // Il logo su un cartoncino chiaro, leggibile su qualsiasi foto.
-        Center(
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: wide ? 40 : 24,
-              vertical: wide ? 28 : 16,
-            ),
-            decoration: BoxDecoration(
-              color: Palette.paper.withValues(alpha: 0.94),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                BrandLogo(width: wide ? 220 : 130),
-                SizedBox(height: wide ? 18 : 10),
-                Text('AREA RISERVATA', style: label(10.5)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-
-    if (wide) {
-      return Scaffold(
-        body: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(flex: 6, child: poster),
-            Expanded(
-              flex: 5,
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(40),
-                  child: form,
-                ),
-              ),
-            ),
-          ],
-        ),
+    // Senza accesso: si entra con le credenziali del titolare, come
+    // dall'Area clienti.
+    if (!s.adminAuthenticated) {
+      return const SiteScaffold(
+        location: '/area-clienti',
+        children: [SignInView(adminOnly: true)],
       );
     }
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: 220, child: poster),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 32, 22, 40),
-              child: Center(child: form),
-            ),
-          ],
-        ),
-      ),
+    return Theme(
+      data: AppTheme.admin(Color(s.content.accent)),
+      child: _Shell(section: section),
     );
   }
 }
@@ -325,11 +116,14 @@ class _ShellState extends State<_Shell> {
       'richieste' => const AdminPageScroll(child: AdminQuotes()),
       'calendario' => const AdminPageScroll(child: AdminCalendar()),
       'clienti' => const AdminPageScroll(child: AdminClients()),
-      'servizi' => const AdminPageScroll(child: AdminServices()),
-      'pacchetti' => const AdminPageScroll(child: AdminPackages()),
       'lavori' => const AdminPageScroll(child: AdminWorks()),
-      'galleria' => const AdminPageScroll(child: AdminGallery()),
-      'home' => const AdminHomeEditor(),
+      'preventivo' => const AdminQuoteForm(),
+      'carosello-sito' => const AdminPageScroll(
+        child: AdminCarousel(vertical: false),
+      ),
+      'carosello-app' => const AdminPageScroll(
+        child: AdminCarousel(vertical: true),
+      ),
       'biografia' => const AdminBioEditor(),
       'contatti' => const AdminIdentityEditor(),
       'impostazioni' => const AdminPageScroll(child: AdminSettingsPage()),
@@ -417,16 +211,14 @@ class _NavPanel extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 children: [
                   for (var g = 0; g < _groups.length; g++) ...[
-                    // Gruppi separati da una linea sottile, senza titoli.
-                    if (g > 0)
-                      Container(
-                        height: 1,
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        color: Palette.line,
+                    // Il titolo del gruppo dice dove si vedono le modifiche.
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(12, g == 0 ? 2 : 16, 12, 6),
+                      child: Text(
+                        _groups[g].$1.toUpperCase(),
+                        style: label(9.5, color: Palette.ash),
                       ),
+                    ),
                     for (final sec in _groups[g].$2)
                       _NavItem(
                         section: sec,

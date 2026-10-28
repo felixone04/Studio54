@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../config.dart';
-import '../../models/models.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/site_scaffold.dart' show openUrl;
@@ -659,14 +658,6 @@ class SaveBar extends StatelessWidget {
 String formatEuro(num v) {
   final s = v.toStringAsFixed(v % 1 == 0 ? 0 : 2).replaceAll('.', ',');
   return '€ $s';
-}
-
-String? serviceNames(List<ServiceItem> all, List<String> ids) {
-  final n = [
-    for (final id in ids)
-      all.where((s) => s.id == id).map((s) => s.name).firstOrNull,
-  ].whereType<String>().toList();
-  return n.isEmpty ? null : n.join(' · ');
 }
 
 /// Riga di un elenco ordinabile (servizi, pacchetti, foto). Su telefono le

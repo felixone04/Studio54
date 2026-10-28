@@ -343,12 +343,16 @@ class _PasswordForm extends StatefulWidget {
 
 class _PasswordFormState extends State<_PasswordForm> {
   final _form = GlobalKey<FormState>();
+  late final _user = TextEditingController(
+    text: context.read<AppState>().settings.username,
+  );
   final _old = TextEditingController();
   final _new = TextEditingController();
   final _again = TextEditingController();
 
   @override
   void dispose() {
+    _user.dispose();
     _old.dispose();
     _new.dispose();
     _again.dispose();
@@ -367,6 +371,21 @@ class _PasswordFormState extends State<_PasswordForm> {
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
               children: [
+                TextFormField(
+                  controller: _user,
+                  decoration: const InputDecoration(labelText: 'Nome utente'),
+                  validator: (v) {
+                    final u = (v ?? '').trim();
+                    if (u.length < 3 || u.contains(' ')) {
+                      return 'Almeno 3 caratteri, senza spazi';
+                    }
+                    final mio = s.settings.username.trim().toLowerCase();
+                    return u.toLowerCase() != mio && s.loginTaken(u)
+                        ? 'È già usato da un cliente'
+                        : null;
+                  },
+                ),
+                const SizedBox(height: 14),
                 TextFormField(
                   controller: _old,
                   obscureText: true,
@@ -404,7 +423,8 @@ class _PasswordFormState extends State<_PasswordForm> {
             onPressed: () async {
               if (!_form.currentState!.validate()) return;
               // Mantiene la scelta "Ricordami" fatta all'accesso.
-              await s.setAdminPassword(
+              await s.setAdminCredentials(
+                _user.text,
                 _new.text,
                 remember: s.settings.sessionUntil != null,
               );
@@ -413,12 +433,18 @@ class _PasswordFormState extends State<_PasswordForm> {
               _again.clear();
               if (context.mounted) toast(context, 'Password aggiornata.');
             },
-            child: const Text('Cambia password'),
+            child: const Text(
+              'Salva l'
+              'accesso',
+            ),
           ),
           const SizedBox(height: 12),
           const Text(
-            'Nota: la password protegge l’accesso all’area riservata da questo browser. Quando i dati saranno '
-            'ospitati online servirà un accesso con account (es. Google) per proteggerli davvero.',
+            'Nome utente e password del titolare valgono nell'
+            'Area clienti '
+            'dell'
+            'app e nel gestionale. Per ora restano su questo telefono: '
+            'con il database varranno ovunque.',
             style: TextStyle(color: Colors.black54, fontSize: 13),
           ),
         ],

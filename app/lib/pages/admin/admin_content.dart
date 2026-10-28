@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/models.dart';
@@ -69,7 +68,7 @@ class _DraftEditorState extends State<DraftEditor> {
       _draft = context.read<AppState>().content.copy();
       _dirty = false;
     });
-    toast(context, 'Modifiche salvate: il sito è aggiornato.');
+    toast(context, 'Modifiche salvate: sito e app aggiornati.');
   }
 
   void _discard() => setState(() {
@@ -107,95 +106,6 @@ class _DraftEditorState extends State<DraftEditor> {
 }
 
 const _gap = SizedBox(height: 16);
-
-// ====================================================================== HOME
-
-class AdminHomeEditor extends StatelessWidget {
-  const AdminHomeEditor({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    Widget field(
-      String label,
-      String value,
-      void Function(String) set,
-      VoidCallback changed, {
-      int maxLines = 1,
-      String? helper,
-    }) => BoundField(
-      label: label,
-      value: value,
-      maxLines: maxLines,
-      helper: helper,
-      onChanged: (v) {
-        set(v);
-        changed();
-      },
-    );
-
-    return DraftEditor(
-      title: 'Pagina Home',
-      subtitle: 'Le foto si gestiscono dalla Galleria.',
-      builder: (context, d, changed) => [
-        Panel(
-          title: 'Apertura',
-          subtitle: 'La frase sotto il carosello (su computer e tablet).',
-          child: field('Frase', d.heroTitle, (v) => d.heroTitle = v, changed),
-        ),
-        Panel(
-          title: 'Manifesto',
-          subtitle: 'Una frase sola, al centro della pagina.',
-          child: field(
-            'Frase',
-            d.manifestoTitle,
-            (v) => d.manifestoTitle = v,
-            changed,
-            maxLines: 3,
-            helper: 'Vai a capo per la seconda riga, che appare in corsivo.',
-          ),
-        ),
-        Panel(
-          title: 'La mostra',
-          trailing: TextButton.icon(
-            onPressed: () => context.go('/admin/galleria'),
-            icon: const Icon(Icons.photo_library_outlined, size: 18),
-            label: const Text('Gestisci le foto'),
-          ),
-          child: Column(
-            children: [
-              field(
-                'Etichetta',
-                d.galleryKicker,
-                (v) => d.galleryKicker = v,
-                changed,
-              ),
-              _gap,
-              field(
-                'Titolo',
-                d.galleryTitle,
-                (v) => d.galleryTitle = v,
-                changed,
-              ),
-            ],
-          ),
-        ),
-        Panel(
-          title: 'Pagina preventivo',
-          subtitle: 'La foto in apertura.',
-          child: ImageField(
-            label: 'Foto di apertura',
-            aspect: 16 / 9,
-            value: d.bannerImage,
-            onChanged: (v) {
-              d.bannerImage = v;
-              changed();
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 // ================================================================= BIOGRAFIA
 
@@ -352,8 +262,10 @@ class AdminIdentityEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DraftEditor(
-      title: 'Identità e contatti',
-      subtitle: 'Nome, colore, recapiti e opzioni del modulo preventivo.',
+      title: 'Contatti',
+      subtitle:
+          'Nome, colore e recapiti: uguali sul sito e nell'
+          'app.',
       builder: (context, d, changed) => [
         Panel(
           title: 'Identità',
@@ -522,18 +434,6 @@ class AdminIdentityEditor extends StatelessWidget {
                 },
               ),
             ],
-          ),
-        ),
-        Panel(
-          title: 'Tipi di festa nel preventivo',
-          subtitle: 'Le voci del menù “Tipo di festa / evento” del modulo. “Altro” permette al cliente di specificare.',
-          child: StringListEditor(
-            items: d.eventTypes,
-            addLabel: 'Nuovo tipo di evento',
-            onChanged: (v) {
-              d.eventTypes = v;
-              changed();
-            },
           ),
         ),
       ],

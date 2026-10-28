@@ -23,7 +23,9 @@ class AdminWorks extends StatelessWidget {
         AdminHeader(
           title: 'Lavori',
           subtitle:
-              'I servizi realizzati, con le foto. Trascina per riordinare.',
+              'Gli stessi sul sito e nell\'app. La stella mette un lavoro in '
+              'evidenza nella home (al massimo ${maxFeatured.toString()}); Sito e '
+              'App scelgono dove si vede. Trascina per riordinare.',
           actions: [
             FilledButton.icon(
               onPressed: () => showDialog(
@@ -57,6 +59,10 @@ class AdminWorks extends StatelessWidget {
                       w.category,
                       w.date,
                       '${w.photos.length} foto',
+                      if (!w.onSite) 'non sul sito',
+                      if (!w.onApp)
+                        'non nell'
+                            'app',
                     ].where((e) => e.trim().isNotEmpty).join(' · ');
                     return AdminListRow(
                       key: ValueKey(w.id),
@@ -66,10 +72,58 @@ class AdminWorks extends StatelessWidget {
                       subtitle: meta,
                       dimmed: !w.published,
                       trailing: [
+                        IconButton(
+                          tooltip: 'In evidenza nella home',
+                          onPressed: () async {
+                            if (!await s.setFeatured(w, !w.featured) &&
+                                context.mounted) {
+                              toast(
+                                context,
+                                'Ci sono già 4 lavori in evidenza: togli la '
+                                'stella a uno prima.',
+                                error: true,
+                              );
+                            }
+                          },
+                          icon: Icon(
+                            w.featured
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            color: w.featured
+                                ? const Color(0xFFB38A2E)
+                                : Colors.black38,
+                          ),
+                        ),
+                        // Su telefono Sito e App si scelgono nella scheda del lavoro.
+                        if (!isNarrow(context))
+                          for (final (where, on) in [
+                            ('Sito', w.onSite),
+                            ('App', w.onApp),
+                          ])
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                              ),
+                              child: FilterChip(
+                                label: Text(where),
+                                selected: on,
+                                showCheckmark: false,
+                                visualDensity: VisualDensity.compact,
+                                tooltip: on
+                                    ? 'Si vede ${where == 'Sito' ? 'sul sito' : 'nell\'app'}'
+                                    : 'Non si vede ${where == 'Sito' ? 'sul sito' : 'nell\'app'}',
+                                onSelected: (v) {
+                                  if (where == 'Sito') {
+                                    w.onSite = v;
+                                  } else {
+                                    w.onApp = v;
+                                  }
+                                  s.setWorks([...s.works]);
+                                },
+                              ),
+                            ),
                         Tooltip(
-                          message: w.published
-                              ? 'Visibile sul sito'
-                              : 'Nascosto',
+                          message: w.published ? 'Pubblicato' : 'Nascosto',
                           child: IconButton(
                             onPressed: () {
                               w.published = !w.published;
@@ -207,6 +261,15 @@ class _WorkDialogState extends State<_WorkDialog> {
     });
     if (_d.photos.isEmpty || !ok) return;
     final s = context.read<AppState>();
+    final others = s.works.where((w) => w.id != _d.id && w.featured).length;
+    if (_d.featured && others >= maxFeatured) {
+      toast(
+        context,
+        'Ci sono già 4 lavori in evidenza: togli la stella a uno prima.',
+        error: true,
+      );
+      return;
+    }
     final list = [...s.works];
     if (widget.existing == null) {
       list.insert(0, _d);
@@ -257,7 +320,7 @@ class _WorkDialogState extends State<_WorkDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 text(
-                  'Titolo',
+                  'Nome dei festeggiati',
                   _d.title,
                   (v) => _d.title = v,
                   required: true,
@@ -268,7 +331,7 @@ class _WorkDialogState extends State<_WorkDialog> {
                   children: [
                     Expanded(
                       child: text(
-                        'Evento (es. Matrimonio)',
+                        'Tipologia (es. Matrimonio)',
                         _d.category,
                         (v) => _d.category = v,
                       ),
@@ -285,7 +348,7 @@ class _WorkDialogState extends State<_WorkDialog> {
                   ],
                 ),
                 gap,
-                text('Luogo', _d.location, (v) => _d.location = v),
+                text('Location', _d.location, (v) => _d.location = v),
                 gap,
                 // Stagione e tipo di location servono ai filtri del sito.
                 FieldRow(
@@ -344,21 +407,6 @@ class _WorkDialogState extends State<_WorkDialog> {
                         }),
                       ),
                   ],
-                ),
-                gap,
-                text(
-                  'Cosa abbiamo realizzato',
-                  _d.credits,
-                  (v) => _d.credits = v,
-                  helper: 'Es. Reportage · Album fine art · Galleria online',
-                ),
-                gap,
-                text(
-                  'Racconto',
-                  _d.story,
-                  (v) => _d.story = v,
-                  maxLines: 6,
-                  helper: 'Poche righe su com\'è andata la giornata.',
                 ),
                 gap,
                 ImageField(
@@ -425,11 +473,44 @@ class _WorkDialogState extends State<_WorkDialog> {
                     onDown: i < _d.photos.length - 1 ? () => _move(i, 1) : null,
                     onDelete: () => setState(() => _d.photos.removeAt(i)),
                   ),
+                const SizedBox(height: 12),
+                Text(
+                  'Dove si vede',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Visibile sul sito'),
+                  title: const Text('Pubblicato'),
+                  subtitle: const Text(
+                    'Spento: resta qui ma non si vede da nessuna parte.',
+                  ),
                   value: _d.published,
                   onChanged: (v) => setState(() => _d.published = v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('In evidenza nella home'),
+                  subtitle: const Text(
+                    'Al massimo 4 lavori, sul sito e nell'
+                    'app.',
+                  ),
+                  value: _d.featured,
+                  onChanged: (v) => setState(() => _d.featured = v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Sul sito'),
+                  value: _d.onSite,
+                  onChanged: (v) => setState(() => _d.onSite = v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text(
+                    'Nell'
+                    'app',
+                  ),
+                  value: _d.onApp,
+                  onChanged: (v) => setState(() => _d.onApp = v),
                 ),
               ],
             ),

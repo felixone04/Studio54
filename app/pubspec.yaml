@@ -47,6 +47,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   file_picker: ^13.2.0
+  video_player: ^2.14.1
+  gal: ^2.3.3
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:

@@ -3,20 +3,20 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Palette del marchio Studio 54: toni chiari e caldi (carta, avorio, lino)
-/// con l'inchiostro del logo, e un accento discreto scelto dal titolare.
+/// Palette del marchio Studio 54: fondo bianco e l'inchiostro del logo, con
+/// un accento discreto scelto dal titolare. Tutto lo spazio è per le foto.
 class Palette {
   /// Inchiostro caldo del logo: testi e segni.
   static const ink = Color(0xFF1E1B17);
 
-  /// Fondo del sito (#FFFAF0).
-  static const paper = Color(0xFFFFFAF0);
+  /// Fondo del sito e dell'app.
+  static const paper = Color(0xFFFFFFFF);
 
-  /// Schede e superfici in rilievo (#FFFFF0).
-  static const ivory = Color(0xFFFFFFF0);
+  /// Schede e campi.
+  static const ivory = Color(0xFFFFFFFF);
 
-  /// Sezioni alternate, segnaposto delle foto (#FAF0E6).
-  static const linen = Color(0xFFFAF0E6);
+  /// Segnaposto delle foto e fondi leggeri del gestionale.
+  static const linen = Color(0xFFF4F4F2);
 
   static const stone = Color(0xFF6B635A); // testo secondario
   static const ash = Color(0xFF8F867C); // testo di contorno (etichette)

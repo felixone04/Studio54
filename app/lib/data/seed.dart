@@ -4,11 +4,108 @@ import 'package:crypto/crypto.dart';
 
 import '../models/models.dart';
 
-/// Foto d'esempio da Unsplash: il titolare le sostituisce con le proprie
-/// dall'area admin (Galleria). Nel carosello d'apertura vanno solo quelle
-/// orizzontali.
-String unsplash(String id, {int w = 1800}) =>
-    'https://images.unsplash.com/photo-$id?auto=format&fit=crop&w=$w&q=80';
+/// Foto d'esempio da Unsplash: il titolare le sostituisce con le proprie dal
+/// gestionale. Si chiedono alla larghezza che serve (vedi PhotoImage).
+String unsplash(String id, {int? w}) =>
+    'https://images.unsplash.com/photo-$id?auto=format&fit=crop'
+    '${w == null ? '' : '&w=$w'}&q=80';
+
+/// Il file originale, in alta qualità (per i download dei clienti).
+String unsplashOriginal(String id) =>
+    'https://images.unsplash.com/photo-$id?q=100&fm=jpg';
+
+/// Foto orizzontali d'esempio.
+const _l = <int, String>{
+  0: '1520854221256-17451cc331bf',
+  1: '1606800052052-a08af7148866',
+  2: '1532712938310-34cb3982ef74',
+  4: '1591604466107-ec97de577aff',
+  5: '1519225421980-715cb0215aed',
+  6: '1515934751635-c81c6bc9a2d8',
+  7: '1529636798458-92182e662485',
+  10: '1591700331354-f7eea65d1ce8',
+  11: '1545232979-8bf68ee9b1af',
+  12: '1595407753234-0882f1e77954',
+  16: '1549488497-94b52bddac5d',
+  17: '1542764824-4cdbd6c92dbe',
+  18: '1550005809-91ad75fb315f',
+  19: '1519379169146-d4b170447caa',
+  20: '1523264114838-feca761983c4',
+  22: '1595467959776-8acfb0dc313f',
+  23: '1475721042966-f829c9b42aab',
+  24: '1606217239582-d9f72323bcd7',
+  25: '1551890946-3e5446d3a71b',
+  26: '1473652502225-6b6af0664e32',
+  29: '1529634597503-139d3726fed5',
+  30: '1604017011826-d3b4c23f8914',
+  33: '1600270237614-d20aef1c8b14',
+  34: '1580824456266-c578703e13da',
+  35: '1520886272478-69aed2b3685b',
+  36: '1511795409834-ef04bbd61622',
+  37: '1523521803700-b3bcaeab0150',
+  38: '1524824267900-2fa9cbf7a506',
+  39: '1612599542558-f3022089fb38',
+  40: '1525441273400-056e9c7517b3',
+  41: '1629219219925-ea8de62f2d68',
+  42: '1522413452208-996ff3f3e740',
+  43: '1587271407850-8d438ca9fdf2',
+  44: '1510076857177-7470076d4098',
+  45: '1541020230467-e33e4f96f7fc',
+  46: '1513151233558-d860c5398176',
+  47: '1527529482837-4698179dc6ce',
+  50: '1504196606672-aef5c9cefc92',
+  51: '1502035618526-6b2f1f5bca1b',
+  52: '1530103862676-de8c9debad1d',
+  53: '1566516171511-1c411a59c8ba',
+  57: '1574957973698-418ac4c877af',
+};
+
+/// Foto verticali d'esempio.
+const _p = <int, String>{
+  0: '1606216794079-73f85bbd57d5',
+  1: '1607190074257-dd4b7af0309f',
+  2: '1599142296733-1c1f2073e6de',
+  3: '1606216794074-735e91aa2c92',
+  4: '1550784718-990c6de52adf',
+  5: '1574871786514-46e1680ea587',
+  7: '1525258946800-98cfd641d0de',
+  8: '1548313093-370cf4ba3892',
+  9: '1492175742197-ed20dc5a6bed',
+  10: '1596457221755-b96bc3a6df18',
+  12: '1583939003579-730e3918a45a',
+  13: '1523438885200-e635ba2c371e',
+  14: '1606490194859-07c18c9f0968',
+  15: '1606490208247-b65be3d94cd1',
+  16: '1507915977619-6ccfe8003ae6',
+  17: '1631225893179-4d6e349189c2',
+  18: '1474867985807-96ca17098cc9',
+  19: '1613089347756-366a788dacf6',
+  21: '1546032996-6dfacbacbf3f',
+  22: '1561287495-a3fe1fd28504',
+  24: '1563808599481-34a342e44508',
+  25: '1618566864264-fb013f791da4',
+  26: '1607357910286-1ff94ac13c24',
+  27: '1606216836537-eea72a939072',
+  28: '1544592732-83bbbfc46783',
+  29: '1550713450-94c9b4fc9f25',
+  30: '1537633552985-df8429e8048b',
+  31: '1502635385003-ee1e6a1a742d',
+  32: '1561593367-66c79c2294e6',
+  33: '1607861884586-c7cfaed16290',
+};
+
+/// Una foto d'esempio: 'L4' = orizzontale n. 4, 'P12' = verticale n. 12,
+/// altrimenti l'id di Unsplash.
+String _photoId(String ref) {
+  final n = int.tryParse(ref.substring(1));
+  if (n != null && ref.startsWith('L')) return _l[n]!;
+  if (n != null && ref.startsWith('P')) return _p[n]!;
+  return ref;
+}
+
+/// Video d'esempio (libero da diritti) per l'area clienti.
+const demoVideo =
+    'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
 
 class Seed {
   static const accentSand = 0xFFB89B72;
@@ -16,22 +113,6 @@ class Seed {
   static SiteContent content() => SiteContent(
     studioName: 'Studio 54',
     tagline: 'Fotografia di matrimoni ed eventi',
-    heroKicker: 'Matrimoni · Eventi · Ritratti',
-    heroTitle: 'Ogni scatto, un\'opera.',
-    heroSubtitle: '',
-    marquee: 'Matrimoni, Ritratti, Cerimonie, Eventi, Famiglie, Fine Art',
-    manifestoTitle: 'Non fotografiamo momenti.\nFotografiamo emozioni.',
-    manifestoText: '',
-    highlights: [],
-    galleryKicker: 'Portfolio',
-    galleryTitle: 'Opere',
-    galleryIntro: '',
-    servicesTitle: 'Cosa facciamo',
-    servicesIntro: '',
-    bannerTitle: 'Parliamone.',
-    bannerText: 'Ti richiamiamo noi.',
-    bannerButton: 'Richiedi un preventivo',
-    bannerImage: unsplash('1519741497674-611481863552', w: 2400),
     bioTitle: 'Chi siamo',
     bioIntro: 'Uno sguardo discreto.\nUna sola ossessione: la luce.',
     bioStory:
@@ -39,7 +120,7 @@ class Seed {
         'mostra da allestire: con calma, attenzione e rispetto.\n\n'
         'Prima ascoltiamo. Poi cerchiamo la luce. Infine stampiamo: perché '
         'una foto vera si tocca.',
-    bioImage: unsplash('1554048612-b6a482bc67e5', w: 1800),
+    bioImage: unsplash(_p[10]!),
     timeline: [
       Milestone(
         year: '01',
@@ -59,11 +140,9 @@ class Seed {
       Milestone(
         year: '04',
         title: 'Consegniamo',
-        text: 'Galleria online, album e stampe fine art.',
+        text: 'Foto e video in alta qualità, album e stampe fine art.',
       ),
     ],
-    team: [],
-    teamTitle: 'Il team',
     contacts: Contacts(
       phone: '+39 06 1234 5678',
       whatsapp: '+39 333 123 4567',
@@ -74,488 +153,257 @@ class Seed {
       facebook: 'https://facebook.com/',
       vat: 'P.IVA 00000000000',
     ),
-    footerNote: '',
     accent: accentSand,
-    eventTypes: [
-      'Matrimonio',
-      'Battesimo',
-      'Comunione / Cresima',
-      'Compleanno / 18 anni',
-      'Laurea',
-      'Festa privata',
-      'Evento aziendale',
-      'Ritratti / famiglia',
-      'Altro',
+  );
+
+  /// Carosello del sito: solo foto orizzontali.
+  static List<CarouselPhoto> carouselSite() => [
+    for (final (i, ref) in ['L2', 'L33', 'L30', 'L19', 'L35', 'L4'].indexed)
+      CarouselPhoto(id: 'cs${i + 1}', url: unsplash(_photoId(ref))),
+  ];
+
+  /// Carosello dell'app: solo foto verticali.
+  static List<CarouselPhoto> carouselApp() => [
+    for (final (i, ref) in ['P1', 'P2', 'P14', 'P21', 'P29', 'P27'].indexed)
+      CarouselPhoto(id: 'ca${i + 1}', url: unsplash(_photoId(ref))),
+  ];
+
+  static Work _work(
+    String id,
+    String title,
+    String category,
+    String location,
+    String date,
+    String setting,
+    List<String> refs, {
+    bool featured = false,
+  }) => Work(
+    id: id,
+    title: title,
+    category: category,
+    location: location,
+    date: date,
+    setting: setting,
+    featured: featured,
+    photos: [
+      for (final (i, r) in refs.indexed)
+        WorkPhoto(id: '$id-${i + 1}', url: unsplash(_photoId(r))),
     ],
   );
 
-  static List<ServiceItem> services() => [
-    ServiceItem(
-      id: 'svc-wedding',
-      name: 'Reportage di matrimonio',
-      description:
-          'La giornata intera raccontata in modo naturale, dai '
-          'preparativi al taglio della torta.',
-      category: 'Fotografia',
-      image: unsplash('1537633552985-df8429e8048b', w: 900),
-      internalPrice: 1400,
-    ),
-    ServiceItem(
-      id: 'svc-engagement',
-      name: 'Servizio pre-matrimonio',
-      description:
-          'Una sessione rilassata a due, per sciogliere la tensione '
-          'e avere le prime foto insieme.',
-      category: 'Fotografia',
-      image: unsplash('1516589178581-6cd7833ae3b2', w: 900),
-      internalPrice: 250,
-    ),
-    ServiceItem(
-      id: 'svc-ceremony',
-      name: 'Cerimonie',
-      description:
-          'Battesimi, comunioni e cresime: i momenti in famiglia, '
-          'senza perdere un sorriso.',
-      category: 'Fotografia',
-      image: unsplash('1469371670807-013ccf25f16a', w: 900),
-      internalPrice: 450,
-    ),
-    ServiceItem(
-      id: 'svc-party',
-      name: 'Feste e compleanni',
-      description:
-          '18 anni, lauree, anniversari e feste a sorpresa: l\'energia '
-          'della festa, catturata dal vivo.',
-      category: 'Fotografia',
-      image: unsplash('1530103862676-de8c9debad1d', w: 900),
-      internalPrice: 380,
-    ),
-    ServiceItem(
-      id: 'svc-portrait',
-      name: 'Ritratti e book',
-      description:
-          'Sessioni in studio o in esterna, per te, per la famiglia o '
-          'per il tuo lavoro.',
-      category: 'Fotografia',
-      image: unsplash('1531746020798-e6953c6e8e04', w: 900),
-      internalPrice: 180,
-    ),
-    ServiceItem(
-      id: 'svc-newborn',
-      name: 'Neonati e famiglia',
-      description:
-          'Servizi dolci e senza fretta per i primi mesi, a casa o in '
-          'studio.',
-      category: 'Fotografia',
-      image: unsplash('1515488042361-ee00e0ddd4e4', w: 900),
-      internalPrice: 200,
-    ),
-    ServiceItem(
-      id: 'svc-events',
-      name: 'Eventi e concerti',
-      description:
-          'Eventi aziendali, serate e spettacoli: tutta l\'atmosfera, '
-          'consegnata in tempi rapidi.',
-      category: 'Fotografia',
-      image: unsplash('1470229722913-7c0e2dbbafd3', w: 900),
-      internalPrice: 500,
-    ),
-    ServiceItem(
-      id: 'svc-video',
-      name: 'Film dell\'evento',
-      description:
-          'Un montaggio cinematografico con le immagini e i suoni più '
-          'belli della giornata.',
-      category: 'Video',
-      image: unsplash('1554048612-b6a482bc67e5', w: 900),
-      internalPrice: 900,
-    ),
-    ServiceItem(
-      id: 'svc-drone',
-      name: 'Riprese con drone',
-      description: 'Vedute dall\'alto di location, cerimonie e ricevimenti.',
-      category: 'Video',
-      image: unsplash('1492691527719-9d1e07e534b4', w: 900),
-      internalPrice: 250,
-    ),
-    ServiceItem(
-      id: 'svc-album',
-      name: 'Album fine art',
-      description:
-          'Un libro cucito a mano, con carte pregiate e copertina '
-          'personalizzata.',
-      category: 'Prodotti',
-      image: unsplash('1452587925148-ce544e77e70d', w: 900),
-      internalPrice: 350,
-    ),
-    ServiceItem(
-      id: 'svc-prints',
-      name: 'Stampe e cornici',
-      description:
-          'Stampe su carta cotone, tele e cornici per dare spazio ai '
-          'ricordi sulle vostre pareti.',
-      category: 'Prodotti',
-      image: unsplash('1519225421980-715cb0215aed', w: 900),
-      internalPrice: 120,
-    ),
-    ServiceItem(
-      id: 'svc-gallery',
-      name: 'Galleria online privata',
-      description:
-          'Tutte le foto in alta risoluzione, da scaricare e condividere '
-          'con parenti e amici.',
-      category: 'Prodotti',
-      image: unsplash('1511795409834-ef04bbd61622', w: 900),
-      internalPrice: 60,
-    ),
-    ServiceItem(
-      id: 'svc-second',
-      name: 'Secondo fotografo',
-      description:
-          'Due punti di vista per non perdere nulla, soprattutto nelle '
-          'cerimonie più affollate.',
-      category: 'Extra',
-      image: unsplash('1522673607200-164d1b6ce486', w: 900),
-      internalPrice: 300,
-    ),
-    ServiceItem(
-      id: 'svc-booth',
-      name: 'Photo booth con stampa',
-      description:
-          'Divertimento per gli ospiti e un ricordo da portare a casa, '
-          'stampato al momento.',
-      category: 'Extra',
-      image: unsplash('1492684223066-81342ee5ff30', w: 900),
-      internalPrice: 350,
-    ),
-  ];
-
-  static List<ServicePackage> packages() => [
-    ServicePackage(
-      id: 'pkg-essential',
-      name: 'Essenziale',
-      tagline: 'Per chi vuole l\'essenziale, fatto bene',
-      description:
-          'Il reportage della giornata con tutte le foto in galleria '
-          'online privata.',
-      serviceIds: ['svc-wedding', 'svc-gallery'],
-      image: unsplash('1583939003579-730e3918a45a', w: 900),
-    ),
-    ServicePackage(
-      id: 'pkg-story',
-      name: 'Racconto',
-      tagline: 'Il più scelto dalle coppie',
-      description:
-          'Dal servizio pre-matrimonio al libro finito: la storia '
-          'completa, con due punti di vista.',
-      serviceIds: [
-        'svc-engagement',
-        'svc-wedding',
-        'svc-second',
-        'svc-album',
-        'svc-gallery',
-      ],
-      image: unsplash('1465495976277-4387d4b0b4c6', w: 900),
+  static List<Work> works() => [
+    _work(
+      'w-giulia-marco',
+      'Giulia & Marco',
+      'Matrimonio',
+      'Sperlonga',
+      'Giugno 2024',
+      'Mare',
+      ['L33', 'P30', 'L1', 'P0', 'L44', 'L26', 'P13'],
       featured: true,
     ),
-    ServicePackage(
-      id: 'pkg-cinema',
-      name: 'Cinema',
-      tagline: 'Foto, video e ricordi da toccare',
-      description:
-          'Un\'esperienza completa: fotografie, film con riprese '
-          'aeree e stampe da incorniciare.',
-      serviceIds: [
-        'svc-wedding',
-        'svc-video',
-        'svc-drone',
-        'svc-album',
-        'svc-prints',
-        'svc-gallery',
-      ],
-      image: unsplash('1511285560929-80b456fea0bc', w: 900),
+    _work(
+      'w-sofia-luca',
+      'Sofia & Luca',
+      'Matrimonio',
+      'Val d\'Orcia',
+      'Settembre 2023',
+      'Campagna',
+      ['L30', 'P17', 'L7', 'P10', 'L36', 'L23', 'P24'],
+      featured: true,
     ),
-    ServicePackage(
-      id: 'pkg-party',
-      name: 'Festa',
-      tagline: 'Per compleanni, 18 anni e lauree',
-      description:
-          'La festa dal vivo con photo booth, per divertirvi e '
-          'portarvi a casa i sorrisi.',
-      serviceIds: ['svc-party', 'svc-booth', 'svc-gallery'],
-      image: unsplash('1530103862676-de8c9debad1d', w: 900),
+    _work(
+      'w-anna-paolo',
+      'Anna & Paolo',
+      'Matrimonio',
+      'Valle d\'Itria',
+      'Maggio 2024',
+      'Masseria',
+      ['L4', 'P3', 'L5', 'P15', 'L41', 'P12', 'L6', 'P5'],
+      featured: true,
+    ),
+    _work(
+      'w-elena-davide',
+      'Elena & Davide',
+      'Matrimonio',
+      'Dolomiti',
+      'Dicembre 2023',
+      'Montagna',
+      ['L2', 'P9', 'L10', 'P22', 'L37', 'L25', 'P26'],
+      featured: true,
+    ),
+    _work(
+      'w-chiara-matteo',
+      'Chiara & Matteo',
+      'Matrimonio',
+      'Lago di Como',
+      'Luglio 2024',
+      'Lago',
+      ['L19', 'P27', 'L11', 'P8', 'L38', 'L20', 'P4'],
+    ),
+    _work(
+      'w-martina-andrea',
+      'Martina & Andrea',
+      'Matrimonio',
+      'Roma',
+      'Ottobre 2023',
+      'Chiesa',
+      ['L12', 'P18', 'L24', 'P16', 'L39', 'L17', 'P7'],
+    ),
+    _work(
+      'w-francesca-simone',
+      'Francesca & Simone',
+      'Matrimonio',
+      'Colli Euganei',
+      'Aprile 2024',
+      'Villa',
+      ['L35', 'P25', 'L0', 'P28', 'L40', 'L18', 'P19', 'L22'],
+    ),
+    _work(
+      'w-serena-fabio',
+      'Serena & Fabio',
+      'Matrimonio',
+      'Costiera Amalfitana',
+      'Settembre 2024',
+      'Mare',
+      ['L34', 'P33', 'L42', 'P32', 'L43', 'L16', 'P31', 'L29'],
+    ),
+    _work(
+      'w-giorgia-18',
+      'I 18 anni di Giorgia',
+      '18 anni',
+      'Milano',
+      'Marzo 2024',
+      'Città',
+      ['L47', 'L51', 'L50', 'L46', 'L45', 'L52'],
+    ),
+    _work(
+      'w-battesimo-leo',
+      'Il battesimo di Leo',
+      'Battesimo',
+      'Roma',
+      'Febbraio 2025',
+      'Chiesa',
+      [
+        'L53',
+        'L57',
+        '1515488042361-ee00e0ddd4e4',
+        '1469371670807-013ccf25f16a',
+        '1452587925148-ce544e77e70d',
+      ],
     ),
   ];
 
-  static List<Work> works() => [
-    Work(
-      id: 'w-giulia-marco',
-      title: 'Giulia & Marco',
-      category: 'Matrimonio',
-      location: 'Costa tirrenica',
-      date: 'Giugno 2024',
-      setting: 'Mare',
-      story:
-          'Una giornata di vento e di sale. Dai preparativi in una casa '
-          'affacciata sul mare fino all\'ultimo ballo sulla spiaggia, '
-          'abbiamo seguito la luce senza mai interrompere la festa.',
-      credits: 'Reportage · Secondo fotografo · Album fine art',
-      photos: [
-        WorkPhoto(
-          url: unsplash('1537633552985-df8429e8048b', w: 2200),
-          caption: 'Il velo e il mare',
-        ),
-        WorkPhoto(
-          url: unsplash('1465495976277-4387d4b0b4c6', w: 2200),
-          caption: 'Le fedi',
-        ),
-        WorkPhoto(
-          url: unsplash('1583939003579-730e3918a45a', w: 2200),
-          caption: 'Pioggia di petali',
-        ),
-        WorkPhoto(
-          url: unsplash('1460978812857-470ed1c77af0', w: 2200),
-          caption: 'Un istante di silenzio',
-        ),
-        WorkPhoto(
-          url: unsplash('1522673607200-164d1b6ce486', w: 2200),
-          caption: 'Tra gli invitati',
-        ),
-        WorkPhoto(
-          url: unsplash('1519741497674-611481863552', w: 2200),
-          caption: 'L\'ultima luce',
-        ),
-      ],
-    ),
-    Work(
-      id: 'w-sofia-luca',
-      title: 'Sofia & Luca',
-      category: 'Matrimonio',
-      location: 'Toscana',
-      date: 'Settembre 2023',
-      setting: 'Campagna',
-      story:
-          'Un casale tra le colline, cento palloncini e una promessa '
-          'detta sottovoce. Un racconto tenero, fatto di sguardi e di '
-          'piccoli gesti.',
-      credits: 'Reportage · Film dell\'evento · Galleria online',
-      photos: [
-        WorkPhoto(
-          url: unsplash('1511285560929-80b456fea0bc', w: 2200),
-          caption: 'Il volo dei desideri',
-        ),
-        WorkPhoto(
-          url: unsplash('1516589178581-6cd7833ae3b2', w: 2200),
-          caption: 'Un cuore al tramonto',
-        ),
-        WorkPhoto(
-          url: unsplash('1511795409834-ef04bbd61622', w: 2200),
-          caption: 'La tavola apparecchiata',
-        ),
-        WorkPhoto(
-          url: unsplash('1544005313-94ddf0286df2', w: 2200),
-          caption: 'Luce d\'oro',
-        ),
-      ],
-    ),
-    Work(
-      id: 'w-battesimo-leo',
-      title: 'Il battesimo di Leo',
-      category: 'Cerimonia',
-      location: 'Roma',
-      date: 'Aprile 2024',
-      setting: 'Chiesa',
-      story:
-          'Una mattina di primavera in famiglia: la chiesa piena di luce, '
-          'i nonni emozionati e un piccolo protagonista che non ha mai '
-          'smesso di sorridere.',
-      credits: 'Reportage · Stampe e cornici',
-      photos: [
-        WorkPhoto(
-          url: unsplash('1515488042361-ee00e0ddd4e4', w: 2200),
-          caption: 'Primi giochi',
-        ),
-        WorkPhoto(
-          url: unsplash('1469371670807-013ccf25f16a', w: 2200),
-          caption: 'In famiglia',
-        ),
-        WorkPhoto(
-          url: unsplash('1452587925148-ce544e77e70d', w: 2200),
-          caption: 'Album cucito a mano',
-        ),
-      ],
-    ),
-    Work(
-      id: 'w-notte-estate',
-      title: 'Notte d\'estate',
-      category: 'Evento',
-      location: 'Milano',
-      date: 'Luglio 2023',
-      setting: 'Città',
-      story:
-          'Una serata aziendale diventata concerto: luci, musica e mani '
-          'al cielo. Foto consegnate la mattina dopo, pronte per i social.',
-      credits: 'Eventi e concerti · Photo booth con stampa',
-      photos: [
-        WorkPhoto(
-          url: unsplash('1470229722913-7c0e2dbbafd3', w: 2200),
-          caption: 'La notte è nostra',
-        ),
-        WorkPhoto(
-          url: unsplash('1492684223066-81342ee5ff30', w: 2200),
-          caption: 'Il photo booth',
-        ),
-        WorkPhoto(
-          url: unsplash('1530103862676-de8c9debad1d', w: 2200),
-          caption: 'Colori di festa',
-        ),
-        WorkPhoto(
-          url: unsplash('1492691527719-9d1e07e534b4', w: 2200),
-          caption: 'Dietro le quinte',
-        ),
-      ],
-    ),
-    Work(
-      id: 'w-anna-paolo',
-      title: 'Anna & Paolo',
-      category: 'Matrimonio',
-      location: 'Valle d\'Itria, Puglia',
-      date: 'Maggio 2024',
-      setting: 'Masseria',
-      story:
-          'Pietra bianca, ulivi e una lunga tavolata sotto le stelle: una '
-          'festa in masseria raccontata dalla mattina fino a notte.',
-      credits: 'Reportage · Film dell\'evento · Album fine art',
-      photos: [
-        WorkPhoto(
-          url: unsplash('1519741497674-611481863552', w: 2200),
-          caption: 'Tra gli ulivi',
-        ),
-        WorkPhoto(
-          url: unsplash('1583939003579-730e3918a45a', w: 2200),
-          caption: 'Petali',
-        ),
-        WorkPhoto(
-          url: unsplash('1465495976277-4387d4b0b4c6', w: 2200),
-          caption: 'Le fedi',
-        ),
-        WorkPhoto(
-          url: unsplash('1460978812857-470ed1c77af0', w: 2200),
-          caption: 'Il velo',
-        ),
-        WorkPhoto(
-          url: unsplash('1516589178581-6cd7833ae3b2', w: 2200),
-          caption: 'Al tramonto',
-        ),
-        WorkPhoto(
-          url: unsplash('1544005313-94ddf0286df2', w: 2200),
-          caption: 'Luce d\'oro',
-        ),
-        WorkPhoto(
-          url: unsplash('1511795409834-ef04bbd61622', w: 2200),
-          caption: 'La tavolata',
-        ),
-        WorkPhoto(
-          url: unsplash('1522673607200-164d1b6ce486', w: 2200),
-          caption: 'Si balla',
-        ),
-      ],
-    ),
-    Work(
-      id: 'w-elena-davide',
-      title: 'Elena & Davide',
-      category: 'Matrimonio',
-      location: 'Dolomiti',
-      date: 'Dicembre 2023',
-      setting: 'Montagna',
-      story:
-          'Neve, legno e candele accese: un matrimonio d\'inverno in quota, '
-          'piccolo e caldissimo.',
-      credits: 'Reportage · Galleria online',
-      photos: [
-        WorkPhoto(
-          url: unsplash('1554048612-b6a482bc67e5', w: 2200),
-          caption: 'In quota',
-        ),
-        WorkPhoto(
-          url: unsplash('1537633552985-df8429e8048b', w: 2200),
-          caption: 'Il vento',
-        ),
-        WorkPhoto(
-          url: unsplash('1531746020798-e6953c6e8e04', w: 2200),
-          caption: 'Uno sguardo',
-        ),
-        WorkPhoto(
-          url: unsplash('1519225421980-715cb0215aed', w: 2200),
-          caption: 'I ricordi',
-        ),
-        WorkPhoto(
-          url: unsplash('1452587925148-ce544e77e70d', w: 2200),
-          caption: 'L\'album',
-        ),
-        WorkPhoto(
-          url: unsplash('1507003211169-0a1dd7228f2d', w: 2200),
-          caption: 'Lo sposo',
-        ),
-      ],
-    ),
-  ];
+  /// Il modulo preventivo: per ora si chiedono informazioni solo per i
+  /// matrimoni. Gli altri tipi restano pronti, spenti.
+  static QuoteForm quoteForm() => QuoteForm(
+    eventTypes: [
+      QuoteOption(id: 'ev-matrimonio', label: 'Matrimonio'),
+      QuoteOption(id: 'ev-battesimo', label: 'Battesimo', active: false),
+      QuoteOption(
+        id: 'ev-comunione',
+        label: 'Comunione / Cresima',
+        active: false,
+      ),
+      QuoteOption(id: 'ev-18', label: '18 anni', active: false),
+      QuoteOption(id: 'ev-azienda', label: 'Evento aziendale', active: false),
+    ],
+    requests: [
+      QuoteOption(id: 'rq-reportage', label: 'Reportage fotografico'),
+      QuoteOption(id: 'rq-video', label: 'Video del matrimonio'),
+      QuoteOption(id: 'rq-prematrimonio', label: 'Servizio pre-matrimonio'),
+      QuoteOption(id: 'rq-album', label: 'Album fine art'),
+      QuoteOption(id: 'rq-drone', label: 'Riprese con drone'),
+      QuoteOption(id: 'rq-secondo', label: 'Secondo fotografo'),
+      QuoteOption(id: 'rq-stampe', label: 'Stampe e cornici'),
+      QuoteOption(id: 'rq-booth', label: 'Photo booth', active: false),
+    ],
+  );
 
   /// Documento PDF d'esempio, pubblicato con il sito.
   static const demoPdf =
       'https://felixone04.github.io/Studio54/assets/demo/scheda-servizio.pdf';
 
-  /// Password dei clienti d'esempio (solo per provare l'area clienti).
+  /// Password dei clienti d'esempio e del titolare (solo per provare).
   static const demoClientPassword = 'studio54';
+  static const demoAdminUser = 'titolare';
+  static const demoAdminPassword = 'studio54';
 
-  static String _demoHash(String salt) =>
-      sha256.convert(utf8.encode('$salt::$demoClientPassword')).toString();
+  static String demoHash(String salt, String pw) =>
+      sha256.convert(utf8.encode('$salt::$pw')).toString();
 
-  /// Clienti d'esempio: ognuno con l'album del suo evento, documenti e link.
+  /// Accesso d'esempio del titolare al gestionale.
+  static AdminSettings admin() => AdminSettings(
+    username: demoAdminUser,
+    passwordSalt: 'demo-admin',
+    passwordHash: demoHash('demo-admin', demoAdminPassword),
+  );
+
+  /// Clienti d'esempio: ognuno con le foto e un video della sua festa,
+  /// documenti e link.
   static List<ClientAccount> clients() {
     final works = {for (final w in Seed.works()) w.id: w};
-    ClientAccount client(
-      String id,
-      String name,
-      String email,
-      String phone,
-      String workId,
-      String title,
-      String date,
-      String location,
-      String welcome,
-      List<ClientFile> files,
-    ) => ClientAccount(
+    List<ClientMedia> media(String id, String workId, String poster) => [
+      for (final (i, p) in works[workId]!.photos.indexed)
+        ClientMedia(
+          id: '$id-m${i + 1}',
+          url: p.url,
+          original: unsplashOriginal(
+            RegExp(r'photo-([0-9a-f-]+)').firstMatch(p.url)![1]!,
+          ),
+          name: '${id.substring(3)}-${(i + 1).toString().padLeft(3, '0')}.jpg',
+        ),
+      ClientMedia(
+        id: '$id-v1',
+        url: demoVideo,
+        isVideo: true,
+        poster: poster,
+        name: '${id.substring(3)}-video.mp4',
+      ),
+    ];
+    ClientAccount client({
+      required String id,
+      required String name,
+      required String email,
+      required String username,
+      required String phone,
+      required String workId,
+      required String title,
+      required String date,
+      required String location,
+      required String welcome,
+      required List<ClientFile> files,
+    }) => ClientAccount(
       id: id,
       name: name,
       email: email,
+      username: username,
       phone: phone,
       passwordSalt: 'demo-$id',
-      passwordHash: _demoHash('demo-$id'),
+      passwordHash: demoHash('demo-$id', demoClientPassword),
       eventTitle: title,
       eventDate: date,
       location: location,
       welcome: welcome,
-      album: [
-        for (final p in works[workId]!.photos)
-          WorkPhoto(id: '$id-${p.id}', url: p.url, caption: p.caption),
-      ],
+      media: media(id, workId, works[workId]!.coverUrl),
       files: files,
       createdAt: DateTime(2024, 6, 2),
     );
     return [
       client(
-        'cl-anna',
-        'Anna Ricci',
-        'anna.ricci@example.com',
-        '+39 333 555 0101',
-        'w-anna-paolo',
-        'Il matrimonio di Anna e Paolo',
-        '18 maggio 2024',
-        'Masseria in Valle d\'Itria',
-        'Ecco le foto del vostro giorno: sfogliate l\'album e scaricate i '
-            'documenti quando volete.',
-        [
+        id: 'cl-anna',
+        name: 'Anna Ricci',
+        email: 'anna.ricci@example.com',
+        username: 'anna.paolo',
+        phone: '+39 333 555 0101',
+        workId: 'w-anna-paolo',
+        title: 'Il matrimonio di Anna e Paolo',
+        date: '18 maggio 2024',
+        location: 'Masseria in Valle d\'Itria',
+        welcome:
+            'Ecco le foto e il video del vostro giorno: scaricateli quando '
+            'volete, in alta qualità.',
+        files: [
           ClientFile(
             id: 'cl-anna-f1',
             name: 'Scheda del servizio',
@@ -563,136 +411,103 @@ class Seed {
             note: 'Riepilogo di servizi, tempi di consegna e album.',
             addedAt: DateTime(2024, 4, 2),
           ),
-          ClientFile(
-            id: 'cl-anna-f2',
-            name: 'Galleria completa in alta risoluzione',
-            url: 'https://drive.google.com/',
-            isLink: true,
-            note: 'Tutte le foto da scaricare (link d\'esempio).',
-            addedAt: DateTime(2024, 6, 2),
-          ),
         ],
       ),
       client(
-        'cl-elena',
-        'Elena Bianchi',
-        'elena.bianchi@example.com',
-        '+39 347 555 0202',
-        'w-elena-davide',
-        'Il matrimonio di Elena e Davide',
-        '9 dicembre 2023',
-        'Dolomiti',
-        'Il vostro inverno in quota, pagina dopo pagina.',
-        [
-          ClientFile(
-            id: 'cl-elena-f1',
-            name: 'Scheda del servizio',
-            url: demoPdf,
-            note: 'Riepilogo del servizio.',
-            addedAt: DateTime(2023, 11, 20),
-          ),
-        ],
+        id: 'cl-elena',
+        name: 'Elena Bianchi',
+        email: 'elena.bianchi@example.com',
+        username: 'elena.davide',
+        phone: '+39 347 555 0202',
+        workId: 'w-elena-davide',
+        title: 'Il matrimonio di Elena e Davide',
+        date: '9 dicembre 2023',
+        location: 'Dolomiti',
+        welcome: 'Il vostro inverno in quota, foto dopo foto.',
+        files: [],
       ),
     ];
   }
 
-  static List<GalleryPhoto> gallery() => [
-    GalleryPhoto(
-      id: 'g1',
-      url: unsplash('1537633552985-df8429e8048b', w: 2200),
-      title: 'Il velo e il mare',
-      caption:
-          'Il vento solleva il velo, loro non sentono altro che il '
-          'rumore dell\'acqua.',
-      category: 'Matrimonio',
-      location: 'Costa tirrenica',
-      year: '2023',
-      inHero: false,
-    ),
-    GalleryPhoto(
-      id: 'g2',
-      url: unsplash('1583939003579-730e3918a45a', w: 2200),
-      title: 'Pioggia di petali',
-      caption: 'Il momento in cui tutta la festa respira insieme.',
-      category: 'Matrimonio',
-      location: 'Toscana',
-      year: '2024',
-      inHero: false,
-    ),
-    GalleryPhoto(
-      id: 'g3',
-      url: unsplash('1460978812857-470ed1c77af0', w: 2200),
-      title: 'Sotto il velo',
-      caption: 'Un istante di silenzio, in bianco e nero.',
-      category: 'Matrimonio',
-      location: 'Umbria',
-      year: '2022',
-    ),
-    GalleryPhoto(
-      id: 'g4',
-      url: unsplash('1511285560929-80b456fea0bc', w: 2200),
-      title: 'Il volo dei desideri',
-      caption: 'Cento palloncini, cento desideri affidati al cielo.',
-      category: 'Cerimonia',
-      location: 'Lago di Bracciano',
-      year: '2023',
-    ),
-    GalleryPhoto(
-      id: 'g5',
-      url: unsplash('1465495976277-4387d4b0b4c6', w: 2200),
-      title: 'Due mani, una promessa',
-      caption: 'Piccoli gesti che dicono tutto.',
-      category: 'Dettagli',
-      location: 'Roma',
-      year: '2024',
-    ),
-    GalleryPhoto(
-      id: 'g6',
-      url: unsplash('1544005313-94ddf0286df2', w: 2200),
-      title: 'Luce d\'oro',
-      caption: 'L\'ultima ora del giorno regala i ritratti più sinceri.',
-      category: 'Ritratto',
-      location: 'Campagna romana',
-      year: '2024',
-      inHero: false,
-    ),
-    GalleryPhoto(
-      id: 'g7',
-      url: unsplash('1531746020798-e6953c6e8e04', w: 2200),
-      title: 'Sguardo',
-      caption: 'Uno sguardo che racconta più di mille pose.',
-      category: 'Ritratto',
-      location: 'Studio',
-      year: '2023',
-      inHero: false,
-    ),
-    GalleryPhoto(
-      id: 'g8',
-      url: unsplash('1515488042361-ee00e0ddd4e4', w: 2200),
-      title: 'Primi giochi',
-      caption: 'Il mondo visto da chi lo scopre per la prima volta.',
-      category: 'Famiglia',
-      location: 'A casa',
-      year: '2024',
-    ),
-    GalleryPhoto(
-      id: 'g9',
-      url: unsplash('1470229722913-7c0e2dbbafd3', w: 2200),
-      title: 'La notte è nostra',
-      caption: 'Luci, voci e mani al cielo: l\'energia di una serata.',
-      category: 'Eventi',
-      location: 'Milano',
-      year: '2023',
-    ),
-    GalleryPhoto(
-      id: 'g10',
-      url: unsplash('1516589178581-6cd7833ae3b2', w: 2200),
-      title: 'Un cuore al tramonto',
-      caption: 'Il sole ha scelto di stare in mezzo a noi.',
-      category: 'Coppia',
-      location: 'Puglia',
-      year: '2022',
-      inHero: false,
-    ),
-  ];
+  /// Richieste d'esempio, per vedere il gestionale già in funzione.
+  static List<QuoteRequest> quotes([DateTime? at]) {
+    final now = at ?? DateTime.now();
+    return [
+      QuoteRequest(
+        id: 'q1',
+        createdAt: now.subtract(const Duration(hours: 3)),
+        firstName: 'Martina',
+        lastName: 'Esposito',
+        phone: '+39 333 482 1190',
+        email: 'martina.esposito@example.com',
+        eventType: 'Matrimonio',
+        eventDate: DateTime(now.year + 1, 6, 12),
+        location: 'Masseria in Valle d\'Itria',
+        requests: [
+          'Reportage fotografico',
+          'Secondo fotografo',
+          'Album fine art',
+        ],
+        message: 'Circa 120 invitati, cerimonia all\'aperto al tramonto.',
+      ),
+      QuoteRequest(
+        id: 'q2',
+        createdAt: now.subtract(const Duration(days: 1, hours: 2)),
+        firstName: 'Luca',
+        lastName: 'Ferri',
+        phone: '+39 347 220 9815',
+        email: 'luca.ferri@example.com',
+        eventType: 'Matrimonio',
+        eventDate: DateTime(now.year + 1, 9, 21),
+        location: 'Lago di Como',
+        requests: ['Reportage fotografico', 'Video del matrimonio'],
+        source: 'app',
+        status: QuoteStatus.contattata,
+      ),
+      QuoteRequest(
+        id: 'q3',
+        createdAt: now.subtract(const Duration(days: 4)),
+        firstName: 'Giorgia',
+        lastName: 'Conti',
+        phone: '+39 320 771 4402',
+        email: 'giorgia.conti@example.com',
+        eventType: 'Matrimonio',
+        eventDate: DateTime(now.year + 1, 5, 5),
+        location: 'Roma',
+        requests: ['Servizio pre-matrimonio', 'Riprese con drone'],
+        message: 'Vorremmo qualche informazione sui tempi di consegna.',
+        status: QuoteStatus.confermata,
+        appointmentId: 'a1',
+      ),
+    ];
+  }
+
+  static List<Appointment> appointments([DateTime? at]) {
+    final n = at ?? DateTime.now();
+    final d = DateTime(n.year, n.month, n.day);
+    return [
+      Appointment(
+        id: 'a1',
+        title: 'Incontro con Giorgia Conti · Matrimonio',
+        start: d.add(const Duration(days: 2, hours: 10)),
+        end: d.add(const Duration(days: 2, hours: 11)),
+        location: 'Studio',
+        quoteId: 'q3',
+      ),
+      Appointment(
+        id: 'a2',
+        title: 'Sopralluogo in masseria',
+        start: d.add(const Duration(days: 6, hours: 15)),
+        end: d.add(const Duration(days: 6, hours: 17)),
+        location: 'Valle d\'Itria',
+      ),
+      Appointment(
+        id: 'a3',
+        title: 'Consegna album · Anna e Paolo',
+        start: d.add(const Duration(days: 13, hours: 18)),
+        end: d.add(const Duration(days: 13, hours: 18, minutes: 30)),
+        location: 'Studio',
+      ),
+    ];
+  }
 }

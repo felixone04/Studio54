@@ -49,7 +49,6 @@ class _AppointmentDialogState extends State<_AppointmentDialog> {
     super.initState();
     final e = widget.existing;
     final q = widget.quote;
-    final s = context.read<AppState>();
     if (e != null) {
       _title = TextEditingController(text: e.title);
       _location = TextEditingController(text: e.location);
@@ -87,7 +86,8 @@ class _AppointmentDialogState extends State<_AppointmentDialog> {
                   'Data evento: ${DateFormat('d MMMM y', 'it_IT').format(q.eventDate!)}',
                 if (q.location.trim().isNotEmpty)
                   'Luogo evento: ${q.location.trim()}',
-                'Servizi: ${serviceNames(s.services, q.serviceIds) ?? '—'}',
+                if (q.requests.isNotEmpty)
+                  'Richieste: ${q.requests.join(', ')}',
                 if (q.message.isNotEmpty) 'Note: ${q.message}',
               ].join('\n'),
       );

@@ -19,14 +19,17 @@ class AppState extends ChangeNotifier {
   bool adminAuthenticated = false;
 
   late SiteContent content;
-  List<ServiceItem> services = [];
-  List<ServicePackage> packages = [];
-  List<GalleryPhoto> gallery = [];
+  List<CarouselPhoto> carouselSite = [];
+  List<CarouselPhoto> carouselApp = [];
   List<Work> works = [];
+  QuoteForm quoteForm = QuoteForm();
   List<QuoteRequest> quotes = [];
   List<Appointment> appointments = [];
   List<ClientAccount> clients = [];
   AdminSettings settings = AdminSettings();
+
+  /// Il cliente entrato nella sua area da questo dispositivo.
+  String? clientId;
 
   final GoogleCalendarService calendar = GoogleCalendarService();
 
@@ -39,70 +42,47 @@ class AppState extends ChangeNotifier {
         ? SiteContent.fromJson(Map<String, dynamic>.from(c), seed)
         : seed;
 
-    services = await _list('services', ServiceItem.fromJson) ?? Seed.services();
-    packages =
-        await _list('packages', ServicePackage.fromJson) ?? Seed.packages();
-    gallery = await _list('gallery', GalleryPhoto.fromJson) ?? Seed.gallery();
+    carouselSite =
+        await _list('carouselSite', CarouselPhoto.fromJson) ??
+        Seed.carouselSite();
+    carouselApp =
+        await _list('carouselApp', CarouselPhoto.fromJson) ??
+        Seed.carouselApp();
     works = await _list('works', Work.fromJson) ?? Seed.works();
-    quotes = await _list('quotes', QuoteRequest.fromJson) ?? [];
-    appointments = await _list('appointments', Appointment.fromJson) ?? [];
+    final f = await repo.read('quoteForm');
+    quoteForm = f is Map
+        ? QuoteForm.fromJson(Map<String, dynamic>.from(f))
+        : Seed.quoteForm();
+    quotes = await _list('quotes', QuoteRequest.fromJson) ?? Seed.quotes();
+    appointments =
+        await _list('appointments', Appointment.fromJson) ??
+        Seed.appointments();
     clients = await _list('clients', ClientAccount.fromJson) ?? Seed.clients();
 
     final s = await repo.read('settings');
     settings = s is Map
         ? AdminSettings.fromJson(Map<String, dynamic>.from(s))
         : AdminSettings();
+    // Senza credenziali scelte vale l'accesso d'esempio del titolare.
+    if (settings.passwordHash.isEmpty) {
+      final d = Seed.admin();
+      settings
+        ..passwordHash = d.passwordHash
+        ..passwordSalt = d.passwordSalt;
+    }
+    if (settings.username.trim().isEmpty) {
+      settings.username = Seed.demoAdminUser;
+    }
     final until = settings.sessionUntil;
     adminAuthenticated = until != null && DateTime.now().isBefore(until);
 
-    await _migrate(seed);
+    final session = await repo.read('clientSession');
+    clientId = session is String && clientById(session)?.active == true
+        ? session
+        : null;
 
     loaded = true;
     notifyListeners();
-  }
-
-  /// Aggiorna i dati salvati con il marchio precedente (Studio Lumen): nome,
-  /// slogan, email e colore d'esempio diventano quelli di Studio 54, e i
-  /// lavori d'esempio ricevono il tipo di location per i filtri. I testi
-  /// scritti dal titolare restano com'erano.
-  Future<void> _migrate(SiteContent seed) async {
-    var contentChanged = false;
-    String swap(String v, String old, String now) {
-      if (v != old) return v;
-      contentChanged = true;
-      return now;
-    }
-
-    final c = content;
-    c.studioName = swap(c.studioName, 'Studio Lumen', seed.studioName);
-    c.tagline = swap(c.tagline, 'Wedding & Events', seed.tagline);
-    c.contacts.email = swap(
-      c.contacts.email,
-      'info@studiolumen.example',
-      seed.contacts.email,
-    );
-    if (c.accent == 0xFFC9C5BC) {
-      c.accent = seed.accent;
-      contentChanged = true;
-    }
-    if (c.team.isNotEmpty && c.team.every((t) => t.name == 'Nome Cognome')) {
-      c.team = [];
-      contentChanged = true;
-    }
-    if (contentChanged) await repo.write('content', c.toJson());
-
-    var worksChanged = false;
-    final examples = {for (final w in Seed.works()) w.id: w};
-    for (final w in works) {
-      final ex = examples[w.id];
-      if (ex != null && w.setting.trim().isEmpty && ex.setting.isNotEmpty) {
-        w.setting = ex.setting;
-        worksChanged = true;
-      }
-    }
-    if (worksChanged) {
-      await repo.write('works', works.map((e) => e.toJson()).toList());
-    }
   }
 
   Future<List<T>?> _list<T>(
@@ -111,7 +91,10 @@ class AppState extends ChangeNotifier {
   ) async {
     final v = await repo.read(key);
     if (v is! List) return null;
-    return v.map((e) => f(Map<String, dynamic>.from(e as Map))).toList();
+    return [
+      for (final e in v)
+        if (e is Map) f(Map<String, dynamic>.from(e)),
+    ];
   }
 
   Future<void> _persist(String key, Object json) async {
@@ -121,35 +104,30 @@ class AppState extends ChangeNotifier {
 
   // -------------------------------------------------------- public views
 
-  List<ServiceItem> get activeServices =>
-      services.where((s) => s.active).toList();
-  List<ServicePackage> get activePackages =>
-      packages.where((p) => p.active).toList();
-  List<GalleryPhoto> get heroPhotos {
-    final h = gallery.where((p) => p.inHero).toList();
-    return h.isEmpty ? gallery : h;
-  }
+  List<String> _activeUrls(List<CarouselPhoto> l) => [
+    for (final p in l)
+      if (p.active && p.url.trim().isNotEmpty) p.url,
+  ];
 
-  List<Work> get publishedWorks => works.where((w) => w.published).toList();
+  /// Foto del carosello d'apertura dell'app (verticali).
+  List<String> get appCarousel => _activeUrls(carouselApp);
+
+  /// Foto del carosello d'apertura del sito (orizzontali).
+  List<String> get siteCarousel => _activeUrls(carouselSite);
+
+  /// I lavori visibili nell'app.
+  List<Work> get publishedWorks =>
+      works.where((w) => w.published && w.onApp).toList();
+
+  /// I lavori in evidenza nella home dell'app (al massimo quattro).
+  List<Work> get featuredWorks =>
+      publishedWorks.where((w) => w.featured).take(maxFeatured).toList();
+
+  int get featuredCount => works.where((w) => w.featured).length;
 
   Work? workById(String? id) {
     for (final w in works) {
       if (w.id == id) return w;
-    }
-    return null;
-  }
-
-  ServiceItem? serviceById(String id) {
-    for (final s in services) {
-      if (s.id == id) return s;
-    }
-    return null;
-  }
-
-  ServicePackage? packageById(String? id) {
-    if (id == null) return null;
-    for (final p in packages) {
-      if (p.id == id) return p;
     }
     return null;
   }
@@ -169,32 +147,32 @@ class AppState extends ChangeNotifier {
     return _persist('content', c.toJson());
   }
 
-  Future<void> setServices(List<ServiceItem> list) {
-    services = list;
-    return _persist('services', list.map((e) => e.toJson()).toList());
+  Future<void> setCarouselSite(List<CarouselPhoto> list) {
+    carouselSite = list;
+    return _persist('carouselSite', list.map((e) => e.toJson()).toList());
   }
 
-  Future<void> deleteService(String id) async {
-    for (final p in packages) {
-      p.serviceIds.remove(id);
-    }
-    await _persist('packages', packages.map((e) => e.toJson()).toList());
-    await setServices(services.where((s) => s.id != id).toList());
-  }
-
-  Future<void> setPackages(List<ServicePackage> list) {
-    packages = list;
-    return _persist('packages', list.map((e) => e.toJson()).toList());
-  }
-
-  Future<void> setGallery(List<GalleryPhoto> list) {
-    gallery = list;
-    return _persist('gallery', list.map((e) => e.toJson()).toList());
+  Future<void> setCarouselApp(List<CarouselPhoto> list) {
+    carouselApp = list;
+    return _persist('carouselApp', list.map((e) => e.toJson()).toList());
   }
 
   Future<void> setWorks(List<Work> list) {
     works = list;
     return _persist('works', list.map((e) => e.toJson()).toList());
+  }
+
+  /// Mette o toglie un lavoro dalla home. Falso se ce ne sono già quattro.
+  Future<bool> setFeatured(Work w, bool on) async {
+    if (on && !w.featured && featuredCount >= maxFeatured) return false;
+    w.featured = on;
+    await setWorks([...works]);
+    return true;
+  }
+
+  Future<void> setQuoteForm(QuoteForm f) {
+    quoteForm = f;
+    return _persist('quoteForm', f.toJson());
   }
 
   Future<void> addQuote(QuoteRequest q) {
@@ -219,6 +197,12 @@ class AppState extends ChangeNotifier {
       if (c.id == id) return c;
     }
     return null;
+  }
+
+  /// Il cliente collegato in questo momento, se l'account è ancora attivo.
+  ClientAccount? get currentClient {
+    final c = clientById(clientId);
+    return c != null && c.active ? c : null;
   }
 
   Future<void> _persistClients() =>
@@ -262,23 +246,60 @@ class AppState extends ChangeNotifier {
     return _persistClients();
   }
 
-  Future<void> deleteClient(String id) {
+  Future<void> deleteClient(String id) async {
     clients = clients.where((e) => e.id != id).toList();
+    if (clientId == id) await logoutClient();
     return _persistClients();
   }
 
-  /// Verifica email e password di un cliente (accesso alla sua area).
-  ClientAccount? checkClientLogin(String email, String pw) {
-    final e = email.trim().toLowerCase();
+  /// Vero se [login] (email o nome utente) è già usato da un altro account.
+  bool loginTaken(String login, {String? exceptId}) {
+    final l = login.trim().toLowerCase();
+    if (l.isEmpty) return false;
+    if (l == settings.username.trim().toLowerCase()) return true;
+    return clients.any(
+      (c) =>
+          c.id != exceptId &&
+          (c.email.trim().toLowerCase() == l ||
+              c.username.trim().toLowerCase() == l),
+    );
+  }
+
+  /// Verifica email (o nome utente) e password di un cliente.
+  ClientAccount? checkClientLogin(String login, String pw) {
+    final l = login.trim().toLowerCase();
+    if (l.isEmpty) return null;
     for (final c in clients) {
+      final match =
+          c.email.trim().toLowerCase() == l ||
+          (c.username.trim().isNotEmpty &&
+              c.username.trim().toLowerCase() == l);
       if (c.active &&
-          c.email.trim().toLowerCase() == e &&
+          match &&
           c.passwordHash.isNotEmpty &&
           _hash(c.passwordSalt, pw) == c.passwordHash) {
         return c;
       }
     }
     return null;
+  }
+
+  /// Accesso dall'area clienti: un cliente entra nella sua area, il titolare
+  /// (con le sue credenziali) nel gestionale.
+  Future<SignIn> signIn(String login, String pw, {bool remember = true}) async {
+    if (await loginAdmin(login, pw, remember: remember)) return SignIn.admin;
+    final c = checkClientLogin(login, pw);
+    if (c == null) return SignIn.wrong;
+    c.lastLogin = DateTime.now();
+    clientId = c.id;
+    await repo.write('clientSession', c.id);
+    await _persistClients();
+    return SignIn.client;
+  }
+
+  Future<void> logoutClient() async {
+    clientId = null;
+    await _persist('clientSession', '');
   }
 
   Future<void> _persistAppointments() =>
@@ -380,16 +401,20 @@ class AppState extends ChangeNotifier {
 
   // ------------------------------------------------------------ admin auth
 
-  bool get hasAdminPassword => settings.passwordHash.isNotEmpty;
-
   String _hash(String salt, String pw) =>
       sha256.convert(utf8.encode('$salt::$pw')).toString();
 
-  Future<void> setAdminPassword(String pw, {bool remember = true}) async {
+  /// Nuove credenziali del titolare (dalle Impostazioni).
+  Future<void> setAdminCredentials(
+    String username,
+    String pw, {
+    bool remember = true,
+  }) async {
     final r = Random.secure();
     final salt = base64Url.encode(
       List<int>.generate(16, (_) => r.nextInt(256)),
     );
+    if (username.trim().isNotEmpty) settings.username = username.trim();
     settings.passwordSalt = salt;
     settings.passwordHash = _hash(salt, pw);
     adminAuthenticated = true;
@@ -399,11 +424,18 @@ class AppState extends ChangeNotifier {
 
   /// Verifica la password senza modificare lo stato di accesso.
   bool checkPassword(String pw) =>
-      hasAdminPassword &&
+      settings.passwordHash.isNotEmpty &&
       _hash(settings.passwordSalt, pw) == settings.passwordHash;
 
-  Future<bool> login(String pw, {bool remember = true}) async {
-    if (!checkPassword(pw)) return false;
+  Future<bool> loginAdmin(
+    String username,
+    String pw, {
+    bool remember = true,
+  }) async {
+    final u = username.trim().toLowerCase();
+    if (u != settings.username.trim().toLowerCase() || !checkPassword(pw)) {
+      return false;
+    }
     adminAuthenticated = true;
     if (remember) {
       _rememberSession();
@@ -423,25 +455,16 @@ class AppState extends ChangeNotifier {
     await _persist('settings', settings.toJson());
   }
 
-  /// Caratteri occupati dalle immagini incorporate (data URL) nell'archivio del
-  /// browser, che ha un limite di circa 5 MB.
+  /// Caratteri occupati dalle immagini incorporate (data URL) nell'archivio
+  /// del dispositivo.
   int get embeddedImageChars {
     var n = 0;
     void add(String u) {
       if (u.startsWith('data:')) n += u.length;
     }
 
-    for (final p in gallery) {
+    for (final p in [...carouselSite, ...carouselApp]) {
       add(p.url);
-    }
-    for (final s in services) {
-      add(s.image);
-    }
-    for (final p in packages) {
-      add(p.image);
-    }
-    for (final t in content.team) {
-      add(t.photo);
     }
     for (final w in works) {
       add(w.cover);
@@ -450,30 +473,42 @@ class AppState extends ChangeNotifier {
       }
     }
     for (final c in clients) {
-      for (final p in c.album) {
-        add(p.url);
+      for (final m in c.media) {
+        add(m.url);
+        add(m.original);
+        add(m.poster);
       }
       for (final f in c.files) {
         add(f.url);
       }
     }
     add(content.bioImage);
-    add(content.bannerImage);
     return n;
   }
 
   /// Copia di sicurezza di tutti i dati in un'unica stringa JSON.
   String exportBackup() => const JsonEncoder.withIndent(' ').convert({
-    'version': 1,
+    'version': 2,
     'content': content.toJson(),
-    'services': services.map((e) => e.toJson()).toList(),
-    'packages': packages.map((e) => e.toJson()).toList(),
-    'gallery': gallery.map((e) => e.toJson()).toList(),
+    'carouselSite': carouselSite.map((e) => e.toJson()).toList(),
+    'carouselApp': carouselApp.map((e) => e.toJson()).toList(),
     'works': works.map((e) => e.toJson()).toList(),
+    'quoteForm': quoteForm.toJson(),
     'quotes': quotes.map((e) => e.toJson()).toList(),
     'appointments': appointments.map((e) => e.toJson()).toList(),
     'clients': clients.map((e) => e.toJson()).toList(),
   });
+
+  static const _backupKeys = [
+    'content',
+    'carouselSite',
+    'carouselApp',
+    'works',
+    'quoteForm',
+    'quotes',
+    'appointments',
+    'clients',
+  ];
 
   Future<void> importBackup(String raw) async {
     const invalid = FormatException(
@@ -487,12 +522,10 @@ class AppState extends ChangeNotifier {
     }
     if (j is! Map || j['content'] is! Map) throw invalid;
     // Prima di sovrascrivere i dati attuali verifica che ogni sezione si possa
-    // leggere: un backup rovinato renderebbe il sito inutilizzabile anche
-    // dopo aver ricaricato la pagina.
+    // leggere: un backup rovinato renderebbe l'app inutilizzabile.
     final parsers = <String, Object Function(Map<String, dynamic>)>{
-      'services': ServiceItem.fromJson,
-      'packages': ServicePackage.fromJson,
-      'gallery': GalleryPhoto.fromJson,
+      'carouselSite': CarouselPhoto.fromJson,
+      'carouselApp': CarouselPhoto.fromJson,
       'works': Work.fromJson,
       'quotes': QuoteRequest.fromJson,
       'appointments': Appointment.fromJson,
@@ -503,6 +536,9 @@ class AppState extends ChangeNotifier {
         Map<String, dynamic>.from(j['content'] as Map),
         Seed.content(),
       );
+      if (j['quoteForm'] != null) {
+        QuoteForm.fromJson(Map<String, dynamic>.from(j['quoteForm'] as Map));
+      }
       for (final MapEntry(key: k, value: parse) in parsers.entries) {
         final v = j[k];
         if (v == null) continue;
@@ -513,33 +549,28 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       throw invalid;
     }
-    for (final k in [
-      'content',
-      'services',
-      'packages',
-      'gallery',
-      'works',
-      'quotes',
-      'appointments',
-      'clients',
-    ]) {
+    for (final k in _backupKeys) {
       if (j[k] != null) await repo.write(k, j[k] as Object);
     }
     await load();
   }
 
+  /// Riporta testi, caroselli, lavori e modulo preventivo agli esempi.
   Future<void> resetAll() async {
     await repo.write('content', Seed.content().toJson());
     await repo.write(
-      'services',
-      Seed.services().map((e) => e.toJson()).toList(),
+      'carouselSite',
+      Seed.carouselSite().map((e) => e.toJson()).toList(),
     );
     await repo.write(
-      'packages',
-      Seed.packages().map((e) => e.toJson()).toList(),
+      'carouselApp',
+      Seed.carouselApp().map((e) => e.toJson()).toList(),
     );
-    await repo.write('gallery', Seed.gallery().map((e) => e.toJson()).toList());
     await repo.write('works', Seed.works().map((e) => e.toJson()).toList());
+    await repo.write('quoteForm', Seed.quoteForm().toJson());
     await load();
   }
 }
+
+/// Esito di un accesso dall'area clienti.
+enum SignIn { client, admin, wrong }

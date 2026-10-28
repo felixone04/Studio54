@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +27,7 @@ const _navItems = <(String, String)>[
   ('Lavori', '/lavori'),
   ('Biografia', '/biografia'),
   ('Preventivo', '/preventivo'),
+  ('Area clienti', '/area-clienti'),
 ];
 
 /// Segna una parte della pagina con il suo colore di fondo: quando la barra
@@ -82,10 +82,18 @@ class SiteScaffold extends StatefulWidget {
     required this.children,
     this.overlay,
     this.photoUnderNav,
+    this.footer = true,
+    this.bottomBar,
   });
 
   final String location;
   final List<Widget> children;
+
+  /// Falso nelle pagine a passi (preventivo), che non hanno il footer.
+  final bool footer;
+
+  /// Comandi fissi in basso (es. Indietro e Avanti del preventivo).
+  final Widget? bottomBar;
 
   /// Elemento fisso sopra al contenuto.
   final Widget? overlay;
@@ -152,6 +160,7 @@ class _SiteScaffoldState extends State<SiteScaffold> {
     final light = _overPhoto;
     return Scaffold(
       backgroundColor: Palette.paper,
+      bottomNavigationBar: widget.bottomBar,
       body: _NavTints(
         tints: _tints,
         child: Stack(
@@ -168,7 +177,7 @@ class _SiteScaffoldState extends State<SiteScaffold> {
                   children: [
                     if (widget.photoUnderNav == null) SizedBox(height: navH),
                     ...widget.children,
-                    SiteFooter(content: state.content),
+                    if (widget.footer) SiteFooter(content: state.content),
                   ],
                 ),
               ),
@@ -234,8 +243,8 @@ class _NavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final compact = context.w < 900;
     final fg = light ? Palette.paper : Palette.ink;
+    // Nell'app: il logo a sinistra e i tre trattini del menu a destra.
     return Row(
       children: [
         Expanded(
@@ -245,18 +254,7 @@ class _NavBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        if (!compact) ...[
-          for (var i = 0; i < _navItems.length; i++) ...[
-            if (i > 0) const SizedBox(width: 34),
-            HoverLink(
-              _navItems[i].$1.toUpperCase(),
-              active: location == _navItems[i].$2,
-              style: label(11.5, color: fg),
-              onTap: () => context.go(_navItems[i].$2),
-            ),
-          ],
-        ] else
-          _MenuButton(color: fg, onTap: () => _openMenu(context, location)),
+        _MenuButton(color: fg, onTap: () => _openMenu(context, location)),
       ],
     );
   }
@@ -269,6 +267,7 @@ class _MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget line() => Container(width: 24, height: 1.6, color: color);
     return Semantics(
       button: true,
       label: 'Menu',
@@ -276,21 +275,15 @@ class _MenuButton extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-          child: Row(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('MENU', style: label(11.5, color: color)),
-              const SizedBox(width: 12),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(width: 26, height: 1.6, color: color),
-                  const SizedBox(height: 6),
-                  Container(width: 16, height: 1.6, color: color),
-                ],
-              ),
+              line(),
+              const SizedBox(height: 6),
+              line(),
+              const SizedBox(height: 6),
+              line(),
             ],
           ),
         ),
@@ -421,18 +414,6 @@ class _FullMenu extends StatelessWidget {
                   child: Text(c.email, style: body(14.5, color: Palette.stone)),
                 ),
               ],
-              // Nell'app il titolare entra nel gestionale direttamente da qui.
-              if (!kIsWeb) ...[
-                const SizedBox(height: 18),
-                HoverLink(
-                  'AREA RISERVATA',
-                  style: label(10.5, color: Palette.ink),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.go('/admin');
-                  },
-                ),
-              ],
               const SizedBox(height: 28),
             ],
           ),
@@ -501,71 +482,40 @@ class SiteFooter extends StatelessWidget {
       ]),
     ];
 
-    return NavTint(
-      color: Palette.linen,
-      child: Container(
-        color: Palette.linen,
-        padding: EdgeInsets.fromLTRB(
-          context.gutter,
-          context.fluid(64, 110),
-          context.gutter,
-          28,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            LayoutBuilder(
-              builder: (context, box) {
-                const gap = 32.0;
-                final wdt = (box.maxWidth - gap * (cols - 1)) / cols;
-                return Wrap(
-                  spacing: gap,
-                  runSpacing: 40,
-                  children: [
-                    for (final w in columns) SizedBox(width: wdt, child: w),
-                  ],
-                );
-              },
-            ),
-            SizedBox(height: context.fluid(56, 90)),
-            // Firma: il logo al centro.
-            Center(child: BrandLogo(width: context.fluid(150, 200))),
-            SizedBox(height: context.fluid(36, 56)),
-            Container(height: 1, color: Palette.line),
-            const SizedBox(height: 18),
-            Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              runSpacing: 10,
-              spacing: 20,
-              children: [
-                Text(
-                  '© ${DateTime.now().year} ${content.studioName}'
-                  '${c.vat.isEmpty ? '' : '  ·  ${c.vat}'}',
-                  style: body(12.5, color: Palette.stone),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: context.accent,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    HoverLink(
-                      'Area riservata',
-                      style: body(12.5, color: Palette.stone),
-                      onTap: () => context.go('/admin'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
+    // Una linea sottile lo separa dalla pagina, come quella in fondo.
+    return Container(
+      color: Palette.paper,
+      padding: EdgeInsets.fromLTRB(context.gutter, 0, context.gutter, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(height: 1, color: Palette.line),
+          SizedBox(height: context.fluid(56, 100)),
+          LayoutBuilder(
+            builder: (context, box) {
+              const gap = 32.0;
+              final wdt = (box.maxWidth - gap * (cols - 1)) / cols;
+              return Wrap(
+                spacing: gap,
+                runSpacing: 40,
+                children: [
+                  for (final w in columns) SizedBox(width: wdt, child: w),
+                ],
+              );
+            },
+          ),
+          SizedBox(height: context.fluid(56, 90)),
+          // Firma: il logo al centro.
+          Center(child: BrandLogo(width: context.fluid(150, 200))),
+          SizedBox(height: context.fluid(36, 56)),
+          Container(height: 1, color: Palette.line),
+          const SizedBox(height: 18),
+          Text(
+            '© ${DateTime.now().year} ${content.studioName}'
+            '${c.vat.isEmpty ? '' : '  ·  ${c.vat}'}',
+            style: body(12.5, color: Palette.stone),
+          ),
+        ],
       ),
     );
   }

@@ -140,13 +140,15 @@ class _Method extends StatelessWidget {
   Widget build(BuildContext context) {
     final cols = context.isPhone ? 1 : (items.length >= 4 ? 4 : items.length);
     return Section(
-      color: Palette.linen,
+      top: 0,
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1180),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(height: 1, color: Palette.line),
+              SizedBox(height: context.fluid(56, 120)),
               const Tag('Il metodo'),
               SizedBox(height: context.fluid(30, 56)),
               LayoutBuilder(

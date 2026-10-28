@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- I colori del marchio Studio 54. -->
-    <color name="studio_paper">#FFFAF0</color>
+    <color name="studio_paper">#FFFFFF</color>
     <color name="studio_dark">#161616</color>
 </resources>

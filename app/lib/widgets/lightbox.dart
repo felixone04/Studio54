@@ -1,41 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../models/models.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
+import 'sections.dart' show RoundIconButton;
 
-/// Visualizzazione a schermo intero di una foto della mostra: frecce,
-/// tastiera, swipe e zoom.
-Future<void> showPhotoLightbox(
+/// Le foto a schermo intero: solo la foto, grande, con le frecce e la X per
+/// uscire. Si sfogliano anche con il dito e si ingrandiscono con due dita.
+Future<void> showPhotoViewer(
   BuildContext context,
-  List<GalleryPhoto> photos,
-  int start,
-) {
+  List<String> photos,
+  int start, {
+  List<Widget> Function(BuildContext, int)? actions,
+}) {
   return showGeneralDialog(
     context: context,
     barrierColor: Palette.paper,
     barrierDismissible: true,
     barrierLabel: 'Chiudi',
-    transitionDuration: const Duration(milliseconds: 400),
+    transitionDuration: const Duration(milliseconds: 350),
     transitionBuilder: (_, a, _, child) => FadeTransition(
       opacity: CurvedAnimation(parent: a, curve: Curves.easeOut),
       child: child,
     ),
-    pageBuilder: (_, _, _) => _Lightbox(photos: photos, start: start),
+    pageBuilder: (_, _, _) =>
+        PhotoViewer(photos: photos, start: start, actions: actions),
   );
 }
 
-class _Lightbox extends StatefulWidget {
-  const _Lightbox({required this.photos, required this.start});
-  final List<GalleryPhoto> photos;
+class PhotoViewer extends StatefulWidget {
+  const PhotoViewer({
+    super.key,
+    required this.photos,
+    required this.start,
+    this.actions,
+    this.itemBuilder,
+  });
+  final List<String> photos;
   final int start;
 
+  /// Comandi in più in basso (es. "Scarica" nell'area clienti).
+  final List<Widget> Function(BuildContext, int)? actions;
+
+  /// Al posto della foto (es. un video).
+  final Widget? Function(BuildContext, int)? itemBuilder;
+
   @override
-  State<_Lightbox> createState() => _LightboxState();
+  State<PhotoViewer> createState() => _PhotoViewerState();
 }
 
-class _LightboxState extends State<_Lightbox> {
+class _PhotoViewerState extends State<PhotoViewer> {
   late final PageController _c = PageController(initialPage: widget.start);
   late int _i = widget.start;
 
@@ -49,27 +63,23 @@ class _LightboxState extends State<_Lightbox> {
     final n = widget.photos.length;
     _c.animateToPage(
       (_i + d + n) % n,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 450),
       curve: Curves.easeInOutCubic,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.photos[_i];
-    final meta = [
-      p.category,
-      p.location,
-      p.year,
-    ].where((e) => e.isNotEmpty).join('  ·  ');
-    final wide = context.w > 720;
+    final many = widget.photos.length > 1;
+    final pad = MediaQuery.paddingOf(context);
+    final actions = widget.actions?.call(context, _i) ?? const <Widget>[];
     return Focus(
       autofocus: true,
       onKeyEvent: (_, e) {
         if (e is! KeyDownEvent) return KeyEventResult.ignored;
-        if (e.logicalKey == LogicalKeyboardKey.arrowRight) {
+        if (e.logicalKey == LogicalKeyboardKey.arrowRight && many) {
           _go(1);
-        } else if (e.logicalKey == LogicalKeyboardKey.arrowLeft) {
+        } else if (e.logicalKey == LogicalKeyboardKey.arrowLeft && many) {
           _go(-1);
         } else if (e.logicalKey == LogicalKeyboardKey.escape) {
           Navigator.pop(context);
@@ -86,101 +96,50 @@ class _LightboxState extends State<_Lightbox> {
               controller: _c,
               itemCount: widget.photos.length,
               onPageChanged: (i) => setState(() => _i = i),
-              itemBuilder: (_, i) => InteractiveViewer(
-                maxScale: 4,
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    wide ? 90 : 0,
-                    70,
-                    wide ? 90 : 0,
-                    110,
-                  ),
-                  child: PhotoImage(widget.photos[i].url, fit: BoxFit.contain),
-                ),
-              ),
-            ),
-            Positioned(
-              left: context.gutter,
-              right: context.gutter,
-              bottom: 26,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          p.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: display(
-                            context.fluid(26, 40),
-                            color: Palette.ink,
-                            italic: true,
-                          ),
-                        ),
-                        if (meta.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            meta.toUpperCase(),
-                            style: label(10.5, color: Palette.stone),
-                          ),
-                        ],
-                      ],
+              itemBuilder: (context, i) =>
+                  widget.itemBuilder?.call(context, i) ??
+                  InteractiveViewer(
+                    maxScale: 4,
+                    child: Center(
+                      child: PhotoImage(widget.photos[i], fit: BoxFit.contain),
                     ),
                   ),
-                  Text(
-                    '${(_i + 1).toString().padLeft(2, '0')} / ${widget.photos.length.toString().padLeft(2, '0')}',
-                    style: label(11, color: context.accentInk),
-                  ),
-                ],
-              ),
             ),
             Positioned(
-              top: 12,
-              right: 12,
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                tooltip: 'Chiudi',
-                icon: const Icon(
-                  Icons.close_rounded,
-                  size: 30,
-                  color: Palette.ink,
-                ),
+              top: pad.top + 14,
+              right: 14,
+              child: RoundIconButton(
+                Icons.close_rounded,
+                () => Navigator.pop(context),
+                'Chiudi',
               ),
             ),
-            if (wide) ...[
+            if (many || actions.isNotEmpty)
               Positioned(
-                left: 16,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: IconButton(
-                    onPressed: () => _go(-1),
-                    tooltip: 'Foto precedente',
-                    iconSize: 40,
-                    color: Palette.ink,
-                    icon: const Icon(Icons.chevron_left_rounded),
-                  ),
+                left: 0,
+                right: 0,
+                bottom: pad.bottom + 20,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (many)
+                      RoundIconButton(
+                        Icons.chevron_left_rounded,
+                        () => _go(-1),
+                        'Foto precedente',
+                      ),
+                    for (final a in actions) ...[const SizedBox(width: 12), a],
+                    if (many) ...[
+                      const SizedBox(width: 12),
+                      RoundIconButton(
+                        Icons.chevron_right_rounded,
+                        () => _go(1),
+                        'Foto successiva',
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              Positioned(
-                right: 16,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: IconButton(
-                    onPressed: () => _go(1),
-                    tooltip: 'Foto successiva',
-                    iconSize: 40,
-                    color: Palette.ink,
-                    icon: const Icon(Icons.chevron_right_rounded),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),

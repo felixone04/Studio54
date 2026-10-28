@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../config.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -14,9 +13,9 @@ import '../../widgets/common.dart';
 import '../../widgets/site_scaffold.dart' show openUrl, digitsOf;
 import 'admin_widgets.dart';
 
-// I clienti con accesso alla propria area sul sito. Dal sito nessuno può
-// registrarsi: gli account si creano solo da qui, con una password generata
-// da mandare al cliente. In ogni area: l'album da sfogliare, PDF e link.
+// I clienti con accesso alla propria area nell'app. Nessuno può registrarsi:
+// gli account si creano solo da qui, con una password generata da mandare al
+// cliente. In ogni area: foto e video della festa da scaricare, PDF e link.
 
 /// PDF caricati qui: finché i dati stanno sul dispositivo meglio file piccoli.
 const _maxPdfBytes = 3 * 1024 * 1024;
@@ -33,8 +32,9 @@ class AdminClients extends StatelessWidget {
         AdminHeader(
           title: 'Clienti',
           subtitle:
-              'Gli account dell\'area clienti: dal sito nessuno può '
-              'registrarsi, li crei solo tu.',
+              'Solo nell\'app: il cliente entra da menu → Area clienti con '
+              'email o nome utente e password, guarda foto e video della '
+              'festa e li scarica in alta qualità. Gli account li crei solo tu.',
           actions: [
             FilledButton.icon(
               onPressed: () => showDialog(
@@ -83,7 +83,8 @@ class _ClientRow extends StatelessWidget {
     final meta = [
       c.email,
       c.eventTitle,
-      '${c.album.length} foto',
+      '${c.photoCount} foto',
+      if (c.videoCount > 0) '${c.videoCount} video',
       '${c.files.length} file',
     ].where((e) => e.trim().isNotEmpty).join(' · ');
     return ListTile(
@@ -175,9 +176,8 @@ class _ClientDialogState extends State<_ClientDialog> {
         final mime = (f.mimeType?.startsWith('image/') ?? false)
             ? f.mimeType!
             : 'image/jpeg';
-        _d.album.add(
-          WorkPhoto(url: 'data:$mime;base64,${base64Encode(bytes)}'),
-        );
+        final data = 'data:$mime;base64,${base64Encode(bytes)}';
+        _d.media.add(ClientMedia(url: data, original: data, name: f.name));
       }
     } catch (e) {
       if (mounted) toast(context, 'Caricamento non riuscito: $e', error: true);
@@ -189,9 +189,64 @@ class _ClientDialogState extends State<_ClientDialog> {
   /// Copia nell'album le foto di un lavoro (es. il suo matrimonio).
   void _fromWork(Work w) => setState(() {
     for (final p in w.photos) {
-      _d.album.add(WorkPhoto(url: p.url, caption: p.caption));
+      _d.media.add(ClientMedia(url: p.url, original: p.url));
     }
   });
+
+  /// Un video della festa: l'indirizzo del file (mp4) e una foto d'anteprima.
+  Future<void> _addVideo() async {
+    var url = '', poster = '';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Aggiungi video'),
+        content: SizedBox(
+          width: dialogWidth(c, 480),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(
+                  labelText: 'Indirizzo del video (mp4) *',
+                  hintText: 'https://',
+                ),
+                onChanged: (v) => url = v.trim(),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(
+                  labelText: 'Foto di anteprima',
+                  hintText: 'https://',
+                ),
+                onChanged: (v) => poster = v.trim(),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Aggiungi'),
+          ),
+        ],
+      ),
+    );
+    final u = Uri.tryParse(url);
+    if (ok != true || !mounted) return;
+    if (u == null || !u.hasScheme || u.host.isEmpty) {
+      toast(context, 'Indirizzo del video non valido.', error: true);
+      return;
+    }
+    setState(
+      () => _d.media.add(ClientMedia(url: url, isVideo: true, poster: poster)),
+    );
+  }
 
   Future<void> _addPdf() async {
     setState(() => _busy = true);
@@ -265,15 +320,16 @@ class _ClientDialogState extends State<_ClientDialog> {
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
     final s = context.read<AppState>();
-    final email = _d.email.trim().toLowerCase();
-    final dup = s.clients.any(
-      (c) => c.id != _d.id && c.email.trim().toLowerCase() == email,
-    );
-    if (dup) {
-      toast(context, 'Esiste già un cliente con questa email.', error: true);
+    if (s.loginTaken(_d.email, exceptId: _d.id)) {
+      toast(context, 'Esiste già un account con questa email.', error: true);
+      return;
+    }
+    if (s.loginTaken(_d.username, exceptId: _d.id)) {
+      toast(context, 'Questo nome utente è già usato.', error: true);
       return;
     }
     _d.email = _d.email.trim();
+    _d.username = _d.username.trim();
     _d.name = _d.name.trim();
     final nav = Navigator.of(context);
     if (_isNew) {
@@ -374,11 +430,28 @@ class _ClientDialogState extends State<_ClientDialog> {
                   ],
                 ),
                 gap,
-                text(
-                  'Telefono (per mandargli i dati su WhatsApp)',
-                  _d.phone,
-                  (v) => _d.phone = v,
-                  keyboard: TextInputType.phone,
+                FieldRow(
+                  children: [
+                    Expanded(
+                      child: text(
+                        'Nome utente (facoltativo)',
+                        _d.username,
+                        (v) => _d.username = v,
+                        helper: 'In alternativa all\'email, es. anna.paolo.',
+                        validator: (v) =>
+                            (v ?? '').contains(' ') ? 'Senza spazi' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: text(
+                        'Telefono (per WhatsApp)',
+                        _d.phone,
+                        (v) => _d.phone = v,
+                        keyboard: TextInputType.phone,
+                      ),
+                    ),
+                  ],
                 ),
                 gap,
                 text(
@@ -426,7 +499,7 @@ class _ClientDialogState extends State<_ClientDialog> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Album da sfogliare (${_d.album.length} foto)',
+                        'Foto e video (${_d.photoCount} foto, ${_d.videoCount} video)',
                         style: title,
                       ),
                     ),
@@ -439,23 +512,32 @@ class _ClientDialogState extends State<_ClientDialog> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                if (_d.album.isNotEmpty)
+                if (_d.media.isNotEmpty)
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      for (var i = 0; i < _d.album.length; i++)
+                      for (var i = 0; i < _d.media.length; i++)
                         Stack(
-                          key: ObjectKey(_d.album[i]),
+                          key: ObjectKey(_d.media[i]),
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(4),
                               child: SizedBox(
                                 width: 76,
                                 height: 56,
-                                child: PhotoImage(_d.album[i].url),
+                                child: PhotoImage(_d.media[i].thumb),
                               ),
                             ),
+                            if (_d.media[i].isVideo)
+                              const Positioned.fill(
+                                child: Center(
+                                  child: Icon(
+                                    Icons.play_circle_outline_rounded,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                             Positioned(
                               right: 2,
                               top: 2,
@@ -465,7 +547,7 @@ class _ClientDialogState extends State<_ClientDialog> {
                                 child: InkWell(
                                   customBorder: const CircleBorder(),
                                   onTap: () =>
-                                      setState(() => _d.album.removeAt(i)),
+                                      setState(() => _d.media.removeAt(i)),
                                   child: const Padding(
                                     padding: EdgeInsets.all(3),
                                     child: Icon(Icons.close_rounded, size: 14),
@@ -489,6 +571,11 @@ class _ClientDialogState extends State<_ClientDialog> {
                         size: 18,
                       ),
                       label: const Text('Carica foto'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : _addVideo,
+                      icon: const Icon(Icons.videocam_outlined, size: 18),
+                      label: const Text('Aggiungi video'),
                     ),
                     if (works.isNotEmpty)
                       PopupMenuButton<Work>(
@@ -730,12 +817,14 @@ class CredentialsDialog extends StatelessWidget {
   String get message {
     final first = client.name.trim().split(' ').first;
     return 'Ciao $first,\n'
-        'da oggi puoi vedere le foto del tuo evento e i documenti nella tua '
-        'area riservata di Studio 54.\n\n'
-        'Indirizzo: ${AppConfig.siteUrl}area-clienti.html\n'
+        'le foto e i video del vostro evento sono pronti nella vostra area '
+        'riservata di Studio 54.\n\n'
+        'Aprite l\'app Studio 54, toccate il menu e poi "Area clienti", ed '
+        'entrate con:\n'
         'Email: ${client.email}\n'
+        '${client.username.trim().isEmpty ? '' : 'oppure nome utente: ${client.username.trim()}\n'}'
         'Password: $password\n\n'
-        'Ti consigliamo di cambiare la password al primo accesso.';
+        'Da lì potete guardare e scaricare tutto in alta qualità.';
   }
 
   @override

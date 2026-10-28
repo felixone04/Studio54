@@ -6,24 +6,32 @@ import '../theme/app_theme.dart';
 import '../widgets/sections.dart';
 import '../widgets/site_scaffold.dart';
 
+/// La home dell'app: il carosello verticale a tutto schermo, sotto la barra
+/// trasparente, poi i lavori in evidenza uno sotto l'altro e le informazioni.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
-    final c = s.content;
-    // In orizzontale la foto d'apertura parte dal bordo in alto, sotto la
-    // barra trasparente.
-    final landscape = context.w > context.h;
+    final photos = s.appCarousel;
+    final featured = s.featuredWorks;
+    final h = context.h;
     return SiteScaffold(
       location: '/',
-      photoUnderNav: landscape ? context.screenH : null,
+      photoUnderNav: photos.isEmpty ? null : h,
       children: [
-        HeroSlideshow(content: c, photos: s.heroPhotos, underNav: landscape),
-        if (c.manifestoTitle.trim().isNotEmpty)
-          Statement(text: c.manifestoTitle, number: '01'),
-        if (s.gallery.isNotEmpty) PrintsTable(photos: s.gallery, number: '02'),
+        if (photos.isNotEmpty) AppCarousel(photos: photos, height: h),
+        if (featured.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              context.gutter,
+              context.fluid(48, 100),
+              context.gutter,
+              context.fluid(56, 110),
+            ),
+            child: WorkList(works: featured),
+          ),
       ],
     );
   }

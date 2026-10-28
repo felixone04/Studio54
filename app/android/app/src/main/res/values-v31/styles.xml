@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Android 12 e successivi: schermata d'avvio di sistema, crema con il "54". -->
+    <!-- Android 12 e successivi: schermata d'avvio di sistema, bianca con il "54". -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowSplashScreenBackground">@color/studio_paper</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/splash_icon</item>

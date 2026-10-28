@@ -1,5 +1,9 @@
 import 'dart:math';
 
+// I dati di Studio 54, gli stessi per sito, app e gestionale: oggi vivono nel
+// dispositivo (o nel browser), domani nel database. I nomi dei campi JSON
+// sono quelli letti anche dal sito (sito/assets/js).
+
 int _idSeq = 0;
 
 /// Genera un id univoco leggero (niente dipendenze extra). Il contatore
@@ -11,15 +15,11 @@ String newId() {
       '${r.nextInt(1 << 20).toRadixString(36)}';
 }
 
-class Highlight {
-  String title;
-  String text;
-  Highlight({required this.title, required this.text});
-
-  factory Highlight.fromJson(Map<String, dynamic> j) =>
-      Highlight(title: j['title'] ?? '', text: j['text'] ?? '');
-  Map<String, dynamic> toJson() => {'title': title, 'text': text};
-}
+List<T> _listOf<T>(Object? v, T Function(Map<String, dynamic>) f) => [
+  if (v is List)
+    for (final e in v)
+      if (e is Map) f(Map<String, dynamic>.from(e)),
+];
 
 class Milestone {
   String year;
@@ -33,36 +33,6 @@ class Milestone {
     text: j['text'] ?? '',
   );
   Map<String, dynamic> toJson() => {'year': year, 'title': title, 'text': text};
-}
-
-class TeamMember {
-  String id;
-  String name;
-  String role;
-  String bio;
-  String photo;
-  TeamMember({
-    String? id,
-    required this.name,
-    required this.role,
-    required this.bio,
-    required this.photo,
-  }) : id = id ?? newId();
-
-  factory TeamMember.fromJson(Map<String, dynamic> j) => TeamMember(
-    id: j['id'],
-    name: j['name'] ?? '',
-    role: j['role'] ?? '',
-    bio: j['bio'] ?? '',
-    photo: j['photo'] ?? '',
-  );
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'role': role,
-    'bio': bio,
-    'photo': photo,
-  };
 }
 
 class Contacts {
@@ -107,36 +77,10 @@ class Contacts {
   };
 }
 
-/// Tutti i testi e le immagini modificabili del sito.
+/// Testi e dati generali, uguali su sito e app: nome, biografia, contatti.
 class SiteContent {
   String studioName;
   String tagline;
-
-  // Home – hero
-  String heroKicker;
-  String heroTitle;
-  String heroSubtitle;
-  String marquee; // parole della striscia scorrevole, separate da virgola
-
-  // Home – manifesto ed emozioni
-  String manifestoTitle;
-  String manifestoText;
-  List<Highlight> highlights;
-
-  // Home – galleria / mostra
-  String galleryKicker;
-  String galleryTitle;
-  String galleryIntro;
-
-  // Home – servizi
-  String servicesTitle;
-  String servicesIntro;
-
-  // Home – banner preventivo
-  String bannerTitle;
-  String bannerText;
-  String bannerButton;
-  String bannerImage;
 
   // Biografia
   String bioTitle;
@@ -144,256 +88,79 @@ class SiteContent {
   String bioStory; // paragrafi separati da riga vuota
   String bioImage;
   List<Milestone> timeline;
-  List<TeamMember> team;
-  String teamTitle;
 
   Contacts contacts;
-  String footerNote;
   int accent; // colore ARGB
-  List<String> eventTypes;
 
   SiteContent({
     required this.studioName,
     required this.tagline,
-    required this.heroKicker,
-    required this.heroTitle,
-    required this.heroSubtitle,
-    this.marquee = '',
-    required this.manifestoTitle,
-    required this.manifestoText,
-    required this.highlights,
-    required this.galleryKicker,
-    required this.galleryTitle,
-    required this.galleryIntro,
-    required this.servicesTitle,
-    required this.servicesIntro,
-    required this.bannerTitle,
-    required this.bannerText,
-    required this.bannerButton,
-    required this.bannerImage,
     required this.bioTitle,
     required this.bioIntro,
     required this.bioStory,
     required this.bioImage,
     required this.timeline,
-    required this.team,
-    required this.teamTitle,
     required this.contacts,
-    required this.footerNote,
     required this.accent,
-    required this.eventTypes,
   });
 
   factory SiteContent.fromJson(Map<String, dynamic> j, SiteContent fallback) {
-    List<T> list<T>(String k, T Function(Map<String, dynamic>) f, List<T> d) {
-      final v = j[k];
-      if (v is! List) return d;
-      return v.map((e) => f(Map<String, dynamic>.from(e as Map))).toList();
-    }
-
     String s(String k, String d) => (j[k] as String?) ?? d;
-
     return SiteContent(
       studioName: s('studioName', fallback.studioName),
       tagline: s('tagline', fallback.tagline),
-      heroKicker: s('heroKicker', fallback.heroKicker),
-      heroTitle: s('heroTitle', fallback.heroTitle),
-      heroSubtitle: s('heroSubtitle', fallback.heroSubtitle),
-      marquee: s('marquee', fallback.marquee),
-      manifestoTitle: s('manifestoTitle', fallback.manifestoTitle),
-      manifestoText: s('manifestoText', fallback.manifestoText),
-      highlights: list('highlights', Highlight.fromJson, fallback.highlights),
-      galleryKicker: s('galleryKicker', fallback.galleryKicker),
-      galleryTitle: s('galleryTitle', fallback.galleryTitle),
-      galleryIntro: s('galleryIntro', fallback.galleryIntro),
-      servicesTitle: s('servicesTitle', fallback.servicesTitle),
-      servicesIntro: s('servicesIntro', fallback.servicesIntro),
-      bannerTitle: s('bannerTitle', fallback.bannerTitle),
-      bannerText: s('bannerText', fallback.bannerText),
-      bannerButton: s('bannerButton', fallback.bannerButton),
-      bannerImage: s('bannerImage', fallback.bannerImage),
       bioTitle: s('bioTitle', fallback.bioTitle),
       bioIntro: s('bioIntro', fallback.bioIntro),
       bioStory: s('bioStory', fallback.bioStory),
       bioImage: s('bioImage', fallback.bioImage),
-      timeline: list('timeline', Milestone.fromJson, fallback.timeline),
-      team: list('team', TeamMember.fromJson, fallback.team),
-      teamTitle: s('teamTitle', fallback.teamTitle),
+      timeline: j['timeline'] is List
+          ? _listOf(j['timeline'], Milestone.fromJson)
+          : fallback.timeline,
       contacts: j['contacts'] is Map
           ? Contacts.fromJson(Map<String, dynamic>.from(j['contacts']))
           : fallback.contacts,
-      footerNote: s('footerNote', fallback.footerNote),
       accent: (j['accent'] as int?) ?? fallback.accent,
-      eventTypes: j['eventTypes'] is List
-          ? List<String>.from(j['eventTypes'])
-          : fallback.eventTypes,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'studioName': studioName,
     'tagline': tagline,
-    'heroKicker': heroKicker,
-    'heroTitle': heroTitle,
-    'heroSubtitle': heroSubtitle,
-    'marquee': marquee,
-    'manifestoTitle': manifestoTitle,
-    'manifestoText': manifestoText,
-    'highlights': highlights.map((e) => e.toJson()).toList(),
-    'galleryKicker': galleryKicker,
-    'galleryTitle': galleryTitle,
-    'galleryIntro': galleryIntro,
-    'servicesTitle': servicesTitle,
-    'servicesIntro': servicesIntro,
-    'bannerTitle': bannerTitle,
-    'bannerText': bannerText,
-    'bannerButton': bannerButton,
-    'bannerImage': bannerImage,
     'bioTitle': bioTitle,
     'bioIntro': bioIntro,
     'bioStory': bioStory,
     'bioImage': bioImage,
     'timeline': timeline.map((e) => e.toJson()).toList(),
-    'team': team.map((e) => e.toJson()).toList(),
-    'teamTitle': teamTitle,
     'contacts': contacts.toJson(),
-    'footerNote': footerNote,
     'accent': accent,
-    'eventTypes': eventTypes,
   };
 
-  /// Copia profonda, usata dagli editor admin per lavorare su una bozza.
+  /// Copia profonda, usata dagli editor del gestionale per lavorare su una bozza.
   SiteContent copy() => SiteContent.fromJson(toJson(), this);
 }
 
-class ServiceItem {
-  String id;
-  String name;
-  String description;
-  String category;
-  String image;
-  double? internalPrice; // visibile solo in admin, mai sul sito pubblico
-  bool active;
-  ServiceItem({
-    String? id,
-    required this.name,
-    this.description = '',
-    this.category = 'Servizi',
-    this.image = '',
-    this.internalPrice,
-    this.active = true,
-  }) : id = id ?? newId();
-
-  factory ServiceItem.fromJson(Map<String, dynamic> j) => ServiceItem(
-    id: j['id'],
-    name: j['name'] ?? '',
-    description: j['description'] ?? '',
-    category: j['category'] ?? 'Servizi',
-    image: j['image'] ?? '',
-    internalPrice: (j['internalPrice'] as num?)?.toDouble(),
-    active: j['active'] ?? true,
-  );
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'description': description,
-    'category': category,
-    'image': image,
-    'internalPrice': internalPrice,
-    'active': active,
-  };
-}
-
-class ServicePackage {
-  String id;
-  String name;
-  String tagline;
-  String description;
-  List<String> serviceIds;
-  String image;
-  bool featured;
-  bool active;
-  ServicePackage({
-    String? id,
-    required this.name,
-    this.tagline = '',
-    this.description = '',
-    List<String>? serviceIds,
-    this.image = '',
-    this.featured = false,
-    this.active = true,
-  }) : id = id ?? newId(),
-       serviceIds = serviceIds ?? [];
-
-  factory ServicePackage.fromJson(Map<String, dynamic> j) => ServicePackage(
-    id: j['id'],
-    name: j['name'] ?? '',
-    tagline: j['tagline'] ?? '',
-    description: j['description'] ?? '',
-    serviceIds: List<String>.from(j['serviceIds'] ?? const []),
-    image: j['image'] ?? '',
-    featured: j['featured'] ?? false,
-    active: j['active'] ?? true,
-  );
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'tagline': tagline,
-    'description': description,
-    'serviceIds': serviceIds,
-    'image': image,
-    'featured': featured,
-    'active': active,
-  };
-}
-
-class GalleryPhoto {
+/// Una foto del carosello d'apertura: orizzontali per il sito, verticali per
+/// l'app (sono due elenchi separati).
+class CarouselPhoto {
   String id;
   String url;
-  String title;
-  String caption;
-  String category;
-  String location;
-  String year;
-  bool inHero; // mostrata anche nel carosello iniziale
-  GalleryPhoto({
-    String? id,
-    required this.url,
-    required this.title,
-    this.caption = '',
-    this.category = '',
-    this.location = '',
-    this.year = '',
-    this.inHero = true,
-  }) : id = id ?? newId();
+  bool active;
+  CarouselPhoto({String? id, required this.url, this.active = true})
+    : id = id ?? newId();
 
-  factory GalleryPhoto.fromJson(Map<String, dynamic> j) => GalleryPhoto(
+  factory CarouselPhoto.fromJson(Map<String, dynamic> j) => CarouselPhoto(
     id: j['id'],
     url: j['url'] ?? '',
-    title: j['title'] ?? '',
-    caption: j['caption'] ?? '',
-    category: j['category'] ?? '',
-    location: j['location'] ?? '',
-    year: j['year'] ?? '',
-    inHero: j['inHero'] ?? true,
+    active: j['active'] ?? true,
   );
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'url': url,
-    'title': title,
-    'caption': caption,
-    'category': category,
-    'location': location,
-    'year': year,
-    'inHero': inHero,
-  };
+  Map<String, dynamic> toJson() => {'id': id, 'url': url, 'active': active};
 }
 
-/// Una foto all'interno di un lavoro, con la sua didascalia.
+/// Una foto all'interno di un lavoro (orizzontale o verticale).
 class WorkPhoto {
   String id;
   String url;
-  String caption;
+  String caption; // solo per il gestionale e l'accessibilità: non si mostra
   WorkPhoto({String? id, required this.url, this.caption = ''})
     : id = id ?? newId();
 
@@ -405,8 +172,7 @@ class WorkPhoto {
 /// Stagioni proposte nel filtro dei lavori.
 const seasons = ['Primavera', 'Estate', 'Autunno', 'Inverno'];
 
-/// Tipi di location suggeriti nell'area riservata (se ne possono scrivere
-/// anche altri).
+/// Tipi di location suggeriti nel gestionale (se ne possono scrivere altri).
 const settingSuggestions = [
   'Masseria',
   'Mare',
@@ -443,21 +209,25 @@ String seasonFromDate(String date) {
   return '';
 }
 
-/// Un lavoro realizzato (un matrimonio, un evento…): copertina, poche righe
-/// di presentazione e la sequenza delle foto.
+/// Al massimo quattro lavori in evidenza nella home.
+const maxFeatured = 4;
+
+/// Un lavoro realizzato (un matrimonio, un evento…): copertina, poche
+/// informazioni e la sequenza delle foto.
 class Work {
   String id;
-  String title;
-  String category; // tipo di evento, es. "Matrimonio"
+  String title; // il nome dei festeggiati, es. "Giulia & Marco"
+  String category; // tipologia, es. "Matrimonio"
   String location;
   String date; // testo libero, es. "Giugno 2024"
   String season; // vuota = ricavata dalla data
   String setting; // tipo di location, es. "Masseria", "Mare"
-  String story;
-  String credits; // cosa è stato realizzato, es. "Reportage · Album fine art"
   String cover;
   List<WorkPhoto> photos;
   bool published;
+  bool featured; // in evidenza nella home
+  bool onSite;
+  bool onApp;
   Work({
     String? id,
     required this.title,
@@ -466,11 +236,12 @@ class Work {
     this.date = '',
     this.season = '',
     this.setting = '',
-    this.story = '',
-    this.credits = '',
     this.cover = '',
     List<WorkPhoto>? photos,
     this.published = true,
+    this.featured = false,
+    this.onSite = true,
+    this.onApp = true,
   }) : id = id ?? newId(),
        photos = photos ?? [];
 
@@ -491,14 +262,12 @@ class Work {
     date: j['date'] ?? '',
     season: j['season'] ?? '',
     setting: j['setting'] ?? '',
-    story: j['story'] ?? '',
-    credits: j['credits'] ?? '',
     cover: j['cover'] ?? '',
-    photos: [
-      for (final p in (j['photos'] as List? ?? const []))
-        WorkPhoto.fromJson(Map<String, dynamic>.from(p as Map)),
-    ],
+    photos: _listOf(j['photos'], WorkPhoto.fromJson),
     published: j['published'] ?? true,
+    featured: j['featured'] ?? false,
+    onSite: j['onSite'] ?? true,
+    onApp: j['onApp'] ?? true,
   );
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -508,11 +277,228 @@ class Work {
     'date': date,
     'season': season,
     'setting': setting,
-    'story': story,
-    'credits': credits,
     'cover': cover,
     'photos': photos.map((e) => e.toJson()).toList(),
     'published': published,
+    'featured': featured,
+    'onSite': onSite,
+    'onApp': onApp,
+  };
+}
+
+// ---------------------------------------------------------------- preventivo
+
+/// Una voce del modulo preventivo (un tipo di evento o una richiesta) che il
+/// titolare può aggiungere, rinominare, spegnere e riaccendere.
+class QuoteOption {
+  String id;
+  String label;
+  bool active;
+  QuoteOption({String? id, required this.label, this.active = true})
+    : id = id ?? newId();
+
+  factory QuoteOption.fromJson(Map<String, dynamic> j) => QuoteOption(
+    id: j['id'],
+    label: j['label'] ?? '',
+    active: j['active'] ?? true,
+  );
+  Map<String, dynamic> toJson() => {'id': id, 'label': label, 'active': active};
+}
+
+/// Il modulo "Preventivo", uguale su sito e app: ogni parte si accende e si
+/// spegne dal gestionale. Nome, almeno un recapito e il consenso restano
+/// sempre: senza non si potrebbe ricontattare nessuno.
+class QuoteForm {
+  bool showEvent;
+  bool showDate;
+  bool showLocation;
+  bool showRequests;
+  bool showMessage;
+  bool askLastName;
+  bool askPhone;
+  bool askEmail;
+  List<QuoteOption> eventTypes;
+  List<QuoteOption> requests;
+  QuoteForm({
+    this.showEvent = true,
+    this.showDate = true,
+    this.showLocation = true,
+    this.showRequests = true,
+    this.showMessage = true,
+    this.askLastName = true,
+    this.askPhone = true,
+    this.askEmail = true,
+    List<QuoteOption>? eventTypes,
+    List<QuoteOption>? requests,
+  }) : eventTypes = eventTypes ?? [],
+       requests = requests ?? [];
+
+  List<QuoteOption> get activeEventTypes =>
+      eventTypes.where((e) => e.active && e.label.trim().isNotEmpty).toList();
+  List<QuoteOption> get activeRequests =>
+      requests.where((e) => e.active && e.label.trim().isNotEmpty).toList();
+
+  /// Almeno un recapito: se il titolare li spegne entrambi resta l'email.
+  bool get phoneOn => askPhone;
+  bool get emailOn => askEmail || !askPhone;
+
+  factory QuoteForm.fromJson(Map<String, dynamic> j) => QuoteForm(
+    showEvent: j['showEvent'] ?? true,
+    showDate: j['showDate'] ?? true,
+    showLocation: j['showLocation'] ?? true,
+    showRequests: j['showRequests'] ?? true,
+    showMessage: j['showMessage'] ?? true,
+    askLastName: j['askLastName'] ?? true,
+    askPhone: j['askPhone'] ?? true,
+    askEmail: j['askEmail'] ?? true,
+    eventTypes: _listOf(j['eventTypes'], QuoteOption.fromJson),
+    requests: _listOf(j['requests'], QuoteOption.fromJson),
+  );
+  Map<String, dynamic> toJson() => {
+    'showEvent': showEvent,
+    'showDate': showDate,
+    'showLocation': showLocation,
+    'showRequests': showRequests,
+    'showMessage': showMessage,
+    'askLastName': askLastName,
+    'askPhone': askPhone,
+    'askEmail': askEmail,
+    'eventTypes': eventTypes.map((e) => e.toJson()).toList(),
+    'requests': requests.map((e) => e.toJson()).toList(),
+  };
+
+  QuoteForm copy() => QuoteForm.fromJson(toJson());
+}
+
+enum QuoteStatus { nuova, contattata, confermata, archiviata }
+
+extension QuoteStatusLabel on QuoteStatus {
+  String get label => switch (this) {
+    QuoteStatus.nuova => 'Nuova',
+    QuoteStatus.contattata => 'Contattata',
+    QuoteStatus.confermata => 'Confermata',
+    QuoteStatus.archiviata => 'Archiviata',
+  };
+}
+
+class QuoteRequest {
+  String id;
+  DateTime createdAt;
+  String firstName;
+  String lastName;
+  String phone;
+  String email;
+  String eventType;
+  DateTime? eventDate;
+  String location; // dove si svolge l'evento
+  List<String> requests; // le voci scelte, con il loro nome
+  String message;
+  String source; // "sito" o "app"
+  QuoteStatus status;
+  String? appointmentId;
+
+  QuoteRequest({
+    String? id,
+    DateTime? createdAt,
+    required this.firstName,
+    this.lastName = '',
+    this.phone = '',
+    this.email = '',
+    this.eventType = '',
+    this.eventDate,
+    this.location = '',
+    List<String>? requests,
+    this.message = '',
+    this.source = 'sito',
+    this.status = QuoteStatus.nuova,
+    this.appointmentId,
+  }) : id = id ?? newId(),
+       createdAt = createdAt ?? DateTime.now(),
+       requests = requests ?? [];
+
+  String get fullName => '$firstName $lastName'.trim();
+
+  factory QuoteRequest.fromJson(Map<String, dynamic> j) => QuoteRequest(
+    id: j['id'],
+    createdAt: DateTime.tryParse(j['createdAt'] ?? ''),
+    firstName: j['firstName'] ?? '',
+    lastName: j['lastName'] ?? '',
+    phone: j['phone'] ?? '',
+    email: j['email'] ?? '',
+    eventType: j['eventType'] ?? '',
+    eventDate: DateTime.tryParse(j['eventDate'] ?? ''),
+    location: j['location'] ?? '',
+    requests: [
+      for (final r in (j['requests'] as List? ?? const []))
+        if (r is String) r,
+    ],
+    message: j['message'] ?? '',
+    source: j['source'] ?? 'sito',
+    status: QuoteStatus.values.firstWhere(
+      (e) => e.name == j['status'],
+      orElse: () => QuoteStatus.nuova,
+    ),
+    appointmentId: j['appointmentId'],
+  );
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'createdAt': createdAt.toIso8601String(),
+    'firstName': firstName,
+    'lastName': lastName,
+    'phone': phone,
+    'email': email,
+    'eventType': eventType,
+    'eventDate': eventDate?.toIso8601String(),
+    'location': location,
+    'requests': requests,
+    'message': message,
+    'source': source,
+    'status': status.name,
+    'appointmentId': appointmentId,
+  };
+}
+
+// ------------------------------------------------------------------- clienti
+
+/// Una foto o un video della festa nell'area di un cliente. [url] è la
+/// versione da guardare, [original] il file in alta qualità da scaricare.
+class ClientMedia {
+  String id;
+  String url;
+  String original;
+  bool isVideo;
+  String poster; // anteprima dei video
+  String name; // nome del file scaricato
+  ClientMedia({
+    String? id,
+    required this.url,
+    this.original = '',
+    this.isVideo = false,
+    this.poster = '',
+    this.name = '',
+  }) : id = id ?? newId();
+
+  /// Il file da scaricare: l'originale, se c'è.
+  String get downloadUrl => original.trim().isNotEmpty ? original : url;
+
+  /// L'immagine da mostrare nella griglia.
+  String get thumb => isVideo ? poster : url;
+
+  factory ClientMedia.fromJson(Map<String, dynamic> j) => ClientMedia(
+    id: j['id'],
+    url: j['url'] ?? '',
+    original: j['original'] ?? '',
+    isVideo: j['isVideo'] ?? false,
+    poster: j['poster'] ?? '',
+    name: j['name'] ?? '',
+  );
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'url': url,
+    'original': original,
+    'isVideo': isVideo,
+    'poster': poster,
+    'name': name,
   };
 }
 
@@ -553,12 +539,14 @@ class ClientFile {
   };
 }
 
-/// Un cliente con accesso alla propria area riservata sul sito. Nessuno si
-/// registra da solo: gli account li crea il titolare dal gestionale.
+/// Un cliente con accesso alla propria area nell'app. Nessuno si registra da
+/// solo: gli account li crea il titolare dal gestionale. Si entra con email
+/// (o nome utente) e password.
 class ClientAccount {
   String id;
   String name;
   String email;
+  String username; // facoltativo, in alternativa all'email
   String phone;
   String passwordHash;
   String passwordSalt;
@@ -567,7 +555,7 @@ class ClientAccount {
   String eventDate; // testo libero, es. "18 maggio 2024"
   String location;
   String welcome; // due righe di benvenuto nell'area del cliente
-  List<WorkPhoto> album;
+  List<ClientMedia> media;
   List<ClientFile> files;
   DateTime createdAt;
   DateTime? lastLogin;
@@ -575,6 +563,7 @@ class ClientAccount {
     String? id,
     required this.name,
     required this.email,
+    this.username = '',
     this.phone = '',
     this.passwordHash = '',
     this.passwordSalt = '',
@@ -583,19 +572,23 @@ class ClientAccount {
     this.eventDate = '',
     this.location = '',
     this.welcome = '',
-    List<WorkPhoto>? album,
+    List<ClientMedia>? media,
     List<ClientFile>? files,
     DateTime? createdAt,
     this.lastLogin,
   }) : id = id ?? newId(),
-       album = album ?? [],
+       media = media ?? [],
        files = files ?? [],
        createdAt = createdAt ?? DateTime.now();
+
+  int get photoCount => media.where((m) => !m.isVideo).length;
+  int get videoCount => media.where((m) => m.isVideo).length;
 
   factory ClientAccount.fromJson(Map<String, dynamic> j) => ClientAccount(
     id: j['id'],
     name: j['name'] ?? '',
     email: j['email'] ?? '',
+    username: j['username'] ?? '',
     phone: j['phone'] ?? '',
     passwordHash: j['passwordHash'] ?? '',
     passwordSalt: j['passwordSalt'] ?? '',
@@ -604,14 +597,8 @@ class ClientAccount {
     eventDate: j['eventDate'] ?? '',
     location: j['location'] ?? '',
     welcome: j['welcome'] ?? '',
-    album: [
-      for (final p in (j['album'] as List? ?? const []))
-        WorkPhoto.fromJson(Map<String, dynamic>.from(p as Map)),
-    ],
-    files: [
-      for (final f in (j['files'] as List? ?? const []))
-        ClientFile.fromJson(Map<String, dynamic>.from(f as Map)),
-    ],
+    media: _listOf(j['media'], ClientMedia.fromJson),
+    files: _listOf(j['files'], ClientFile.fromJson),
     createdAt: DateTime.tryParse(j['createdAt'] ?? ''),
     lastLogin: DateTime.tryParse(j['lastLogin'] ?? ''),
   );
@@ -619,6 +606,7 @@ class ClientAccount {
     'id': id,
     'name': name,
     'email': email,
+    'username': username,
     'phone': phone,
     'passwordHash': passwordHash,
     'passwordSalt': passwordSalt,
@@ -627,94 +615,10 @@ class ClientAccount {
     'eventDate': eventDate,
     'location': location,
     'welcome': welcome,
-    'album': album.map((e) => e.toJson()).toList(),
+    'media': media.map((e) => e.toJson()).toList(),
     'files': files.map((e) => e.toJson()).toList(),
     'createdAt': createdAt.toIso8601String(),
     'lastLogin': lastLogin?.toIso8601String(),
-  };
-}
-
-enum QuoteStatus { nuova, contattata, confermata, archiviata }
-
-extension QuoteStatusLabel on QuoteStatus {
-  String get label => switch (this) {
-    QuoteStatus.nuova => 'Nuova',
-    QuoteStatus.contattata => 'Contattata',
-    QuoteStatus.confermata => 'Confermata',
-    QuoteStatus.archiviata => 'Archiviata',
-  };
-}
-
-class QuoteRequest {
-  String id;
-  DateTime createdAt;
-  String firstName;
-  String lastName;
-  String phone;
-  String email;
-  String eventType;
-  DateTime? eventDate;
-  String location; // dove si svolge l'evento
-  String message;
-  List<String> serviceIds;
-  String? packageId;
-  QuoteStatus status;
-  String? appointmentId;
-
-  QuoteRequest({
-    String? id,
-    DateTime? createdAt,
-    required this.firstName,
-    required this.lastName,
-    required this.phone,
-    required this.email,
-    required this.eventType,
-    this.eventDate,
-    this.location = '',
-    this.message = '',
-    required this.serviceIds,
-    this.packageId,
-    this.status = QuoteStatus.nuova,
-    this.appointmentId,
-  }) : id = id ?? newId(),
-       createdAt = createdAt ?? DateTime.now();
-
-  String get fullName => '$firstName $lastName'.trim();
-
-  factory QuoteRequest.fromJson(Map<String, dynamic> j) => QuoteRequest(
-    id: j['id'],
-    createdAt: DateTime.tryParse(j['createdAt'] ?? ''),
-    firstName: j['firstName'] ?? '',
-    lastName: j['lastName'] ?? '',
-    phone: j['phone'] ?? '',
-    email: j['email'] ?? '',
-    eventType: j['eventType'] ?? '',
-    eventDate: DateTime.tryParse(j['eventDate'] ?? ''),
-    location: j['location'] ?? '',
-    message: j['message'] ?? '',
-    serviceIds: List<String>.from(j['serviceIds'] ?? const []),
-    packageId: j['packageId'],
-    status: QuoteStatus.values.firstWhere(
-      (e) => e.name == j['status'],
-      orElse: () => QuoteStatus.nuova,
-    ),
-    appointmentId: j['appointmentId'],
-  );
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'createdAt': createdAt.toIso8601String(),
-    'firstName': firstName,
-    'lastName': lastName,
-    'phone': phone,
-    'email': email,
-    'eventType': eventType,
-    'eventDate': eventDate?.toIso8601String(),
-    'location': location,
-    'message': message,
-    'serviceIds': serviceIds,
-    'packageId': packageId,
-    'status': status.name,
-    'appointmentId': appointmentId,
   };
 }
 
@@ -767,6 +671,7 @@ class Appointment {
 
 /// Impostazioni riservate al titolare (non pubbliche).
 class AdminSettings {
+  String username;
   String passwordHash;
   String passwordSalt;
   String googleClientId;
@@ -775,6 +680,7 @@ class AdminSettings {
   /// Fine della sessione "ricordami" su questo dispositivo.
   DateTime? sessionUntil;
   AdminSettings({
+    this.username = '',
     this.passwordHash = '',
     this.passwordSalt = '',
     this.googleClientId = '',
@@ -783,6 +689,7 @@ class AdminSettings {
   });
 
   factory AdminSettings.fromJson(Map<String, dynamic> j) => AdminSettings(
+    username: j['username'] ?? '',
     passwordHash: j['passwordHash'] ?? '',
     passwordSalt: j['passwordSalt'] ?? '',
     googleClientId: j['googleClientId'] ?? '',
@@ -790,6 +697,7 @@ class AdminSettings {
     sessionUntil: DateTime.tryParse(j['sessionUntil'] ?? ''),
   );
   Map<String, dynamic> toJson() => {
+    'username': username,
     'passwordHash': passwordHash,
     'passwordSalt': passwordSalt,
     'googleClientId': googleClientId,

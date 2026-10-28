@@ -7,9 +7,9 @@ import 'package:go_router/go_router.dart';
 
 import 'support/harness.dart';
 
-String _where(WidgetTester tester) => GoRouter.of(
-  tester.element(find.byType(Scaffold).first),
-).state.uri.toString();
+String _where(WidgetTester tester) =>
+    GoRouter.of(tester.element(find.byType(Scaffold).first)).state.uri
+        .toString();
 
 Future<void> _back(WidgetTester tester) async {
   await tester.binding.handlePopRoute();

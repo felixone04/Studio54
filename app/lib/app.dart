@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import 'pages/admin/admin_page.dart';
 import 'pages/bio_page.dart';
+import 'pages/client_area_page.dart';
 import 'pages/home_page.dart';
 import 'pages/quote_page.dart';
 import 'pages/works_page.dart';
@@ -142,14 +143,11 @@ class _StudioAppState extends State<StudioApp> {
       GoRoute(path: '/', pageBuilder: (c, s) => _fade(s, const HomePage())),
       GoRoute(
         path: '/preventivo',
-        pageBuilder: (c, s) => _fade(
-          s,
-          QuotePage(
-            key: ValueKey(s.uri.toString()),
-            preService: s.uri.queryParameters['s'],
-            prePackage: s.uri.queryParameters['p'],
-          ),
-        ),
+        pageBuilder: (c, s) => _fade(s, const QuotePage()),
+      ),
+      GoRoute(
+        path: '/area-clienti',
+        pageBuilder: (c, s) => _fade(s, const ClientAreaPage()),
       ),
       GoRoute(
         path: '/lavori',

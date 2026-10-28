@@ -90,16 +90,6 @@ class _QuoteCard extends StatelessWidget {
     final appt = s.appointments
         .where((a) => a.id == q.appointmentId)
         .firstOrNull;
-    final pkg = s.packageById(q.packageId);
-    double total = 0;
-    var priced = 0;
-    for (final id in q.serviceIds) {
-      final p = s.serviceById(id)?.internalPrice;
-      if (p != null) {
-        total += p;
-        priced++;
-      }
-    }
     final digits = q.phone.replaceAll(RegExp(r'[^0-9+]'), '');
 
     return Padding(
@@ -153,7 +143,7 @@ class _QuoteCard extends StatelessWidget {
                 '${q.eventType}'
                 '${q.eventDate != null ? ' · ${DateFormat('d MMM y', 'it_IT').format(q.eventDate!)}' : ''}'
                 '${q.location.trim().isNotEmpty ? ' · ${q.location.trim()}' : ''}'
-                ' · richiesta del $date',
+                ' · ${q.source == 'app' ? 'dall\'app' : 'dal sito'} il $date',
                 style: const TextStyle(color: Colors.black54),
               ),
             ),
@@ -162,56 +152,51 @@ class _QuoteCard extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 10,
                 children: [
-                  OutlinedButton.icon(
-                    onPressed: () => openUrl('tel:$digits'),
-                    icon: const Icon(Icons.phone_outlined, size: 18),
-                    label: Text(q.phone),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () =>
-                        openUrl('https://wa.me/${digits.replaceAll('+', '')}'),
-                    icon: const Icon(Icons.chat_outlined, size: 18),
-                    label: const Text('WhatsApp'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () => openUrl('mailto:${q.email}'),
-                    icon: const Icon(Icons.mail_outline_rounded, size: 18),
-                    label: Text(q.email),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Text(
-                pkg != null
-                    ? 'Pacchetto ${pkg.name} · servizi richiesti'
-                    : 'Servizi richiesti',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final id in q.serviceIds)
-                    Chip(
-                      label: Text(
-                        s.serviceById(id)?.name ?? '(servizio rimosso)',
+                  if (digits.isNotEmpty) ...[
+                    OutlinedButton.icon(
+                      onPressed: () => openUrl('tel:$digits'),
+                      icon: const Icon(Icons.phone_outlined, size: 18),
+                      label: Text(q.phone),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => openUrl(
+                        'https://wa.me/${digits.replaceAll('+', '')}',
                       ),
-                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.chat_outlined, size: 18),
+                      label: const Text('WhatsApp'),
+                    ),
+                  ],
+                  if (q.email.isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () => openUrl('mailto:${q.email}'),
+                      icon: const Icon(Icons.mail_outline_rounded, size: 18),
+                      label: Text(q.email),
                     ),
                 ],
               ),
-              if (priced > 0) ...[
-                const SizedBox(height: 10),
-                Text(
-                  'Stima interna: ${formatEuro(total)}${priced < q.serviceIds.length ? ' (parziale)' : ''}  ·  non visibile al cliente',
-                  style: const TextStyle(color: Colors.black54, fontSize: 13),
+              if (q.requests.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                const Text(
+                  'Richieste',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final r in q.requests)
+                      Chip(
+                        label: Text(r),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                  ],
                 ),
               ],
               if (q.message.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 const Text(
-                  'Note del cliente',
+                  'Messaggio',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 6),
