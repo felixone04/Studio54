@@ -313,30 +313,39 @@ class WorkCard extends StatelessWidget {
   }
 }
 
-/// I lavori uno sotto l'altro sul telefono, due per riga sui tablet.
+/// I lavori uno sotto l'altro sul telefono in verticale, due per riga sugli
+/// schermi più larghi; mai più larghi di [maxWidth], centrati.
 class WorkList extends StatelessWidget {
   const WorkList({super.key, required this.works});
   final List<Work> works;
 
+  /// Le schede restano piccole anche su schermi larghi (come sul sito).
+  static const maxWidth = 880.0;
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, box) {
-        final cols = box.maxWidth >= 720 ? 2 : 1;
-        final gap = context.fluid(20, 44);
-        final w = (box.maxWidth - gap * (cols - 1)) / cols;
-        return Wrap(
-          spacing: gap,
-          runSpacing: context.fluid(44, 72),
-          children: [
-            for (final work in works)
-              SizedBox(
-                width: w,
-                child: Reveal(child: WorkCard(work: work)),
-              ),
-          ],
-        );
-      },
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: maxWidth),
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final cols = box.maxWidth >= 600 ? 2 : 1;
+            final gap = context.fluid(20, 44);
+            final w = (box.maxWidth - gap * (cols - 1)) / cols;
+            return Wrap(
+              spacing: gap,
+              runSpacing: context.fluid(44, 72),
+              children: [
+                for (final work in works)
+                  SizedBox(
+                    width: w,
+                    child: Reveal(child: WorkCard(work: work)),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

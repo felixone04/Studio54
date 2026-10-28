@@ -203,9 +203,11 @@ class _ClientHome extends StatefulWidget {
 }
 
 class _ClientHomeState extends State<_ClientHome> {
-  /// Download in corso (id del file) e "scarica tutto" (fatti / totale).
+  /// La cartella aperta (null = tutte le cartelle).
+  String? _folder;
+
+  /// Download in corso (id del file).
   final _saving = <String>{};
-  (int, int)? _all;
 
   void _snack(String m) {
     final s = ScaffoldMessenger.maybeOf(context);
@@ -213,12 +215,13 @@ class _ClientHomeState extends State<_ClientHome> {
     s?.showSnackBar(SnackBar(content: Text(m)));
   }
 
-  Future<bool> _save(ClientMedia m, {bool quiet = false}) async {
+  /// Si scarica una foto (o un video) alla volta, guardandola.
+  Future<bool> _save(ClientMedia m) async {
     if (_saving.contains(m.id)) return false;
     setState(() => _saving.add(m.id));
     try {
       await mediaSaver.save(m);
-      if (!quiet && mounted) {
+      if (mounted) {
         _snack(
           m.isVideo
               ? 'Video salvato nella galleria (album Studio 54).'
@@ -238,28 +241,7 @@ class _ClientHomeState extends State<_ClientHome> {
     }
   }
 
-  Future<void> _saveAll() async {
-    final list = widget.client.media;
-    if (_all != null || list.isEmpty) return;
-    var ok = 0;
-    for (var i = 0; i < list.length; i++) {
-      if (!mounted) return;
-      setState(() => _all = (i, list.length));
-      if (await _save(list[i], quiet: true)) {
-        ok++;
-      } else {
-        break;
-      }
-    }
-    if (!mounted) return;
-    setState(() => _all = null);
-    if (ok == list.length) {
-      _snack('Tutto salvato nella galleria del telefono (album Studio 54).');
-    }
-  }
-
-  void _open(int i) {
-    final media = widget.client.media;
+  void _open(List<ClientMedia> media, int i) {
     showGeneralDialog(
       context: context,
       barrierColor: Palette.paper,
@@ -274,6 +256,7 @@ class _ClientHomeState extends State<_ClientHome> {
             media[k].isVideo ? _VideoView(media: media[k]) : null,
         actions: (_, k) => [
           _DownloadButton(
+            key: ValueKey(media[k].id),
             busy: _saving.contains(media[k].id),
             onTap: () => _save(media[k]),
           ),
@@ -282,15 +265,132 @@ class _ClientHomeState extends State<_ClientHome> {
     );
   }
 
+  String _count(List<ClientMedia> l) {
+    final v = l.where((m) => m.isVideo).length, p = l.length - v;
+    return [
+      if (p > 0) '$p foto',
+      if (v > 0) '$v video',
+    ].join(' · ').toUpperCase();
+  }
+
+  Widget _grid(List<ClientMedia> media) => LayoutBuilder(
+    builder: (context, box) {
+      final cols = box.maxWidth >= 720 ? 4 : (box.maxWidth >= 480 ? 3 : 2);
+      const gap = 8.0;
+      final w = (box.maxWidth - gap * (cols - 1)) / cols;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [
+          for (var i = 0; i < media.length; i++)
+            SizedBox(
+              width: w,
+              height: w,
+              child: _Tile(
+                media: media[i],
+                number: i + 1,
+                onTap: () => _open(media, i),
+              ),
+            ),
+        ],
+      );
+    },
+  );
+
   @override
   Widget build(BuildContext context) {
     final c = widget.client;
     final s = context.read<AppState>();
+    final folder = c.folders.where((f) => f.id == _folder).firstOrNull;
     final info = [
       c.eventDate,
       c.location,
     ].where((e) => e.trim().isNotEmpty).join(' · ');
-    final all = _all;
+
+    final List<Widget> content;
+    if (folder != null) {
+      // Dentro una cartella: le sue foto, come sempre.
+      final media = c.mediaIn(folder.id);
+      content = [
+        HoverLink(
+          '← TUTTE LE CARTELLE',
+          style: label(10.5, color: Palette.stone),
+          onTap: () => setState(() => _folder = null),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          folder.name.toUpperCase(),
+          style: display(context.fluid(24, 36), spacing: 0.08, height: 1.15),
+        ),
+        const SizedBox(height: 6),
+        Text(_count(media), style: label(10.5, color: Palette.stone)),
+        const SizedBox(height: 18),
+        if (media.isEmpty)
+          Text(
+            'Questa cartella è ancora vuota.',
+            style: display(20, italic: true, color: Palette.stone),
+          )
+        else
+          _grid(media),
+      ];
+    } else {
+      final loose = c.mediaIn('');
+      final folders = [
+        for (final f in c.folders)
+          if (c.mediaIn(f.id).isNotEmpty) f,
+      ];
+      content = [
+        if (c.media.isEmpty)
+          Text(
+            'Le foto della vostra festa arriveranno qui a breve.',
+            style: display(20, italic: true, color: Palette.stone),
+          ),
+        if (folders.isNotEmpty) ...[
+          Text('LE CARTELLE', style: label(10.5)),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, box) {
+              final cols = box.maxWidth >= 720 ? 3 : 2;
+              final gap = context.fluid(14, 22);
+              final w = (box.maxWidth - gap * (cols - 1)) / cols;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap + 6,
+                children: [
+                  for (final f in folders)
+                    SizedBox(
+                      width: w,
+                      child: _FolderCard(
+                        name: f.name,
+                        media: c.mediaIn(f.id),
+                        count: _count(c.mediaIn(f.id)),
+                        onTap: () => setState(() => _folder = f.id),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+        if (loose.isNotEmpty) ...[
+          if (folders.isNotEmpty) const SizedBox(height: 36),
+          Text(
+            folders.isEmpty ? _count(loose) : 'ALTRE FOTO · ${_count(loose)}',
+            style: label(10.5),
+          ),
+          const SizedBox(height: 14),
+          _grid(loose),
+        ],
+        if (c.media.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            'Toccate una foto o un video per vederlo grande e scaricarlo.',
+            style: body(13, color: Palette.ash),
+          ),
+        ],
+      ];
+    }
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         context.gutter,
@@ -331,75 +431,16 @@ class _ClientHomeState extends State<_ClientHome> {
                   style: label(10.5, color: Palette.stone),
                 ),
               ],
-              if (c.welcome.trim().isNotEmpty) ...[
+              if (c.welcome.trim().isNotEmpty && folder == null) ...[
                 const SizedBox(height: 16),
                 Text(
                   c.welcome,
                   style: body(15.5, color: Palette.stone, height: 1.65),
                 ),
               ],
-              const SizedBox(height: 26),
-              if (c.media.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        [
-                          if (c.photoCount > 0) '${c.photoCount} foto',
-                          if (c.videoCount > 0)
-                            '${c.videoCount} ${c.videoCount == 1 ? 'video' : 'video'}',
-                        ].join(' · ').toUpperCase(),
-                        style: label(10.5),
-                      ),
-                    ),
-                    PillButton(
-                      all == null
-                          ? 'Scarica tutto'
-                          : 'Scarico ${all.$1 + 1} di ${all.$2}',
-                      filled: false,
-                      loading: all != null,
-                      icon: Icons.download_rounded,
-                      onTap: _saveAll,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                LayoutBuilder(
-                  builder: (context, box) {
-                    final cols = box.maxWidth >= 720
-                        ? 4
-                        : (box.maxWidth >= 480 ? 3 : 2);
-                    const gap = 8.0;
-                    final w = (box.maxWidth - gap * (cols - 1)) / cols;
-                    return Wrap(
-                      spacing: gap,
-                      runSpacing: gap,
-                      children: [
-                        for (var i = 0; i < c.media.length; i++)
-                          SizedBox(
-                            width: w,
-                            height: w,
-                            child: _Tile(
-                              media: c.media[i],
-                              number: i + 1,
-                              onTap: () => _open(i),
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Toccate una foto o un video per vederlo grande e scaricarlo.',
-                  style: body(13, color: Palette.ash),
-                ),
-              ] else
-                Text(
-                  'Le foto della vostra festa arriveranno qui a breve.',
-                  style: display(20, italic: true, color: Palette.stone),
-                ),
-              if (c.files.isNotEmpty) ...[
+              const SizedBox(height: 28),
+              ...content,
+              if (c.files.isNotEmpty && folder == null) ...[
                 const SizedBox(height: 40),
                 Text('DOCUMENTI E LINK', style: label(10.5)),
                 const SizedBox(height: 10),
@@ -453,6 +494,99 @@ class _ClientHomeState extends State<_ClientHome> {
   }
 }
 
+/// Una cartella dell'area clienti, come un piccolo album: tre foto
+/// sovrapposte e un po' ruotate, il nome e quante foto contiene.
+class _FolderCard extends StatelessWidget {
+  const _FolderCard({
+    required this.name,
+    required this.media,
+    required this.count,
+    required this.onTap,
+  });
+  final String name;
+  final List<ClientMedia> media;
+  final String count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final covers = [
+      for (final m in media.take(3))
+        if (m.thumb.isNotEmpty) m.thumb,
+    ];
+    Widget sheet(String? url, double turns, Offset shift) =>
+        Transform.translate(
+          offset: shift,
+          child: Transform.rotate(
+            angle: turns,
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x261E1B17),
+                    blurRadius: 14,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: url == null
+                  ? const ColoredBox(color: Palette.linen)
+                  : PhotoImage(url),
+            ),
+          ),
+        );
+    return Semantics(
+      button: true,
+      label: 'Cartella $name',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                color: Palette.linen,
+                padding: const EdgeInsets.all(18),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (covers.length > 2)
+                      sheet(covers[2], 0.07, const Offset(6, 2)),
+                    if (covers.length > 1)
+                      sheet(covers[1], -0.06, const Offset(-5, 3)),
+                    sheet(covers.firstOrNull, 0, Offset.zero),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.folder_outlined, size: 18, color: context.accentInk),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    name.toUpperCase(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: display(17, spacing: 0.08, height: 1.2),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(count, style: label(9.5, color: Palette.stone)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _Tile extends StatelessWidget {
   const _Tile({required this.media, required this.number, required this.onTap});
   final ClientMedia media;
@@ -492,7 +626,7 @@ class _Tile extends StatelessWidget {
 }
 
 class _DownloadButton extends StatefulWidget {
-  const _DownloadButton({required this.busy, required this.onTap});
+  const _DownloadButton({super.key, required this.busy, required this.onTap});
   final bool busy;
   final Future<bool> Function() onTap;
 

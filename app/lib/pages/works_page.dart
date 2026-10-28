@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -440,6 +442,11 @@ class _WorkPageState extends State<WorkPage> {
     }
     final urls = [for (final p in w.photos) p.url];
     _aspects.resolveAll(urls);
+    double ratio(String u) => (_aspects.of(u) ?? 1.5).clamp(0.4, 3.0);
+    // Tablet in orizzontale: le foto sparse, come sul sito. Telefono (anche
+    // girato) o tablet in verticale: una sotto l'altra.
+    final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
+    final scattered = tablet && context.w > context.h;
     final gap = context.fluid(10, 22);
     return SiteScaffold(
       location: '/lavori',
@@ -447,41 +454,243 @@ class _WorkPageState extends State<WorkPage> {
         _Wrap(
           top: context.fluid(14, 32),
           bottom: context.fluid(70, 120),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (var i = 0; i < w.photos.length; i++) ...[
-                    if (i > 0) SizedBox(height: gap),
-                    Reveal(
-                      child: Semantics(
-                        button: true,
-                        image: true,
-                        label: w.photos[i].caption.trim().isEmpty
-                            ? 'Foto ${i + 1}'
-                            : w.photos[i].caption,
-                        child: GestureDetector(
-                          onTap: () => showPhotoViewer(context, urls, i),
-                          child: AspectRatio(
-                            // Proporzioni vere, così la foto non si taglia.
-                            aspectRatio: (_aspects.of(urls[i]) ?? 1.5).clamp(
-                              0.4,
-                              3.0,
+          child: scattered
+              ? _Scattered(
+                  urls: urls,
+                  ratio: ratio,
+                  gap: gap,
+                  open: (list, i) => showPhotoViewer(context, list, i),
+                )
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 900),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (var i = 0; i < urls.length; i++) ...[
+                          if (i > 0) SizedBox(height: gap),
+                          Reveal(
+                            child: _Photo(
+                              url: urls[i],
+                              label: 'Foto ${i + 1}',
+                              onTap: () => showPhotoViewer(context, urls, i),
+                              child: AspectRatio(
+                                // Proporzioni vere: la foto non si taglia.
+                                aspectRatio: ratio(urls[i]),
+                                child: PhotoImage(urls[i]),
+                              ),
                             ),
-                            child: PhotoImage(urls[i]),
                           ),
-                        ),
-                      ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+                  ),
+                ),
         ),
       ],
+    );
+  }
+}
+
+class _Photo extends StatelessWidget {
+  const _Photo({
+    required this.url,
+    required this.label,
+    required this.onTap,
+    required this.child,
+  });
+  final String url;
+  final String label;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    image: true,
+    label: label,
+    child: MouseRegion(
+      cursor: SystemMouseCursors.zoomIn,
+      child: GestureDetector(onTap: onTap, child: child),
+    ),
+  );
+}
+
+// ------------------------------------------------------ foto sparse (tablet)
+
+/// Composizione di una riga delle foto sparse.
+sealed class _Row {
+  const _Row();
+}
+
+/// Una foto sola a tutta larghezza (o, se verticale, centrata).
+class _Single extends _Row {
+  const _Single(this.i);
+  final int i;
+}
+
+/// Foto affiancate alla stessa altezza.
+class _Side extends _Row {
+  const _Side(this.ids);
+  final List<int> ids;
+}
+
+/// Una verticale accanto a due orizzontali una sopra l'altra.
+class _Stack extends _Row {
+  const _Stack(this.tall, this.top, this.bottom, {required this.tallLeft});
+  final int tall;
+  final int top;
+  final int bottom;
+  final bool tallLeft;
+}
+
+/// Come sul sito: la prima orizzontale grande, poi ritmi diversi che si
+/// alternano (una verticale e due orizzontali, una orizzontale e due
+/// verticali, coppie, foto singole). Nessuna foto viene tagliata.
+List<_Row> _plan(List<bool> landscape) {
+  final n = landscape.length;
+  final rows = <_Row>[];
+  if (n == 0) return rows;
+  rows.add(const _Single(0));
+  var k = 1;
+  var variant = 0;
+  bool? o(int d) => k + d < n ? landscape[k + d] : null;
+  while (k < n) {
+    final a = o(0)!, b = o(1), c = o(2);
+    if (!a) {
+      if (b == true && c == true) {
+        rows.add(_Stack(k, k + 1, k + 2, tallLeft: true));
+        k += 3;
+      } else if (b == false && c != null) {
+        rows.add(_Side([k, k + 1, k + 2]));
+        k += 3;
+      } else if (b != null) {
+        rows.add(_Side([k, k + 1]));
+        k += 2;
+      } else {
+        rows.add(_Single(k));
+        k += 1;
+      }
+    } else {
+      if (b == false && c == false) {
+        rows.add(_Side([k, k + 1, k + 2]));
+        k += 3;
+      } else if (b == true && c == false) {
+        rows.add(_Stack(k + 2, k, k + 1, tallLeft: false));
+        k += 3;
+      } else if (b == true && c == true && variant.isOdd) {
+        rows.add(_Single(k));
+        k += 1;
+      } else if (b != null) {
+        rows.add(_Side([k, k + 1]));
+        k += 2;
+      } else {
+        rows.add(_Single(k));
+        k += 1;
+      }
+    }
+    variant++;
+  }
+  return rows;
+}
+
+class _Scattered extends StatelessWidget {
+  const _Scattered({
+    required this.urls,
+    required this.ratio,
+    required this.gap,
+    required this.open,
+  });
+  final List<String> urls;
+  final double Function(String) ratio;
+  final double gap;
+  final void Function(List<String> photos, int index) open;
+
+  @override
+  Widget build(BuildContext context) {
+    // In apertura la prima foto orizzontale; le altre restano in ordine.
+    final lead = urls.indexWhere((u) => ratio(u) > 1);
+    final photos = [
+      if (lead > 0) urls[lead],
+      for (var i = 0; i < urls.length; i++)
+        if (i != lead || lead <= 0) urls[i],
+    ];
+    final ratios = [for (final u in photos) ratio(u)];
+    final maxH = context.h * 0.9;
+
+    Widget tile(int i, double w, double h) => _Photo(
+      url: photos[i],
+      label: 'Foto ${i + 1}',
+      onTap: () => open(photos, i),
+      child: SizedBox(width: w, height: h, child: PhotoImage(photos[i])),
+    );
+
+    return LayoutBuilder(
+      builder: (context, box) {
+        // Un pixel di margine contro gli arrotondamenti.
+        final full = box.maxWidth.floorToDouble() - 1;
+        final rows = <Widget>[];
+        for (final r in _plan([for (final a in ratios) a > 1])) {
+          switch (r) {
+            case _Single(:final i):
+              var h = full / ratios[i];
+              if (ratios[i] <= 1) h = math.min(h, maxH);
+              rows.add(Center(child: tile(i, h * ratios[i], h)));
+            case _Side(:final ids):
+              final sum = ids.fold<double>(0, (s, i) => s + ratios[i]);
+              final h = math.min((full - gap * (ids.length - 1)) / sum, maxH);
+              rows.add(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var j = 0; j < ids.length; j++) ...[
+                      if (j > 0) SizedBox(width: gap),
+                      tile(ids[j], h * ratios[ids[j]], h),
+                    ],
+                  ],
+                ),
+              );
+            case _Stack(
+              :final tall,
+              :final top,
+              :final bottom,
+              :final tallLeft,
+            ):
+              // La colonna delle due orizzontali è larga quanto basta perché
+              // finisca alla stessa altezza della verticale.
+              final av = ratios[tall];
+              final k = 1 / ratios[top] + 1 / ratios[bottom];
+              final c = (full - gap - av * gap) / (av * k + 1);
+              final hp = c * k + gap;
+              final tallTile = tile(tall, av * hp, hp);
+              final column = Column(
+                children: [
+                  tile(top, c, c / ratios[top]),
+                  SizedBox(height: gap),
+                  tile(bottom, c, c / ratios[bottom]),
+                ],
+              );
+              rows.add(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: tallLeft
+                      ? [tallTile, SizedBox(width: gap), column]
+                      : [column, SizedBox(width: gap), tallTile],
+                ),
+              );
+          }
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var r = 0; r < rows.length; r++) ...[
+              if (r > 0) SizedBox(height: gap * 1.6),
+              Reveal(child: rows[r]),
+            ],
+          ],
+        );
+      },
     );
   }
 }

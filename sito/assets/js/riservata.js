@@ -823,7 +823,7 @@
   function modaleCliente(cl) {
     var nuovo = !cl;
     var d = cl ? copia(cl) : { id: nuovoId('cl-'), name: '', email: '', username: '', phone: '', passwordHash: '', passwordSalt: '', active: true, eventTitle: '', eventDate: '', location: '', welcome: '', media: [], files: [], createdAt: new Date().toISOString(), lastLogin: null };
-    d.media = d.media || []; d.files = d.files || [];
+    d.media = d.media || []; d.files = d.files || []; d.folders = d.folders || [];
     finestra({
       titolo: nuovo ? 'Nuovo cliente' : d.name,
       corpo: '<div class="coppia">' + campo('cl-name', 'Nome e cognome *', d.name) + campo('cl-email', 'Email *', d.email, { tipo: 'email', aiuto: 'Serve per entrare nell\'app.' }) + '</div>' +
@@ -832,7 +832,10 @@
         '<div class="coppia">' + campo('cl-eventDate', 'Data', d.eventDate, { aiuto: 'Es. 18 maggio 2024.' }) + campo('cl-location', 'Luogo', d.location) + '</div>' +
         campo('cl-welcome', 'Benvenuto nella sua area', d.welcome, { area: true, righe: 2 }) +
         (nuovo ? '' : interruttore('cl-active', d.active !== false, 'Accesso attivo', 'Spento: il cliente non può più entrare.')) +
-        '<h3 id="cl-conto"></h3><p class="nota-piccola" style="margin:-4px 0 10px">Il cliente li guarda nell\'app e li scarica sul telefono in alta qualità.</p><div class="griglia-foto piccole" id="cl-media"></div>' +
+        '<h3 id="cl-conto"></h3><p class="nota-piccola" style="margin:-4px 0 10px">Il cliente li guarda nell\'app e li scarica sul telefono in alta qualità, uno alla volta.</p>' +
+        '<p class="etichetta-campo">Cartelle</p><p class="nota-piccola" style="margin:-6px 0 8px">Per dividere foto e video in sezioni (es. Preparativi, Cerimonia, Festa). Sotto ogni foto scegli la sua cartella.</p><div class="cartelle" id="cl-cartelle"></div>' +
+        '<div class="riga-aggiungi" style="margin:6px 0 16px"><span class="campo"><input id="cl-nuova-cartella" placeholder="Nuova cartella (es. Cerimonia)"></span><button type="button" class="bottone bordo" id="cl-aggiungi-cartella">' + ico('piu') + 'Crea cartella</button></div>' +
+        '<div class="griglia-foto piccole" id="cl-media"></div>' +
         '<div class="aggiungi-foto">' + caricatore('Carica foto', 'image/*', true).replace('<label', '<label id="cl-carica"') +
         '<label class="campo" style="margin:0;min-width:200px"><select id="cl-da-lavoro"><option value="">Prendi le foto di un lavoro…</option>' + P.works.map(function (w) { return '<option value="' + esc(w.id) + '">' + esc(w.title) + '</option>'; }).join('') + '</select></label></div>' +
         '<div class="coppia" style="margin-top:12px">' + campo('cl-foto-url', 'Indirizzo di una foto (originale)', '', { attr: ' placeholder="https://…"' }) +
@@ -844,7 +847,14 @@
         '<div class="coppia">' + campo('cl-link-nome', 'Nome del link', '', { attr: ' placeholder="Es. Galleria su Google Drive"' }) + campo('cl-link-url', 'Indirizzo', '', { attr: ' placeholder="https://…"' }) + '</div>' +
         '<button type="button" class="bottone bordo" id="cl-link-aggiungi">' + ico('link') + 'Aggiungi link</button>',
       dopo: function (c) {
+        function cartelle() {
+          $('#cl-cartelle', c).innerHTML = d.folders.length ? d.folders.map(function (f, k) {
+            var n = d.media.filter(function (m) { return m.folder === f.id; }).length;
+            return '<span class="cartella-voce"><i class="ico ico-cartella"></i><input data-rinomina="' + k + '" value="' + esc(f.name) + '" aria-label="Nome della cartella"><small>' + n + '</small><button type="button" class="ico-bottone" data-via-cartella="' + k + '" aria-label="Elimina la cartella">' + ico('cestino') + '</button></span>';
+          }).join('') : '<p class="tenue piccolo">Nessuna cartella: le foto si vedono tutte insieme.</p>';
+        }
         function media() {
+          cartelle();
           var foto = d.media.filter(function (m) { return !m.isVideo; }).length;
           $('#cl-conto', c).textContent = 'Foto e video (' + foto + ' foto, ' + (d.media.length - foto) + ' video)';
           $('#cl-media', c).innerHTML = d.media.map(function (m, i) {
@@ -852,7 +862,8 @@
             return '<figure class="foto-scheda"><div class="foto-scheda-img">' + (anteprima ? '<img src="' + esc(miniatura(anteprima, 300)) + '" alt="" loading="lazy">' : '') + (m.isVideo ? '<span class="segno video">' + ico('video') + 'Video</span>' : '') + '</div>' +
               '<div class="foto-scheda-fondo"><button type="button" class="ico-bottone" data-sx="' + i + '" aria-label="Sposta prima"' + (i ? '' : ' disabled') + '>' + ico('sinistra') + '</button>' +
               '<button type="button" class="ico-bottone" data-dx="' + i + '" aria-label="Sposta dopo"' + (i < d.media.length - 1 ? '' : ' disabled') + '>' + ico('destra') + '</button>' +
-              '<button type="button" class="ico-bottone" data-via="' + i + '" aria-label="Togli">' + ico('cestino') + '</button></div></figure>';
+              '<button type="button" class="ico-bottone" data-via="' + i + '" aria-label="Togli">' + ico('cestino') + '</button></div>' +
+              (d.folders.length ? '<select class="scegli-cartella" data-cartella="' + i + '" aria-label="Cartella"><option value="">Senza cartella</option>' + d.folders.map(function (f) { return '<option value="' + esc(f.id) + '"' + (m.folder === f.id ? ' selected' : '') + '>' + esc(f.name || 'Senza nome') + '</option>'; }).join('') + '</select>' : '') + '</figure>';
           }).join('');
         }
         function file() {
@@ -863,6 +874,32 @@
           }).join('');
         }
         media(); file();
+        $('#cl-media', c).addEventListener('change', function (e) {
+          var s = e.target.closest('[data-cartella]');
+          if (s) { d.media[+s.getAttribute('data-cartella')].folder = s.value; cartelle(); }
+        });
+        $('#cl-cartelle', c).addEventListener('input', function (e) {
+          var r = e.target.closest('[data-rinomina]');
+          if (r) d.folders[+r.getAttribute('data-rinomina')].name = r.value;
+        });
+        $('#cl-cartelle', c).addEventListener('change', function () { media(); });
+        $('#cl-cartelle', c).addEventListener('click', function (e) {
+          var b = e.target.closest('[data-via-cartella]');
+          if (!b) return;
+          // Le foto della cartella eliminata restano, fuori dalle cartelle.
+          var via = d.folders.splice(+b.getAttribute('data-via-cartella'), 1)[0];
+          d.media.forEach(function (m) { if (m.folder === via.id) m.folder = ''; });
+          media();
+        });
+        var nuovaCartella = function () {
+          var n = val(c, 'cl-nuova-cartella');
+          if (!n) return;
+          d.folders.push({ id: nuovoId(d.id + '-c'), name: n });
+          $('#cl-nuova-cartella', c).value = '';
+          media();
+        };
+        $('#cl-aggiungi-cartella', c).addEventListener('click', nuovaCartella);
+        $('#cl-nuova-cartella', c).addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); nuovaCartella(); } });
         $('#cl-media', c).addEventListener('click', function (e) {
           var b = e.target.closest('button');
           if (!b) return;

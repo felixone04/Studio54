@@ -25,6 +25,14 @@ class _AppScrollBehavior extends MaterialScrollBehavior {
     PointerDeviceKind.trackpad,
     PointerDeviceKind.stylus,
   };
+
+  /// Nessuna barra di scorrimento visibile: si scorre lo stesso.
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
 }
 
 /// Sul telefono il sito sta tra la barra di stato (ora, batteria) e quella

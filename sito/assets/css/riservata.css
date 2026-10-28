@@ -7,7 +7,10 @@
   --rosso: #B3382A; --verde: #3F7D4E; --blu: #3D6A9E;
   --display: 'Josefin Sans', system-ui, sans-serif; --testo: 'Jost', system-ui, sans-serif;
 }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; scrollbar-width: none; }
+/* Nessuna barra di scorrimento visibile: si scorre lo stesso. */
+*::-webkit-scrollbar { display: none; }
+html, body { overflow-x: clip; }
 body { margin: 0; background: var(--carta); color: var(--inchiostro); font: 400 15px/1.5 var(--testo); -webkit-font-smoothing: antialiased; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
@@ -317,3 +320,15 @@ button.riga { width: 100%; text-align: left; }
 .messaggio-cliente { width: 100%; min-height: 220px; margin: 4px 0 8px; padding: 12px 14px; border: 1px solid var(--linea-campo); border-radius: 6px; background: var(--carta); font: 400 14px/1.55 var(--testo); resize: vertical; }
 .file-riga { padding-left: 0; padding-right: 0; }
 .file-tipo { flex: none; display: grid; place-items: center; width: 44px; height: 32px; border-radius: 4px; background: var(--lino); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; color: var(--accento-scuro); }
+
+/* Cartelle dell'area clienti */
+.ico-cartella { --i: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'%3E%3Cpath d='M3.5 6.5a1.5 1.5 0 0 1 1.5-1.5h4.2l2 2.2H19a1.5 1.5 0 0 1 1.5 1.5v9.3a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z'/%3E%3C/svg%3E"); }
+.etichetta-campo { margin: 14px 0 10px; font-weight: 600; font-size: 14px; }
+.cartelle { display: flex; flex-wrap: wrap; gap: 8px; }
+.cartella-voce { display: inline-flex; align-items: center; gap: 6px; padding: 4px 4px 4px 12px; border: 1px solid var(--linea-campo); border-radius: 8px; background: var(--bianco); }
+.cartella-voce .ico { color: var(--accento-scuro); width: 17px; height: 17px; }
+.cartella-voce input { width: 130px; min-width: 0; border: 0; padding: 6px 2px; font: 500 14px var(--testo); background: transparent; }
+.cartella-voce input:focus { outline: none; border-bottom: 1px solid var(--inchiostro); }
+.cartella-voce small { color: var(--pietra); font-size: 12px; }
+.cartella-voce .ico-bottone { width: 30px; height: 30px; }
+.scegli-cartella { width: calc(100% - 12px); margin: 0 6px 6px; padding: 5px 6px; border: 1px solid var(--linea-campo); border-radius: 6px; background: var(--bianco); font: 400 12.5px var(--testo); }

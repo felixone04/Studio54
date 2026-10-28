@@ -214,6 +214,54 @@ void main() {
     });
   });
 
+  group('orientamento', () {
+    testWidgets('girato in orizzontale il carosello usa le foto del sito', (
+      tester,
+    ) async {
+      final s = await loadState();
+      // Una foto del sito spenta: il carosello orizzontale ne ha 5.
+      s.carouselSite.first.active = false;
+      await s.setCarouselSite([...s.carouselSite]);
+      await pumpApp(tester, s, size: const Size(844, 390));
+      expect(find.bySemanticsLabel('Foto 1 di 5'), findsOneWidget);
+      await disposeApp(tester);
+
+      await pumpApp(tester, s, size: phone);
+      expect(find.bySemanticsLabel('Foto 1 di 6'), findsOneWidget);
+      await disposeApp(tester);
+    });
+
+    Future<(double, double)> tops(WidgetTester tester, Size size) async {
+      final s = await loadState();
+      await pumpApp(tester, s, location: '/lavori/w-anna-paolo', size: size);
+      await settle(tester, 1600);
+      // Anche fuori dallo schermo: si cerca il widget, non la semantica.
+      Finder foto(String l) => find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == l,
+      );
+      final a = tester.getTopLeft(foto('Foto 2')).dy;
+      final b = tester.getTopLeft(foto('Foto 3')).dy;
+      await disposeApp(tester);
+      return (a, b);
+    }
+
+    testWidgets('tablet in orizzontale: foto sparse, affiancate', (
+      tester,
+    ) async {
+      final (a, b) = await tops(tester, const Size(1180, 820));
+      expect(a, b);
+    });
+
+    testWidgets('telefono girato: una sotto l\'altra', (tester) async {
+      final (a, b) = await tops(tester, const Size(844, 390));
+      expect(b, greaterThan(a));
+    });
+
+    testWidgets('tablet in verticale: una sotto l\'altra', (tester) async {
+      final (a, b) = await tops(tester, const Size(820, 1180));
+      expect(b, greaterThan(a));
+    });
+  });
   group('lavori', () {
     testWidgets('filtri e dettaglio solo foto', (tester) async {
       final s = await loadState();

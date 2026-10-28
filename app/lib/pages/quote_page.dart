@@ -116,6 +116,10 @@ class _QuotePageState extends State<QuotePage> {
         if (v.isEmpty) return 'Inserisci l\'indirizzo email';
         return _email.hasMatch(v) ? '' : 'Email non valida (es. nome@email.it)';
       }(),
+      'requests' =>
+        f.showRequests && f.activeRequests.isNotEmpty && _requests.isEmpty
+            ? 'Scegliete almeno una richiesta'
+            : '',
       'privacy' => _privacy ? '' : 'Serve il consenso per inviare la richiesta',
       _ => '',
     };
@@ -124,6 +128,7 @@ class _QuotePageState extends State<QuotePage> {
 
   List<String> _fields(_Step s) => switch (s) {
     _Step.event => ['type', 'date', 'location'],
+    _Step.requests => ['requests'],
     _Step.contacts => ['first', 'last', 'phone', 'email'],
     _Step.summary => ['privacy'],
     _ => [],
@@ -380,7 +385,7 @@ class _QuotePageState extends State<QuotePage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Hint('Toccate le voci che vi interessano.'),
+            _Hint('Toccate una o più voci. *'),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -395,6 +400,7 @@ class _QuotePageState extends State<QuotePage> {
                   ),
               ],
             ),
+            _Error(_shown('requests', f)),
           ],
         );
       case _Step.contacts:

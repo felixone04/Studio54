@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -186,24 +188,33 @@ class _SiteScaffoldState extends State<SiteScaffold> {
               top: 0,
               left: 0,
               right: 0,
-              // Niente sfocatura: è costosa da disegnare. La barra prende il
-              // colore pieno della parte di pagina sotto di lei, e sopra la
-              // foto d'apertura è trasparente con una velatura leggera.
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 450),
-                height: navH,
-                padding: EdgeInsets.symmetric(horizontal: context.gutter),
-                decoration: BoxDecoration(
-                  color: light ? Colors.transparent : _under,
-                  gradient: light
-                      ? const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0x61000000), Color(0x00000000)],
-                        )
-                      : null,
+              // Come un vetro: bianco appena trasparente e sfocato, così si
+              // intravede la pagina che scorre sotto ma logo e menu si leggono
+              // sempre. Sopra la foto d'apertura è del tutto trasparente, con
+              // una velatura leggera.
+              child: ClipRect(
+                child: BackdropFilter(
+                  enabled: !light,
+                  filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 450),
+                    height: navH,
+                    padding: EdgeInsets.symmetric(horizontal: context.gutter),
+                    decoration: BoxDecoration(
+                      color: light
+                          ? Colors.transparent
+                          : _under.withValues(alpha: 0.72),
+                      gradient: light
+                          ? const LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Color(0x61000000), Color(0x00000000)],
+                            )
+                          : null,
+                    ),
+                    child: _NavBar(location: widget.location, light: light),
+                  ),
                 ),
-                child: _NavBar(location: widget.location, light: light),
               ),
             ),
             if (widget.overlay != null) widget.overlay!,

@@ -132,6 +132,8 @@ const screenSizes = <Size>[
   Size(320, 568),
   Size(360, 640),
   Size(390, 844),
+  // Telefono girato in orizzontale.
+  Size(844, 390),
   Size(820, 1180),
   Size(1180, 820),
   Size(1440, 900),

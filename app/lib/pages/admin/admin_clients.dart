@@ -193,6 +193,48 @@ class _ClientDialogState extends State<_ClientDialog> {
     }
   });
 
+  /// Nuova cartella (o nuovo nome per [f]).
+  Future<void> _folderName(ClientFolder? f) async {
+    var name = f?.name ?? '';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(f == null ? 'Nuova cartella' : 'Rinomina cartella'),
+        content: SizedBox(
+          width: dialogWidth(c, 420),
+          child: TextFormField(
+            initialValue: name,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Nome',
+              hintText: 'Es. Cerimonia',
+            ),
+            onChanged: (v) => name = v.trim(),
+            onFieldSubmitted: (_) => Navigator.pop(c, true),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(f == null ? 'Crea' : 'Salva'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || name.isEmpty || !mounted) return;
+    setState(() {
+      if (f == null) {
+        _d.folders.add(ClientFolder(name: name));
+      } else {
+        f.name = name;
+      }
+    });
+  }
+
   /// Un video della festa: l'indirizzo del file (mp4) e una foto d'anteprima.
   Future<void> _addVideo() async {
     var url = '', poster = '';
@@ -511,7 +553,45 @@ class _ClientDialogState extends State<_ClientDialog> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
+                Text(
+                  'Cartelle: dividono foto e video in sezioni (es. Cerimonia, '
+                  'Festa). Tocca una foto per scegliere la sua cartella.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final f in _d.folders)
+                      InputChip(
+                        key: ObjectKey(f),
+                        avatar: const Icon(Icons.folder_outlined, size: 18),
+                        label: Text(
+                          '${f.name} (${_d.media.where((m) => m.folder == f.id).length})',
+                        ),
+                        tooltip: 'Rinomina',
+                        onPressed: () => _folderName(f),
+                        onDeleted: () => setState(() {
+                          // Le sue foto restano, fuori dalle cartelle.
+                          _d.folders.remove(f);
+                          for (final m in _d.media) {
+                            if (m.folder == f.id) m.folder = '';
+                          }
+                        }),
+                      ),
+                    ActionChip(
+                      avatar: const Icon(
+                        Icons.create_new_folder_outlined,
+                        size: 18,
+                      ),
+                      label: const Text('Nuova cartella'),
+                      onPressed: () => _folderName(null),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 if (_d.media.isNotEmpty)
                   Wrap(
                     spacing: 8,
@@ -521,12 +601,63 @@ class _ClientDialogState extends State<_ClientDialog> {
                         Stack(
                           key: ObjectKey(_d.media[i]),
                           children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: SizedBox(
-                                width: 76,
-                                height: 56,
-                                child: PhotoImage(_d.media[i].thumb),
+                            PopupMenuButton<String>(
+                              tooltip: 'Cartella',
+                              enabled: _d.folders.isNotEmpty,
+                              onSelected: (v) =>
+                                  setState(() => _d.media[i].folder = v),
+                              itemBuilder: (_) => [
+                                const PopupMenuItem(
+                                  value: '',
+                                  child: Text('Senza cartella'),
+                                ),
+                                for (final f in _d.folders)
+                                  PopupMenuItem(
+                                    value: f.id,
+                                    child: Text(f.name),
+                                  ),
+                              ],
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: SizedBox(
+                                  width: 76,
+                                  height: 56,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      PhotoImage(_d.media[i].thumb),
+                                      if (_d.folders.any(
+                                        (f) => f.id == _d.media[i].folder,
+                                      ))
+                                        Align(
+                                          alignment: Alignment.bottomLeft,
+                                          child: Container(
+                                            width: double.infinity,
+                                            color: const Color(0xB31E1B17),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                              vertical: 1,
+                                            ),
+                                            child: Text(
+                                              _d.folders
+                                                  .firstWhere(
+                                                    (f) =>
+                                                        f.id ==
+                                                        _d.media[i].folder,
+                                                  )
+                                                  .name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                             if (_d.media[i].isVideo)

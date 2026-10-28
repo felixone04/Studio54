@@ -185,66 +185,96 @@ void main() {
     setUp(() => mediaSaver = saver = FakeSaver());
     tearDown(() => mediaSaver = GalleryMediaSaver());
 
-    testWidgets('il cliente entra, vede foto e video e scarica tutto', (
-      tester,
-    ) async {
-      final s = await loadState();
-      await pumpApp(tester, s, location: '/area-clienti', size: phone);
-      await signIn(tester, 'anna.ricci@example.com', 'sbagliata');
-      expect(
-        find.text('Email, nome utente o password non corretti.'),
-        findsOneWidget,
-      );
+    testWidgets(
+      'il cliente entra, apre le cartelle e scarica una foto alla volta',
+      (tester) async {
+        final s = await loadState();
+        await pumpApp(tester, s, location: '/area-clienti', size: phone);
+        await signIn(tester, 'anna.ricci@example.com', 'sbagliata');
+        expect(
+          find.text('Email, nome utente o password non corretti.'),
+          findsOneWidget,
+        );
 
-      await signIn(tester, 'anna.paolo', Seed.demoClientPassword);
-      expect(find.text('IL MATRIMONIO DI ANNA E PAOLO'), findsOneWidget);
-      expect(find.text('8 FOTO · 1 VIDEO'), findsOneWidget);
-      expect(find.bySemanticsLabel('Video 9'), findsOneWidget);
+        await signIn(tester, 'anna.paolo', Seed.demoClientPassword);
+        expect(find.text('IL MATRIMONIO DI ANNA E PAOLO'), findsOneWidget);
+        // Tre cartelle e, fuori, il video.
+        expect(
+          find.bySemanticsLabel(RegExp('^Cartella Preparativi')),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel(RegExp('^Cartella Cerimonia')),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel(RegExp('^Cartella Festa')),
+          findsOneWidget,
+        );
+        expect(find.text('ALTRE FOTO · 1 VIDEO'), findsOneWidget);
+        // Niente "scarica tutto": si scarica una foto alla volta.
+        expect(find.text('SCARICA TUTTO'), findsNothing);
 
-      await tester.tap(find.text('SCARICA TUTTO'));
-      await settle(tester, 1600);
-      expect(saver.saved, hasLength(9));
-      expect(
-        find.text(
-          'Tutto salvato nella galleria del telefono (album Studio 54).',
-        ),
-        findsOneWidget,
-      );
+        await tester.tap(find.bySemanticsLabel(RegExp('^Cartella Cerimonia')));
+        await settle(tester, 800);
+        expect(find.text('CERIMONIA'), findsOneWidget);
+        expect(find.text('3 FOTO'), findsOneWidget);
+        await tester.tap(find.bySemanticsLabel('Foto 2'));
+        await settle(tester, 800);
+        await tester.tap(find.text('SCARICA').last);
+        await settle(tester, 800);
+        // La seconda foto della cartella Cerimonia (la quinta in tutto).
+        expect(saver.saved, ['cl-anna-m5']);
+        await tester.tap(find.bySemanticsLabel('Chiudi').last);
+        await settle(tester, 800);
 
-      // Una foto aperta a schermo intero si scarica da sola.
-      await tester.tap(find.bySemanticsLabel('Foto 2'));
-      await settle(tester, 800);
-      await tester.tap(find.text('SCARICA').last);
-      await settle(tester, 800);
-      expect(saver.saved.last, 'cl-anna-m2');
-      await tester.tap(find.bySemanticsLabel('Chiudi').last);
-      await settle(tester, 800);
+        await tester.tap(find.text('← TUTTE LE CARTELLE'));
+        await settle(tester, 800);
+        expect(find.text('LE CARTELLE'), findsOneWidget);
 
-      // Esce: torna l'accesso.
-      await Scrollable.ensureVisible(
-        tester.element(find.text('ESCI')),
-        alignment: 0.5,
-      );
-      await settle(tester, 400);
-      await tester.tap(find.text('ESCI'));
-      await settle(tester, 800);
-      expect(find.text('Le vostre foto.'), findsOneWidget);
-      expect(s.currentClient, isNull);
-      await disposeApp(tester);
-    });
+        // Esce: torna l'accesso.
+        await Scrollable.ensureVisible(
+          tester.element(find.text('ESCI')),
+          alignment: 0.5,
+        );
+        await settle(tester, 400);
+        await tester.tap(find.text('ESCI'));
+        await settle(tester, 800);
+        expect(find.text('Le vostre foto.'), findsOneWidget);
+        expect(s.currentClient, isNull);
+        await disposeApp(tester);
+      },
+    );
 
-    testWidgets('un download non riuscito lo dice', (tester) async {
-      final s = await loadState();
-      saver.failOn = 'cl-elena-m1';
-      await s.signIn('elena.bianchi@example.com', Seed.demoClientPassword);
-      await pumpApp(tester, s, location: '/area-clienti', size: phone);
-      await tester.tap(find.text('SCARICA TUTTO'));
-      await settle(tester, 1600);
-      expect(saver.saved, isEmpty);
-      expect(find.text('Spazio sul telefono esaurito.'), findsOneWidget);
-      await disposeApp(tester);
-    });
+    testWidgets(
+      'senza cartelle le foto si vedono tutte insieme; un download non riuscito lo dice',
+      (tester) async {
+        final s = await loadState();
+        saver.failOn = 'cl-elena-m1';
+        await s.signIn('elena.bianchi@example.com', Seed.demoClientPassword);
+        await pumpApp(tester, s, location: '/area-clienti', size: phone);
+        expect(find.text('LE CARTELLE'), findsNothing);
+        expect(find.text('7 FOTO · 1 VIDEO'), findsOneWidget);
+        await tester.tap(find.bySemanticsLabel('Foto 1'));
+        await settle(tester, 800);
+        await tester.tap(find.text('SCARICA').last);
+        await settle(tester, 800);
+        expect(saver.saved, isEmpty);
+        expect(find.text('Spazio sul telefono esaurito.'), findsOneWidget);
+        await disposeApp(tester);
+      },
+    );
 
+    test(
+      'una cartella eliminata lascia le foto fuori dalle cartelle',
+      () async {
+        final s = await loadState();
+        final c = s.clientById('cl-anna')!;
+        expect(c.mediaIn('').length, 1);
+        c.folders.removeWhere((f) => f.name == 'Festa');
+        expect(c.mediaIn('').length, 3);
+      },
+    );
     testWidgets('il titolare entra nel gestionale dall\'area clienti', (
       tester,
     ) async {

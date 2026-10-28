@@ -469,6 +469,7 @@ class ClientMedia {
   bool isVideo;
   String poster; // anteprima dei video
   String name; // nome del file scaricato
+  String folder; // id della cartella, vuoto = fuori dalle cartelle
   ClientMedia({
     String? id,
     required this.url,
@@ -476,6 +477,7 @@ class ClientMedia {
     this.isVideo = false,
     this.poster = '',
     this.name = '',
+    this.folder = '',
   }) : id = id ?? newId();
 
   /// Il file da scaricare: l'originale, se c'è.
@@ -491,6 +493,7 @@ class ClientMedia {
     isVideo: j['isVideo'] ?? false,
     poster: j['poster'] ?? '',
     name: j['name'] ?? '',
+    folder: j['folder'] ?? '',
   );
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -499,7 +502,20 @@ class ClientMedia {
     'isVideo': isVideo,
     'poster': poster,
     'name': name,
+    'folder': folder,
   };
+}
+
+/// Una cartella dell'area di un cliente (es. "Cerimonia", "Festa"): divide
+/// foto e video in più sezioni.
+class ClientFolder {
+  String id;
+  String name;
+  ClientFolder({String? id, required this.name}) : id = id ?? newId();
+
+  factory ClientFolder.fromJson(Map<String, dynamic> j) =>
+      ClientFolder(id: j['id'], name: j['name'] ?? '');
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }
 
 /// Un file nell'area di un cliente: un PDF da scaricare o un link (es. una
@@ -555,6 +571,7 @@ class ClientAccount {
   String eventDate; // testo libero, es. "18 maggio 2024"
   String location;
   String welcome; // due righe di benvenuto nell'area del cliente
+  List<ClientFolder> folders;
   List<ClientMedia> media;
   List<ClientFile> files;
   DateTime createdAt;
@@ -572,16 +589,29 @@ class ClientAccount {
     this.eventDate = '',
     this.location = '',
     this.welcome = '',
+    List<ClientFolder>? folders,
     List<ClientMedia>? media,
     List<ClientFile>? files,
     DateTime? createdAt,
     this.lastLogin,
   }) : id = id ?? newId(),
+       folders = folders ?? [],
        media = media ?? [],
        files = files ?? [],
        createdAt = createdAt ?? DateTime.now();
 
   int get photoCount => media.where((m) => !m.isVideo).length;
+
+  /// Foto e video di una cartella ('' = quelli fuori dalle cartelle; un id
+  /// di cartella che non esiste più vale come nessuna cartella).
+  List<ClientMedia> mediaIn(String folder) {
+    final ids = {for (final f in folders) f.id};
+    return [
+      for (final m in media)
+        if ((ids.contains(m.folder) ? m.folder : '') == folder) m,
+    ];
+  }
+
   int get videoCount => media.where((m) => m.isVideo).length;
 
   factory ClientAccount.fromJson(Map<String, dynamic> j) => ClientAccount(
@@ -597,6 +627,7 @@ class ClientAccount {
     eventDate: j['eventDate'] ?? '',
     location: j['location'] ?? '',
     welcome: j['welcome'] ?? '',
+    folders: _listOf(j['folders'], ClientFolder.fromJson),
     media: _listOf(j['media'], ClientMedia.fromJson),
     files: _listOf(j['files'], ClientFile.fromJson),
     createdAt: DateTime.tryParse(j['createdAt'] ?? ''),
@@ -615,6 +646,7 @@ class ClientAccount {
     'eventDate': eventDate,
     'location': location,
     'welcome': welcome,
+    'folders': folders.map((e) => e.toJson()).toList(),
     'media': media.map((e) => e.toJson()).toList(),
     'files': files.map((e) => e.toJson()).toList(),
     'createdAt': createdAt.toIso8601String(),

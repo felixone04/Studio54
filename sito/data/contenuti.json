@@ -29,14 +29,14 @@
       }
     ],
     "contacts": {
-      "phone": "+39 06 1234 5678",
-      "whatsapp": "+39 333 123 4567",
+      "phone": "0883 198 5503",
+      "whatsapp": "+39 340 545 5454",
       "email": "info@studio54.example",
-      "address": "Via Roma 12, 00100 Roma",
-      "hours": "Lun–Ven 10–19 · Sabato su appuntamento",
+      "address": "Via Vittore Pisani, 54, 76123 Andria BT",
+      "hours": "Lun–Sab 9–13 · 17–21 · Domenica chiusi",
       "instagram": "https://instagram.com/",
       "facebook": "https://facebook.com/",
-      "vat": "P.IVA 00000000000"
+      "vat": "P.IVA 08154270726"
     },
     "accent": 4290288498
   },

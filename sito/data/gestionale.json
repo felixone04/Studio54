@@ -2,7 +2,7 @@
   "quotes": [
     {
       "id": "q1",
-      "createdAt": "2026-10-27T21:44:54.780690",
+      "createdAt": "2026-10-28T07:53:51.514007",
       "firstName": "Martina",
       "lastName": "Esposito",
       "phone": "+39 333 482 1190",
@@ -22,7 +22,7 @@
     },
     {
       "id": "q2",
-      "createdAt": "2026-10-26T22:44:54.780690",
+      "createdAt": "2026-10-27T08:53:51.514007",
       "firstName": "Luca",
       "lastName": "Ferri",
       "phone": "+39 347 220 9815",
@@ -41,7 +41,7 @@
     },
     {
       "id": "q3",
-      "createdAt": "2026-10-24T01:44:54.780690",
+      "createdAt": "2026-10-24T11:53:51.514007",
       "firstName": "Giorgia",
       "lastName": "Conti",
       "phone": "+39 320 771 4402",
@@ -108,6 +108,20 @@
       "eventDate": "18 maggio 2024",
       "location": "Masseria in Valle d'Itria",
       "welcome": "Ecco le foto e il video del vostro giorno: scaricateli quando volete, in alta qualità.",
+      "folders": [
+        {
+          "id": "cl-anna-c1",
+          "name": "Preparativi"
+        },
+        {
+          "id": "cl-anna-c2",
+          "name": "Cerimonia"
+        },
+        {
+          "id": "cl-anna-c3",
+          "name": "Festa"
+        }
+      ],
       "media": [
         {
           "id": "cl-anna-m1",
@@ -115,7 +129,8 @@
           "original": "https://images.unsplash.com/photo-1591604466107-ec97de577aff?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "anna-001.jpg"
+          "name": "anna-001.jpg",
+          "folder": "cl-anna-c1"
         },
         {
           "id": "cl-anna-m2",
@@ -123,7 +138,8 @@
           "original": "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "anna-002.jpg"
+          "name": "anna-002.jpg",
+          "folder": "cl-anna-c1"
         },
         {
           "id": "cl-anna-m3",
@@ -131,7 +147,8 @@
           "original": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "anna-003.jpg"
+          "name": "anna-003.jpg",
+          "folder": "cl-anna-c1"
         },
         {
           "id": "cl-anna-m4",
@@ -139,7 +156,8 @@
           "original": "https://images.unsplash.com/photo-1606490208247-b65be3d94cd1?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "anna-004.jpg"
+          "name": "anna-004.jpg",
+          "folder": "cl-anna-c2"
         },
         {
           "id": "cl-anna-m5",
@@ -147,7 +165,8 @@
           "original": "https://images.unsplash.com/photo-1629219219925-ea8de62f2d68?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "anna-005.jpg"
+          "name": "anna-005.jpg",
+          "folder": "cl-anna-c2"
         },
         {
           "id": "cl-anna-m6",
@@ -155,7 +174,8 @@
           "original": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "anna-006.jpg"
+          "name": "anna-006.jpg",
+          "folder": "cl-anna-c2"
         },
         {
           "id": "cl-anna-m7",
@@ -163,7 +183,8 @@
           "original": "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "anna-007.jpg"
+          "name": "anna-007.jpg",
+          "folder": "cl-anna-c3"
         },
         {
           "id": "cl-anna-m8",
@@ -171,7 +192,8 @@
           "original": "https://images.unsplash.com/photo-1574871786514-46e1680ea587?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "anna-008.jpg"
+          "name": "anna-008.jpg",
+          "folder": "cl-anna-c3"
         },
         {
           "id": "cl-anna-v1",
@@ -179,7 +201,8 @@
           "original": "",
           "isVideo": true,
           "poster": "https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&q=80",
-          "name": "anna-video.mp4"
+          "name": "anna-video.mp4",
+          "folder": ""
         }
       ],
       "files": [
@@ -208,6 +231,7 @@
       "eventDate": "9 dicembre 2023",
       "location": "Dolomiti",
       "welcome": "Il vostro inverno in quota, foto dopo foto.",
+      "folders": [],
       "media": [
         {
           "id": "cl-elena-m1",
@@ -215,7 +239,8 @@
           "original": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "elena-001.jpg"
+          "name": "elena-001.jpg",
+          "folder": ""
         },
         {
           "id": "cl-elena-m2",
@@ -223,7 +248,8 @@
           "original": "https://images.unsplash.com/photo-1492175742197-ed20dc5a6bed?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "elena-002.jpg"
+          "name": "elena-002.jpg",
+          "folder": ""
         },
         {
           "id": "cl-elena-m3",
@@ -231,7 +257,8 @@
           "original": "https://images.unsplash.com/photo-1591700331354-f7eea65d1ce8?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "elena-003.jpg"
+          "name": "elena-003.jpg",
+          "folder": ""
         },
         {
           "id": "cl-elena-m4",
@@ -239,7 +266,8 @@
           "original": "https://images.unsplash.com/photo-1561287495-a3fe1fd28504?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "elena-004.jpg"
+          "name": "elena-004.jpg",
+          "folder": ""
         },
         {
           "id": "cl-elena-m5",
@@ -247,7 +275,8 @@
           "original": "https://images.unsplash.com/photo-1523521803700-b3bcaeab0150?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "elena-005.jpg"
+          "name": "elena-005.jpg",
+          "folder": ""
         },
         {
           "id": "cl-elena-m6",
@@ -255,7 +284,8 @@
           "original": "https://images.unsplash.com/photo-1551890946-3e5446d3a71b?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "elena-006.jpg"
+          "name": "elena-006.jpg",
+          "folder": ""
         },
         {
           "id": "cl-elena-m7",
@@ -263,7 +293,8 @@
           "original": "https://images.unsplash.com/photo-1607357910286-1ff94ac13c24?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
-          "name": "elena-007.jpg"
+          "name": "elena-007.jpg",
+          "folder": ""
         },
         {
           "id": "cl-elena-v1",
@@ -271,7 +302,8 @@
           "original": "",
           "isVideo": true,
           "poster": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80",
-          "name": "elena-video.mp4"
+          "name": "elena-video.mp4",
+          "folder": ""
         }
       ],
       "files": [],

@@ -176,8 +176,8 @@
       html += '</section>';
     }
     if (conRichieste) {
-      html += '<section class="passo-modulo" data-passo="richieste">' + titolo('LE TUE RICHIESTE') + '<p class="nota">Tocca le voci che ti interessano.</p><div class="scelte">' +
-        richieste.map(function (r) { return '<button type="button" class="scelta-voce" data-richiesta="' + esc(r.label) + '" aria-pressed="false">' + esc(r.label) + '</button>'; }).join('') + '</div></section>';
+      html += '<section class="passo-modulo" data-passo="richieste">' + titolo('LE TUE RICHIESTE') + '<p class="nota">Tocca una o più voci. *</p><div class="scelte">' +
+        richieste.map(function (r) { return '<button type="button" class="scelta-voce" data-richiesta="' + esc(r.label) + '" aria-pressed="false">' + esc(r.label) + '</button>'; }).join('') + '</div><p class="errore errore-richieste"></p></section>';
     }
     var nome = [testo('nome', 'Nome *', { attr: ' autocomplete="given-name" maxlength="40"' })];
     if (conCognome) nome.push(testo('cognome', 'Cognome *', { attr: ' autocomplete="family-name" maxlength="40"' }));
@@ -651,9 +651,18 @@
         controllaTipo(true);
       });
     });
-    /* Richieste: una o più, facoltative. */
+    /* Richieste: almeno una. */
+    var erroreRichieste = $('.errore-richieste', form);
+    function controllaRichieste(mostra) {
+      var msg = erroreRichieste && !$('[data-richiesta][aria-pressed="true"]', form) ? 'Scegli almeno una richiesta' : '';
+      if (mostra && erroreRichieste) erroreRichieste.textContent = msg;
+      return msg;
+    }
     $$('[data-richiesta]', form).forEach(function (b) {
-      b.addEventListener('click', function () { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); });
+      b.addEventListener('click', function () {
+        b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+        if (provato) controllaRichieste(true);
+      });
     });
 
     /* Data dal calendario. */
@@ -692,7 +701,9 @@
       provato = true;
       var primo = null;
       if (controllaTipo(true)) primo = campo('tipo');
-      ['data', 'luogo', 'nome', 'cognome', 'telefono', 'email'].forEach(function (n) { if (controlla(n, true) && !primo) primo = campo(n); });
+      ['data', 'luogo'].forEach(function (n) { if (controlla(n, true) && !primo) primo = campo(n); });
+      if (controllaRichieste(true) && !primo) primo = $('[data-passo="richieste"]', form);
+      ['nome', 'cognome', 'telefono', 'email'].forEach(function (n) { if (controlla(n, true) && !primo) primo = campo(n); });
       if (controllaConsenso(true) && !primo) primo = consenso;
       if (primo) {
         var y = primo.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.2;
@@ -728,6 +739,7 @@
         tipo = tipi.length === 1 ? tipi[0].label : '';
         $$('[data-tipo]', form).forEach(function (x) { var on = x.getAttribute('data-tipo') === tipo; x.setAttribute('aria-pressed', on); x.setAttribute('aria-checked', on); });
         $$('[data-richiesta]', form).forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+        if (erroreRichieste) erroreRichieste.textContent = '';
         $$('.campo', form).forEach(function (c) { c.classList.remove('sbagliato'); var er = $('.errore', c); if (er) er.textContent = ''; });
         if (conto) conto.textContent = '0/500';
         grazie.hidden = true; form.hidden = false;

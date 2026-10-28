@@ -144,14 +144,16 @@ class Seed {
       ),
     ],
     contacts: Contacts(
-      phone: '+39 06 1234 5678',
-      whatsapp: '+39 333 123 4567',
+      phone: '0883 198 5503',
+      // WhatsApp ed email di prova: quelli veri si inseriscono dal gestionale.
+      whatsapp: '+39 340 545 5454',
       email: 'info@studio54.example',
-      address: 'Via Roma 12, 00100 Roma',
-      hours: 'Lun–Ven 10–19 · Sabato su appuntamento',
+      address: 'Via Vittore Pisani, 54, 76123 Andria BT',
+      hours: 'Lun–Sab 9–13 · 17–21 · Domenica chiusi',
+      // Per ora aprono l'app (o il sito) del social, senza un profilo preciso.
       instagram: 'https://instagram.com/',
       facebook: 'https://facebook.com/',
-      vat: 'P.IVA 00000000000',
+      vat: 'P.IVA 08154270726',
     ),
     accent: accentSand,
   );
@@ -373,22 +375,39 @@ class Seed {
       required String location,
       required String welcome,
       required List<ClientFile> files,
-    }) => ClientAccount(
-      id: id,
-      name: name,
-      email: email,
-      username: username,
-      phone: phone,
-      passwordSalt: 'demo-$id',
-      passwordHash: demoHash('demo-$id', demoClientPassword),
-      eventTitle: title,
-      eventDate: date,
-      location: location,
-      welcome: welcome,
-      media: media(id, workId, works[workId]!.coverUrl),
-      files: files,
-      createdAt: DateTime(2024, 6, 2),
-    );
+      List<(String, int)> folders = const [],
+    }) {
+      // Le cartelle prendono, in ordine, il numero di foto indicato; il resto
+      // resta fuori dalle cartelle.
+      final m = media(id, workId, works[workId]!.coverUrl);
+      final list = <ClientFolder>[];
+      var k = 0;
+      for (final (i, (n, count)) in folders.indexed) {
+        final f = ClientFolder(id: '$id-c${i + 1}', name: n);
+        list.add(f);
+        for (var j = 0; j < count && k < m.length; j++, k++) {
+          m[k].folder = f.id;
+        }
+      }
+      return ClientAccount(
+        id: id,
+        name: name,
+        email: email,
+        username: username,
+        phone: phone,
+        passwordSalt: 'demo-$id',
+        passwordHash: demoHash('demo-$id', demoClientPassword),
+        eventTitle: title,
+        eventDate: date,
+        location: location,
+        welcome: welcome,
+        folders: list,
+        media: m,
+        files: files,
+        createdAt: DateTime(2024, 6, 2),
+      );
+    }
+
     return [
       client(
         id: 'cl-anna',
@@ -397,6 +416,7 @@ class Seed {
         username: 'anna.paolo',
         phone: '+39 333 555 0101',
         workId: 'w-anna-paolo',
+        folders: [('Preparativi', 3), ('Cerimonia', 3), ('Festa', 2)],
         title: 'Il matrimonio di Anna e Paolo',
         date: '18 maggio 2024',
         location: 'Masseria in Valle d\'Itria',
