@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/models.dart';
+import '../services/system_bars.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
@@ -141,6 +142,8 @@ class _SiteScaffoldState extends State<SiteScaffold> {
       final top = box.localToGlobal(Offset.zero).dy;
       if (top <= navH && top + box.size.height > navH) under = t.widget.color;
     }
+    // Sul carosello d'apertura le barre del telefono si nascondono.
+    SystemBars.hide(this, overPhoto);
     if (under != _under || overPhoto != _overPhoto) {
       setState(() {
         _under = under;
@@ -151,6 +154,7 @@ class _SiteScaffoldState extends State<SiteScaffold> {
 
   @override
   void dispose() {
+    SystemBars.hide(this, false);
     _scroll.dispose();
     super.dispose();
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../services/system_bars.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
 import 'sections.dart' show RoundIconButton;
@@ -54,7 +55,15 @@ class _PhotoViewerState extends State<PhotoViewer> {
   late int _i = widget.start;
 
   @override
+  void initState() {
+    super.initState();
+    // Solo la foto: le barre del telefono si nascondono.
+    SystemBars.hide(this, true);
+  }
+
+  @override
   void dispose() {
+    SystemBars.hide(this, false);
     _c.dispose();
     super.dispose();
   }
