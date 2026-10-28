@@ -280,6 +280,37 @@ void main() {
         expect(c.videoCount, 3);
       },
     );
+    for (final size in [phone, const Size(1180, 820), const Size(820, 1180)]) {
+      testWidgets('indietro: dalla foto alla cartella, dalla cartella alle '
+          'cartelle, poi resta nell\'area clienti (${size.width.toInt()}x'
+          '${size.height.toInt()})', (tester) async {
+        final s = await loadState();
+        await s.signIn('anna.paolo', Seed.demoClientPassword);
+        await pumpApp(tester, s, location: '/', size: size);
+        await goTo(tester, '/area-clienti');
+        Future<void> back() async {
+          await tester.binding.handlePopRoute();
+          await settle(tester, 800);
+        }
+
+        await tester.tap(find.bySemanticsLabel(RegExp('^Cartella Festa')));
+        await settle(tester, 800);
+        await tester.tap(find.bySemanticsLabel('Foto 1'));
+        await settle(tester, 800);
+        expect(find.text('SCARICA'), findsWidgets);
+
+        await back(); // chiude la foto
+        expect(find.text('← TUTTE LE CARTELLE'), findsOneWidget);
+        await back(); // torna alle cartelle
+        expect(find.text('LE CARTELLE'), findsOneWidget);
+        expect(find.text('← TUTTE LE CARTELLE'), findsNothing);
+        await back(); // resta nell'area clienti
+        await back();
+        expect(find.text('LE CARTELLE'), findsOneWidget);
+        expect(find.text('IL MATRIMONIO DI ANNA E PAOLO'), findsOneWidget);
+        await disposeApp(tester);
+      });
+    }
     testWidgets('il titolare entra nel gestionale dall\'area clienti', (
       tester,
     ) async {

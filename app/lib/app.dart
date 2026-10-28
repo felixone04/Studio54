@@ -12,6 +12,7 @@ import 'pages/client_area_page.dart';
 import 'pages/home_page.dart';
 import 'pages/quote_page.dart';
 import 'pages/works_page.dart';
+import 'services/back_handlers.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 import 'widgets/common.dart';
@@ -128,6 +129,9 @@ class _BackToHome extends RootBackButtonDispatcher {
     if (t != null && (t.settings is! Page || t.willHandlePopInternally)) {
       return super.invokeCallback(defaultValue);
     }
+    // Una pagina che gestisce da sé il tasto (es. le cartelle dell'area
+    // clienti).
+    if (BackHandlers.handle()) return true;
     if (_history.length > 1) {
       _history.removeLast();
       router.go(_history.last);

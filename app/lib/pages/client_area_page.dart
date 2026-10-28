@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
 import '../models/models.dart';
+import '../services/back_handlers.dart';
 import '../services/media_saver.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
@@ -205,6 +206,25 @@ class _ClientHome extends StatefulWidget {
 class _ClientHomeState extends State<_ClientHome> {
   /// La cartella aperta (null = tutte le cartelle).
   String? _folder;
+
+  @override
+  void initState() {
+    super.initState();
+    BackHandlers.add(_onBack);
+  }
+
+  @override
+  void dispose() {
+    BackHandlers.remove(_onBack);
+    super.dispose();
+  }
+
+  /// Tasto indietro del telefono o del tablet: da una cartella si torna alle
+  /// cartelle; dall'area clienti si resta lì.
+  bool _onBack() {
+    if (_folder != null) setState(() => _folder = null);
+    return true;
+  }
 
   /// Download in corso (id del file).
   final _saving = <String>{};
