@@ -211,20 +211,23 @@ void main() {
           find.bySemanticsLabel(RegExp('^Cartella Festa')),
           findsOneWidget,
         );
-        expect(find.text('ALTRE FOTO · 1 VIDEO'), findsOneWidget);
+        // Tutto dentro le cartelle: niente "altre foto".
+        expect(find.textContaining('ALTRE FOTO'), findsNothing);
+        expect(find.text('2 FOTO · 1 VIDEO'), findsOneWidget);
         // Niente "scarica tutto": si scarica una foto alla volta.
         expect(find.text('SCARICA TUTTO'), findsNothing);
 
         await tester.tap(find.bySemanticsLabel(RegExp('^Cartella Cerimonia')));
         await settle(tester, 800);
         expect(find.text('CERIMONIA'), findsOneWidget);
-        expect(find.text('3 FOTO'), findsOneWidget);
+        expect(find.text('3 FOTO · 1 VIDEO'), findsOneWidget);
+        expect(find.bySemanticsLabel('Video 4'), findsOneWidget);
         await tester.tap(find.bySemanticsLabel('Foto 2'));
         await settle(tester, 800);
         await tester.tap(find.text('SCARICA').last);
         await settle(tester, 800);
-        // La seconda foto della cartella Cerimonia (la quinta in tutto).
-        expect(saver.saved, ['cl-anna-m5']);
+        // La seconda foto della cartella Cerimonia (la quarta in tutto).
+        expect(saver.saved, ['cl-anna-m4']);
         await tester.tap(find.bySemanticsLabel('Chiudi').last);
         await settle(tester, 800);
 
@@ -270,9 +273,11 @@ void main() {
       () async {
         final s = await loadState();
         final c = s.clientById('cl-anna')!;
-        expect(c.mediaIn('').length, 1);
+        expect(c.mediaIn(''), isEmpty);
         c.folders.removeWhere((f) => f.name == 'Festa');
-        expect(c.mediaIn('').length, 3);
+        // Le 3 foto e il video della Festa.
+        expect(c.mediaIn('').length, 4);
+        expect(c.videoCount, 3);
       },
     );
     testWidgets('il titolare entra nel gestionale dall\'area clienti', (

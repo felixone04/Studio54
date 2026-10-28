@@ -650,7 +650,8 @@ class _DownloadButtonState extends State<_DownloadButton> {
   );
 }
 
-/// Un video della festa: l'anteprima, poi parte toccandolo.
+/// Un video della festa, con l'audio: l'anteprima, poi parte toccandolo.
+/// Sotto, la barra per andare avanti e indietro e il tasto dell'audio.
 class _VideoView extends StatefulWidget {
   const _VideoView({required this.media});
   final ClientMedia media;
@@ -662,16 +663,24 @@ class _VideoView extends StatefulWidget {
 class _VideoViewState extends State<_VideoView> {
   VideoPlayerController? _c;
   bool _failed = false;
+  bool _muted = false;
 
   Future<void> _start() async {
-    if (_c != null) {
-      setState(() => _c!.value.isPlaying ? _c!.pause() : _c!.play());
+    final c0 = _c;
+    if (c0 != null) {
+      if (!c0.value.isInitialized) return;
+      setState(() => c0.value.isPlaying ? c0.pause() : c0.play());
       return;
     }
-    final c = VideoPlayerController.networkUrl(Uri.parse(widget.media.url));
+    final c = VideoPlayerController.networkUrl(
+      Uri.parse(widget.media.url),
+      // L'audio del video si sente anche con altra musica in pausa.
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
+    );
     setState(() => _c = c);
     try {
       await c.initialize();
+      await c.setVolume(1);
       c.addListener(() {
         if (mounted) setState(() {});
       });
@@ -681,53 +690,111 @@ class _VideoViewState extends State<_VideoView> {
     }
   }
 
+  Future<void> _toggleAudio() async {
+    final c = _c;
+    if (c == null) return;
+    setState(() => _muted = !_muted);
+    await c.setVolume(_muted ? 0 : 1);
+  }
+
   @override
   void dispose() {
     _c?.dispose();
     super.dispose();
   }
 
+  String _time(Duration d) =>
+      '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
+
   @override
   Widget build(BuildContext context) {
     final c = _c;
     final ready = c != null && c.value.isInitialized;
-    return GestureDetector(
-      onTap: _failed ? null : _start,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (ready)
-            Center(
-              child: AspectRatio(
-                aspectRatio: c.value.aspectRatio,
-                child: VideoPlayer(c),
-              ),
-            )
-          else if (widget.media.poster.isNotEmpty)
-            Positioned.fill(
-              child: PhotoImage(widget.media.poster, fit: BoxFit.contain),
+    final pad = MediaQuery.paddingOf(context);
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _failed ? null : _start,
+          child: SizedBox.expand(
+            child: ready
+                ? Center(
+                    child: AspectRatio(
+                      aspectRatio: c.value.aspectRatio,
+                      child: VideoPlayer(c),
+                    ),
+                  )
+                : (widget.media.poster.isNotEmpty
+                      ? PhotoImage(widget.media.poster, fit: BoxFit.contain)
+                      : const SizedBox()),
+          ),
+        ),
+        if (_failed)
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: Palette.paper.withValues(alpha: 0.9),
+            child: Text(
+              'Il video non si riesce a riprodurre: potete comunque '
+              'scaricarlo.',
+              textAlign: TextAlign.center,
+              style: body(14),
             ),
-          if (_failed)
-            Container(
-              padding: const EdgeInsets.all(16),
-              color: Palette.paper.withValues(alpha: 0.9),
-              child: Text(
-                'Il video non si riesce a riprodurre: potete comunque scaricarlo.',
-                textAlign: TextAlign.center,
-                style: body(14),
-              ),
-            )
-          else if (!ready || !c.value.isPlaying)
-            c != null && !ready
-                ? const CircularProgressIndicator(color: Palette.ink)
-                : RoundIconButton(
-                    Icons.play_arrow_rounded,
-                    _start,
-                    'Guarda il video',
-                    size: 64,
+          )
+        else if (c != null && !ready)
+          const CircularProgressIndicator(color: Palette.ink)
+        else if (!ready || !c.value.isPlaying)
+          RoundIconButton(
+            Icons.play_arrow_rounded,
+            _start,
+            'Guarda il video',
+            size: 64,
+          ),
+        // Avanzamento e audio, sopra le frecce in basso.
+        if (ready)
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: pad.bottom + 84,
+            child: Row(
+              children: [
+                Text(
+                  _time(c.value.position),
+                  style: label(10, color: Palette.stone),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: VideoProgressIndicator(
+                    c,
+                    allowScrubbing: true,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    colors: const VideoProgressColors(
+                      playedColor: Palette.ink,
+                      bufferedColor: Palette.lineStrong,
+                      backgroundColor: Palette.line,
+                    ),
                   ),
-        ],
-      ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _time(c.value.duration),
+                  style: label(10, color: Palette.stone),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: _muted ? 'Attiva l\'audio' : 'Togli l\'audio',
+                  onPressed: _toggleAudio,
+                  icon: Icon(
+                    _muted
+                        ? Icons.volume_off_outlined
+                        : Icons.volume_up_outlined,
+                    color: Palette.ink,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

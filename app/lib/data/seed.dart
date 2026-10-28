@@ -103,9 +103,13 @@ String _photoId(String ref) {
   return ref;
 }
 
-/// Video d'esempio (libero da diritti) per l'area clienti.
-const demoVideo =
-    'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+/// Video d'esempio per l'area clienti, brevi e con l'audio: un fiore (MDN,
+/// CC0), un'ape e una farfalla (documentazione di Flutter, licenza BSD).
+const demoVideos = [
+  'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+  'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',
+  'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
+];
 
 class Seed {
   static const accentSand = 0xFFB89B72;
@@ -341,28 +345,11 @@ class Seed {
     passwordHash: demoHash('demo-admin', demoAdminPassword),
   );
 
-  /// Clienti d'esempio: ognuno con le foto e un video della sua festa,
-  /// documenti e link.
+  /// Clienti d'esempio: foto e video (con l'audio) della festa, divisi in
+  /// cartelle per Anna e tutti insieme per Elena; documenti e link.
   static List<ClientAccount> clients() {
     final works = {for (final w in Seed.works()) w.id: w};
-    List<ClientMedia> media(String id, String workId, String poster) => [
-      for (final (i, p) in works[workId]!.photos.indexed)
-        ClientMedia(
-          id: '$id-m${i + 1}',
-          url: p.url,
-          original: unsplashOriginal(
-            RegExp(r'photo-([0-9a-f-]+)').firstMatch(p.url)![1]!,
-          ),
-          name: '${id.substring(3)}-${(i + 1).toString().padLeft(3, '0')}.jpg',
-        ),
-      ClientMedia(
-        id: '$id-v1',
-        url: demoVideo,
-        isVideo: true,
-        poster: poster,
-        name: '${id.substring(3)}-video.mp4',
-      ),
-    ];
+
     ClientAccount client({
       required String id,
       required String name,
@@ -375,19 +362,56 @@ class Seed {
       required String location,
       required String welcome,
       required List<ClientFile> files,
-      List<(String, int)> folders = const [],
+      // (nome della cartella, quante foto, video): foto e video si prendono
+      // in ordine; senza cartelle restano tutti insieme.
+      List<(String, int, List<String>)> folders = const [],
+      List<String> looseVideos = const [],
     }) {
-      // Le cartelle prendono, in ordine, il numero di foto indicato; il resto
-      // resta fuori dalle cartelle.
-      final m = media(id, workId, works[workId]!.coverUrl);
+      final photos = works[workId]!.photos;
+      final media = <ClientMedia>[];
       final list = <ClientFolder>[];
-      var k = 0;
-      for (final (i, (n, count)) in folders.indexed) {
+      var p = 0, v = 0;
+      ClientMedia photo(String folder) {
+        final u = photos[p++].url;
+        return ClientMedia(
+          id: '$id-m$p',
+          url: u,
+          original: unsplashOriginal(
+            RegExp(r'photo-([0-9a-f-]+)').firstMatch(u)![1]!,
+          ),
+          name: '${id.substring(3)}-${p.toString().padLeft(3, '0')}.jpg',
+          folder: folder,
+        );
+      }
+
+      ClientMedia video(String url, String folder) {
+        v++;
+        return ClientMedia(
+          id: '$id-v$v',
+          url: url,
+          isVideo: true,
+          // Anteprima: una delle foto della festa.
+          poster: photos[(v * 3) % photos.length].url,
+          name: '${id.substring(3)}-video-$v.mp4',
+          folder: folder,
+        );
+      }
+
+      for (final (i, (n, count, videos)) in folders.indexed) {
         final f = ClientFolder(id: '$id-c${i + 1}', name: n);
         list.add(f);
-        for (var j = 0; j < count && k < m.length; j++, k++) {
-          m[k].folder = f.id;
+        for (var j = 0; j < count && p < photos.length; j++) {
+          media.add(photo(f.id));
         }
+        for (final u in videos) {
+          media.add(video(u, f.id));
+        }
+      }
+      while (p < photos.length) {
+        media.add(photo(''));
+      }
+      for (final u in looseVideos) {
+        media.add(video(u, ''));
       }
       return ClientAccount(
         id: id,
@@ -402,7 +426,7 @@ class Seed {
         location: location,
         welcome: welcome,
         folders: list,
-        media: m,
+        media: media,
         files: files,
         createdAt: DateTime(2024, 6, 2),
       );
@@ -416,13 +440,17 @@ class Seed {
         username: 'anna.paolo',
         phone: '+39 333 555 0101',
         workId: 'w-anna-paolo',
-        folders: [('Preparativi', 3), ('Cerimonia', 3), ('Festa', 2)],
+        folders: [
+          ('Preparativi', 2, [demoVideos[0]]),
+          ('Cerimonia', 3, [demoVideos[1]]),
+          ('Festa', 3, [demoVideos[2]]),
+        ],
         title: 'Il matrimonio di Anna e Paolo',
         date: '18 maggio 2024',
         location: 'Masseria in Valle d\'Itria',
         welcome:
-            'Ecco le foto e il video del vostro giorno: scaricateli quando '
-            'volete, in alta qualità.',
+            'Ecco le foto e i video del vostro giorno, divisi per momenti: '
+            'guardateli e scaricateli quando volete, in alta qualità.',
         files: [
           ClientFile(
             id: 'cl-anna-f1',
@@ -440,6 +468,7 @@ class Seed {
         username: 'elena.davide',
         phone: '+39 347 555 0202',
         workId: 'w-elena-davide',
+        looseVideos: [demoVideos[0]],
         title: 'Il matrimonio di Elena e Davide',
         date: '9 dicembre 2023',
         location: 'Dolomiti',

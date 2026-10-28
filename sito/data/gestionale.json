@@ -2,7 +2,7 @@
   "quotes": [
     {
       "id": "q1",
-      "createdAt": "2026-10-28T07:53:51.514007",
+      "createdAt": "2026-10-28T09:29:30.131143",
       "firstName": "Martina",
       "lastName": "Esposito",
       "phone": "+39 333 482 1190",
@@ -22,7 +22,7 @@
     },
     {
       "id": "q2",
-      "createdAt": "2026-10-27T08:53:51.514007",
+      "createdAt": "2026-10-27T10:29:30.131143",
       "firstName": "Luca",
       "lastName": "Ferri",
       "phone": "+39 347 220 9815",
@@ -41,7 +41,7 @@
     },
     {
       "id": "q3",
-      "createdAt": "2026-10-24T11:53:51.514007",
+      "createdAt": "2026-10-24T13:29:30.131143",
       "firstName": "Giorgia",
       "lastName": "Conti",
       "phone": "+39 320 771 4402",
@@ -107,7 +107,7 @@
       "eventTitle": "Il matrimonio di Anna e Paolo",
       "eventDate": "18 maggio 2024",
       "location": "Masseria in Valle d'Itria",
-      "welcome": "Ecco le foto e il video del vostro giorno: scaricateli quando volete, in alta qualità.",
+      "welcome": "Ecco le foto e i video del vostro giorno, divisi per momenti: guardateli e scaricateli quando volete, in alta qualità.",
       "folders": [
         {
           "id": "cl-anna-c1",
@@ -142,13 +142,22 @@
           "folder": "cl-anna-c1"
         },
         {
+          "id": "cl-anna-v1",
+          "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+          "original": "",
+          "isVideo": true,
+          "poster": "https://images.unsplash.com/photo-1606490208247-b65be3d94cd1?auto=format&fit=crop&q=80",
+          "name": "anna-video-1.mp4",
+          "folder": "cl-anna-c1"
+        },
+        {
           "id": "cl-anna-m3",
           "url": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&q=80",
           "original": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
           "name": "anna-003.jpg",
-          "folder": "cl-anna-c1"
+          "folder": "cl-anna-c2"
         },
         {
           "id": "cl-anna-m4",
@@ -169,13 +178,22 @@
           "folder": "cl-anna-c2"
         },
         {
+          "id": "cl-anna-v2",
+          "url": "https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4",
+          "original": "",
+          "isVideo": true,
+          "poster": "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&q=80",
+          "name": "anna-video-2.mp4",
+          "folder": "cl-anna-c2"
+        },
+        {
           "id": "cl-anna-m6",
           "url": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&q=80",
           "original": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=100&fm=jpg",
           "isVideo": false,
           "poster": "",
           "name": "anna-006.jpg",
-          "folder": "cl-anna-c2"
+          "folder": "cl-anna-c3"
         },
         {
           "id": "cl-anna-m7",
@@ -196,13 +214,13 @@
           "folder": "cl-anna-c3"
         },
         {
-          "id": "cl-anna-v1",
-          "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+          "id": "cl-anna-v3",
+          "url": "https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4",
           "original": "",
           "isVideo": true,
-          "poster": "https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&q=80",
-          "name": "anna-video.mp4",
-          "folder": ""
+          "poster": "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&q=80",
+          "name": "anna-video-3.mp4",
+          "folder": "cl-anna-c3"
         }
       ],
       "files": [
@@ -301,8 +319,8 @@
           "url": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
           "original": "",
           "isVideo": true,
-          "poster": "https://images.unsplash.com/photo-1532712938310-34cb3982ef74?auto=format&fit=crop&q=80",
-          "name": "elena-video.mp4",
+          "poster": "https://images.unsplash.com/photo-1561287495-a3fe1fd28504?auto=format&fit=crop&q=80",
+          "name": "elena-video-1.mp4",
           "folder": ""
         }
       ],
