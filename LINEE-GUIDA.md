@@ -244,7 +244,19 @@ Ogni uscita ha anche due o tre righe di "Novità", in italiano, da scrivere negl
 
 ---
 
-## 10. Decisioni da prendere prima di partire
+## 10. Chi fa cosa
+
+| Attività | Chi |
+|---|---|
+| Pubblicare sito e gestionale su Hostinger, impostare DNS, database, foto e API su Cloudflare | Claude |
+| Ogni modifica a sito, gestionale, database e app (codice) | Claude |
+| Prima di ogni uscita dell'app: alzare la versione, test, Novità, etichetta su GitHub | Claude |
+| Creare i file dell'app per gli store (`.aab`, `.ipa`) con il nome corretto e caricarli su Play Store e App Store | Il titolare |
+| Account (dominio, Hostinger, Cloudflare, store) e pagamenti | Il titolare, che poi dà accesso a Claude dove serve |
+
+---
+
+## 11. Decisioni da prendere prima di partire
 
 - [ ] **Dominio** definitivo (es. `studio54.it`) e su quale sito di domini comprarlo.
 - [ ] **ID definitivo dell'app** (es. `it.studio54.app`): dopo la prima pubblicazione non si cambia più.
