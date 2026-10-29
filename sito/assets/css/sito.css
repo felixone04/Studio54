@@ -140,24 +140,25 @@ main { padding-top: var(--barra); min-height: 60vh; }
   /* Come un vetro: bianco appena trasparente e sfocato, così si intravede
      la pagina che scorre sotto ma logo e menu si leggono sempre. Nessuna
      riga di separazione. */
-  background-color: rgba(255, 255, 255, .72);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
-  backdrop-filter: blur(16px) saturate(1.3);
-  transition: background-color .45s ease, color .35s, backdrop-filter .45s;
+  /* Sopra la foto d'apertura della home la barra è trasparente, con logo e
+     voci chiari; --p (da 0 a 1, lo calcola sito.js mentre si scorre) la
+     porta piano piano al vetro bianco, senza scatti. */
+  --p: 1;
+  background-color: rgba(255, 255, 255, calc(.72 * var(--p)));
+  -webkit-backdrop-filter: blur(calc(16px * var(--p))) saturate(calc(1 + .3 * var(--p)));
+  backdrop-filter: blur(calc(16px * var(--p))) saturate(calc(1 + .3 * var(--p)));
+  /* Breve, per ammorbidire gli scatti della rotella del mouse. */
+  transition: background-color .18s linear, color .18s linear, backdrop-filter .18s linear;
 }
 .barra-logo { position: relative; margin-right: auto; }
-.barra-logo img { height: calc(var(--barra) * .7); width: auto; transition: opacity .35s; }
-.barra-logo .logo-chiaro { position: absolute; left: 0; top: 0; opacity: 0; }
+.barra-logo img { height: calc(var(--barra) * .7); width: auto; transition: opacity .18s linear; }
+.barra-logo .logo-scuro { opacity: var(--p); }
+.barra-logo .logo-chiaro { position: absolute; left: 0; top: 0; opacity: calc(1 - var(--p)); }
 /* Velatura leggera in alto, solo sopra la foto, per leggere logo e voci. */
 .barra::before {
   content: ''; position: absolute; inset: 0 0 -40px; z-index: -1; pointer-events: none;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, .38), rgba(0, 0, 0, 0)); opacity: 0; transition: opacity .35s;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, .38), rgba(0, 0, 0, 0)); opacity: calc(1 - var(--p)); transition: opacity .18s linear;
 }
-/* Sopra la foto d'apertura la barra è trasparente, con logo e voci chiari. */
-.barra.su-foto { background-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; color: #fff; }
-.barra.su-foto::before { opacity: 1; }
-.barra.su-foto .logo-scuro { opacity: 0; }
-.barra.su-foto .logo-chiaro { opacity: 1; }
 .barra-voci { display: flex; gap: 34px; }
 .barra-voci .link { font: 600 11.5px/1.3 var(--display); letter-spacing: .24em; }
 .barra-menu { display: none; align-items: center; gap: 12px; padding: 12px 4px; font: 600 11.5px/1 var(--display); letter-spacing: .24em; }

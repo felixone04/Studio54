@@ -237,13 +237,28 @@
   var orizzontale = window.matchMedia('(min-aspect-ratio: 1/1)');
   // Sopra la foto d'apertura (home, schermo in orizzontale) la barra è
   // trasparente; altrove ha il bianco della pagina, senza riga di stacco.
+  // Il passaggio segue lo scorrimento: mentre il bordo della foto sale verso
+  // la barra, il vetro si riempie piano piano ed è pieno quando la foto è
+  // passata tutta sotto.
+  var INCHIOSTRO = [30, 27, 23];
+  var pPrima = -1, inAttesa = false;
   var aggiornaBarra = function () {
+    inAttesa = false;
     if (!barra) return;
-    var suFoto = !!aperturaHome && orizzontale.matches &&
-      window.scrollY < aperturaHome.offsetHeight - barra.offsetHeight;
-    barra.classList.toggle('su-foto', suFoto);
+    var p = 1;
+    if (aperturaHome && orizzontale.matches) {
+      var hb = barra.offsetHeight, bordo = aperturaHome.getBoundingClientRect().bottom;
+      p = Math.min(1, Math.max(0, 1 - (bordo - hb) / (hb * 1.5)));
+    }
+    p = Math.round(p * 1000) / 1000;
+    if (p === pPrima) return;
+    pPrima = p;
+    barra.style.setProperty('--p', p);
+    barra.style.color = 'rgb(' + INCHIOSTRO.map(function (c) { return Math.round(255 + (c - 255) * p); }).join(',') + ')';
+    barra.classList.toggle('su-foto', p < 1);
   };
-  window.addEventListener('scroll', aggiornaBarra, { passive: true });
+  var chiediBarra = function () { if (!inAttesa) { inAttesa = true; requestAnimationFrame(aggiornaBarra); } };
+  window.addEventListener('scroll', chiediBarra, { passive: true });
   window.addEventListener('resize', aggiornaBarra);
   aggiornaBarra();
 

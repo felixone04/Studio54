@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio_fotografico/models/models.dart';
+import 'package:studio_fotografico/theme/app_theme.dart';
 import 'package:studio_fotografico/widgets/lightbox.dart';
 import 'package:studio_fotografico/widgets/sections.dart';
 
@@ -176,6 +177,46 @@ void main() {
   });
 
   group('home', () {
+    testWidgets('la barra passa dalla foto al vetro bianco senza scatti', (
+      tester,
+    ) async {
+      final s = await loadState();
+      await pumpApp(tester, s, size: phone);
+      Color menu() =>
+          (tester
+              .widget<Container>(
+                find
+                    .descendant(
+                      of: find.bySemanticsLabel('Menu'),
+                      matching: find.byType(Container),
+                    )
+                    .first,
+              )
+              .color ??
+          const Color(0x00000000));
+      final scroll = tester
+          .widget<SingleChildScrollView>(
+            find.byType(SingleChildScrollView).first,
+          )
+          .controller!;
+      // Come context.navH a 390 di larghezza.
+      final navH = 72 + 28 * (phone.width - 360) / (1600 - 360);
+      expect(menu(), Palette.paper);
+
+      // Il bordo della foto è a metà della zona di passaggio sotto la barra.
+      scroll.jumpTo(phone.height - navH - navH * 0.75);
+      await settle(tester, 400);
+      final mid = menu();
+      expect(mid, isNot(Palette.paper));
+      expect(mid, isNot(Palette.ink));
+      expect(mid.r, closeTo((Palette.paper.r + Palette.ink.r) / 2, 0.08));
+
+      scroll.jumpTo(phone.height);
+      await settle(tester, 400);
+      expect(menu(), Palette.ink);
+      await disposeApp(tester);
+    });
+
     testWidgets('carosello verticale e i quattro lavori in evidenza', (
       tester,
     ) async {

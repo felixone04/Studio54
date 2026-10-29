@@ -114,7 +114,10 @@ class _SiteScaffoldState extends State<SiteScaffold> {
   final _scroll = ScrollController();
   final _tints = <_NavTintState>{};
   Color _under = Palette.paper;
-  bool _overPhoto = false;
+
+  /// Da 0 (barra trasparente sopra la foto d'apertura) a 1 (vetro bianco):
+  /// segue lo scorrimento, così il passaggio è fluido e senza scatti.
+  double _glass = 1;
 
   @override
   void initState() {
@@ -136,6 +139,13 @@ class _SiteScaffoldState extends State<SiteScaffold> {
     final offset = _scroll.hasClients ? _scroll.offset : 0.0;
     final photo = widget.photoUnderNav;
     final overPhoto = photo != null && offset < photo - navH;
+    // Mentre il bordo della foto sale verso la barra il vetro si riempie piano
+    // piano, ed è pieno quando la foto è passata tutta sotto.
+    final glass = photo == null
+        ? 1.0
+        : ((1 - (photo - offset - navH) / (navH * 1.5)).clamp(0.0, 1.0) * 100)
+                  .roundToDouble() /
+              100;
     var under = Palette.paper;
     for (final t in _tints) {
       final box = t.context.findRenderObject();
@@ -145,10 +155,10 @@ class _SiteScaffoldState extends State<SiteScaffold> {
     }
     // Sul carosello d'apertura le barre del telefono si nascondono.
     SystemBars.hide(this, overPhoto);
-    if (under != _under || overPhoto != _overPhoto) {
+    if (under != _under || glass != _glass) {
       setState(() {
         _under = under;
-        _overPhoto = overPhoto;
+        _glass = glass;
       });
     }
   }
@@ -164,7 +174,7 @@ class _SiteScaffoldState extends State<SiteScaffold> {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final navH = context.navH;
-    final light = _overPhoto;
+    final g = _glass;
     return Scaffold(
       backgroundColor: Palette.paper,
       bottomNavigationBar: widget.bottomBar,
@@ -199,25 +209,25 @@ class _SiteScaffoldState extends State<SiteScaffold> {
               // una velatura leggera.
               child: ClipRect(
                 child: BackdropFilter(
-                  enabled: !light,
-                  filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 450),
+                  enabled: g > 0,
+                  filter: ImageFilter.blur(sigmaX: 14 * g, sigmaY: 14 * g),
+                  child: Container(
                     height: navH,
                     padding: EdgeInsets.symmetric(horizontal: context.gutter),
                     decoration: BoxDecoration(
-                      color: light
-                          ? Colors.transparent
-                          : _under.withValues(alpha: 0.72),
-                      gradient: light
-                          ? const LinearGradient(
+                      color: _under.withValues(alpha: 0.72 * g),
+                      gradient: g < 1
+                          ? LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [Color(0x61000000), Color(0x00000000)],
+                              colors: [
+                                Color.fromRGBO(0, 0, 0, 0.38 * (1 - g)),
+                                const Color(0x00000000),
+                              ],
                             )
                           : null,
                     ),
-                    child: _NavBar(location: widget.location, light: light),
+                    child: _NavBar(location: widget.location, glass: g),
                   ),
                 ),
               ),
@@ -232,9 +242,11 @@ class _SiteScaffoldState extends State<SiteScaffold> {
 
 /// Il logo in alto a sinistra, che riporta alla home.
 class _HomeLogo extends StatelessWidget {
-  const _HomeLogo({required this.onTap, this.light = false});
+  const _HomeLogo({required this.onTap, this.glass = 1});
   final VoidCallback onTap;
-  final bool light;
+
+  /// 0: logo chiaro (sopra la foto), 1: logo scuro; in mezzo si sfumano.
+  final double glass;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -244,18 +256,33 @@ class _HomeLogo extends StatelessWidget {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: onTap,
-        child: BrandLogo(height: context.navH * 0.7, light: light),
+        child: glass >= 1
+            ? BrandLogo(height: context.navH * 0.7)
+            : Stack(
+                children: [
+                  Opacity(
+                    opacity: glass,
+                    child: BrandLogo(height: context.navH * 0.7),
+                  ),
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: 1 - glass,
+                      child: BrandLogo(height: context.navH * 0.7, light: true),
+                    ),
+                  ),
+                ],
+              ),
       ),
     ),
   );
 }
 
 class _NavBar extends StatelessWidget {
-  const _NavBar({required this.location, this.light = false});
+  const _NavBar({required this.location, this.glass = 1});
   final String location;
 
-  /// Chiara sopra la foto d'apertura.
-  final bool light;
+  /// 0: chiara sopra la foto d'apertura, 1: scura sul vetro bianco.
+  final double glass;
 
   /// Voci in riga, come sul sito: solo su un tablet in orizzontale, dove
   /// stanno comode. Sui telefoni (anche girati) e sul tablet in verticale i
@@ -269,13 +296,13 @@ class _NavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = light ? Palette.paper : Palette.ink;
+    final fg = Color.lerp(Palette.paper, Palette.ink, glass)!;
     return Row(
       children: [
         Expanded(
           child: Align(
             alignment: Alignment.centerLeft,
-            child: _HomeLogo(onTap: () => context.go('/'), light: light),
+            child: _HomeLogo(onTap: () => context.go('/'), glass: glass),
           ),
         ),
         const SizedBox(width: 16),
