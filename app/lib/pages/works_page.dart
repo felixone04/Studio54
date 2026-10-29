@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
 import '../widgets/line_icons.dart';
@@ -182,7 +184,7 @@ class _Filters extends StatelessWidget {
   Widget build(BuildContext context) {
     final menus = Wrap(
       spacing: context.fluid(22, 44),
-      runSpacing: 12,
+      runSpacing: context.isPhone ? 0 : 12,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         for (final (id, title, values, sel) in groups)
@@ -253,6 +255,7 @@ class _FilterMenuState extends State<_FilterMenu> {
   Widget build(BuildContext context) {
     final sel = widget.selected;
     final on = sel != null;
+    final phone = context.isPhone;
     bool isSel(String v) => sel != null && _key(sel) == _key(v);
     PopupMenuItem<String> item(String value, String text, bool active) =>
         PopupMenuItem(
@@ -310,7 +313,7 @@ class _FilterMenuState extends State<_FilterMenu> {
               for (final v in widget.values) item(v, v, isSel(v)),
             ],
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: EdgeInsets.symmetric(vertical: phone ? 10 : 6),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,18 +322,23 @@ class _FilterMenuState extends State<_FilterMenu> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        widget.title.toUpperCase(),
-                        style: label(10, color: Palette.stone),
+                      // Sul telefono, un filtro per riga: nomi e valori in
+                      // colonna, come sul sito.
+                      SizedBox(
+                        width: phone ? 84 : null,
+                        child: Text(
+                          widget.title.toUpperCase(),
+                          style: label(10, color: Palette.stone),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       // Larghezza fissa, quella della scelta più lunga: le
                       // voci accanto non si spostano cambiando la scelta.
                       ConstrainedBox(
                         // Nomi molto lunghi: si accorciano con i puntini.
-                        constraints: BoxConstraints(
-                          maxWidth: context.isPhone ? 150 : 220,
-                        ),
+                        constraints: phone
+                            ? const BoxConstraints.tightFor(width: 150)
+                            : const BoxConstraints(maxWidth: 220),
                         child: Stack(
                           children: [
                             for (final v in ['Tutti', ...widget.values])
@@ -397,6 +405,14 @@ class WorkPage extends StatefulWidget {
 class _WorkPageState extends State<WorkPage> {
   final _aspects = PhotoAspects.instance;
 
+  // Le foto si mostrano quando si conoscono le proporzioni di tutte (al
+  // massimo dopo 3 secondi), e da lì le misure restano ferme: la pagina non
+  // salta mentre si scorre.
+  Timer? _wait;
+  bool _timeUp = false;
+  List<String>? _frozenUrls;
+  Map<String, double> _frozen = const {};
+
   @override
   void initState() {
     super.initState();
@@ -410,6 +426,7 @@ class _WorkPageState extends State<WorkPage> {
   @override
   void dispose() {
     _aspects.removeListener(_changed);
+    _wait?.cancel();
     super.dispose();
   }
 
@@ -445,7 +462,21 @@ class _WorkPageState extends State<WorkPage> {
     }
     final urls = [for (final p in w.photos) p.url];
     _aspects.resolveAll(urls);
-    double ratio(String u) => (_aspects.of(u) ?? 1.5).clamp(0.4, 3.0);
+    if (_frozenUrls == null || !listEquals(_frozenUrls, urls)) {
+      final ready = _timeUp || urls.every(_aspects.settled);
+      if (ready) {
+        _frozenUrls = urls;
+        _frozen = {
+          for (final u in urls) u: (_aspects.of(u) ?? 1.5).clamp(0.4, 3.0),
+        };
+      } else {
+        _wait ??= Timer(const Duration(seconds: 3), () {
+          if (mounted) setState(() => _timeUp = true);
+        });
+      }
+    }
+    final ready = _frozenUrls != null && listEquals(_frozenUrls, urls);
+    double ratio(String u) => _frozen[u] ?? 1.5;
     // Tablet in orizzontale: le foto sparse, come sul sito. Telefono (anche
     // girato) o tablet in verticale: una sotto l'altra.
     final tablet = MediaQuery.sizeOf(context).shortestSide >= 600;
@@ -457,7 +488,10 @@ class _WorkPageState extends State<WorkPage> {
         _Wrap(
           top: context.spaceTop,
           bottom: context.spaceSection,
-          child: scattered
+          child: !ready
+              // Lo spazio resta occupato finché le foto non sono pronte.
+              ? SizedBox(height: context.h)
+              : scattered
               ? _Scattered(
                   urls: urls,
                   ratio: ratio,
@@ -471,7 +505,9 @@ class _WorkPageState extends State<WorkPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         for (var i = 0; i < urls.length; i++) ...[
-                          if (i > 0) SizedBox(height: gap),
+                          // Come sul sito: tra una foto e l'altra un po' più
+                          // dello spazio di base.
+                          if (i > 0) SizedBox(height: gap * 1.6),
                           Reveal(
                             child: LayoutBuilder(
                               builder: (context, c) {

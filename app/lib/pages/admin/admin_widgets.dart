@@ -468,87 +468,6 @@ class _ImageFieldState extends State<ImageField> {
   }
 }
 
-/// Elenco di righe di testo modificabile (es. tipi di evento).
-class StringListEditor extends StatefulWidget {
-  const StringListEditor({
-    super.key,
-    required this.items,
-    required this.onChanged,
-    this.addLabel = 'Aggiungi',
-  });
-  final List<String> items;
-  final ValueChanged<List<String>> onChanged;
-  final String addLabel;
-
-  @override
-  State<StringListEditor> createState() => _StringListEditorState();
-}
-
-class _StringListEditorState extends State<StringListEditor> {
-  late final List<String> _items = [...widget.items];
-  final _c = TextEditingController();
-
-  void _emit() => widget.onChanged([..._items]);
-
-  void _add() {
-    final v = _c.text.trim();
-    if (v.isEmpty || _items.contains(v)) return;
-    setState(() => _items.add(v));
-    _c.clear();
-    _emit();
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final e in _items)
-              InputChip(
-                label: Text(e),
-                onDeleted: () {
-                  setState(() => _items.remove(e));
-                  _emit();
-                },
-              ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _c,
-                onSubmitted: (_) => _add(),
-                decoration: InputDecoration(
-                  labelText: widget.addLabel,
-                  isDense: true,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            FilledButton.icon(
-              onPressed: _add,
-              icon: const Icon(Icons.add),
-              label: const Text('Aggiungi'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
 /// Contenitore di una voce modificabile in una lista (con comandi sposta/elimina).
 class ItemCard extends StatelessWidget {
   const ItemCard({
@@ -697,12 +616,7 @@ class SaveBar extends StatelessWidget {
   }
 }
 
-String formatEuro(num v) {
-  final s = v.toStringAsFixed(v % 1 == 0 ? 0 : 2).replaceAll('.', ',');
-  return '€ $s';
-}
-
-/// Riga di un elenco ordinabile (servizi, pacchetti, foto). Su telefono le
+/// Riga di un elenco ordinabile (lavori, foto). Su telefono le
 /// azioni finiscono in un menu e si tocca la riga per modificare.
 class AdminListRow extends StatelessWidget {
   const AdminListRow({

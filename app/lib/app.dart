@@ -37,7 +37,7 @@ class _AppScrollBehavior extends MaterialScrollBehavior {
 }
 
 /// Sul telefono il sito sta tra la barra di stato (ora, batteria) e quella
-/// dei gesti, su fondo crema: le pagine misurano solo lo spazio libero.
+/// dei gesti, su fondo bianco: le pagine misurano solo lo spazio libero.
 class _SystemBars extends StatelessWidget {
   const _SystemBars({required this.child});
   final Widget child;

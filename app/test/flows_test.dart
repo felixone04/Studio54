@@ -58,8 +58,11 @@ void main() {
       expect(find.text('PASSO 1 DI 5'), findsOneWidget);
       expect(find.text('IL VOSTRO EVENTO'), findsOneWidget);
       await tapText(tester, 'AVANTI');
-      expect(find.text('Scegliete la data dell\'evento'), findsOneWidget);
-      expect(find.text('Indicate la città o la location'), findsOneWidget);
+      expect(find.text('Indicate la data dell\'evento'), findsOneWidget);
+      expect(
+        find.text('Indicate la città o la location dell\'evento'),
+        findsOneWidget,
+      );
       expect(find.text('Scegliete il tipo di evento'), findsNothing);
       await pickDate(tester);
       await fill(tester, 'Luogo *', 'Masseria in Puglia');
@@ -307,6 +310,22 @@ void main() {
         await disposeApp(tester);
       }
     });
+
+    testWidgets('il menu a schermo intero sta nello schermo anche con il '
+        'telefono girato e il testo grande', (tester) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      final s = await loadState();
+      await pumpApp(tester, s, location: '/lavori', size: const Size(844, 390));
+      await tester.tap(find.bySemanticsLabel('Menu'));
+      await settle(tester, 800);
+      expect(tester.takeException(), isNull);
+      expect(find.text('AREA CLIENTI'), findsOneWidget);
+      // L'email del menu (l'altra è nel footer della pagina sotto).
+      expect(find.text(s.content.contacts.email), findsNWidgets(2));
+      await disposeApp(tester);
+    });
+
     Future<(double, double)> tops(WidgetTester tester, Size size) async {
       final s = await loadState();
       await pumpApp(tester, s, location: '/lavori/w-anna-paolo', size: size);

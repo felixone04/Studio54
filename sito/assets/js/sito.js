@@ -265,13 +265,20 @@
   var menu = $('#menu');
   var apriMenu = $('.barra-menu');
   if (menu && apriMenu) {
-    var mostra = function (si) {
+    var tChiudi = null;
+    var mostra = function (si, daStoria) {
+      clearTimeout(tChiudi);
       if (si) {
         menu.hidden = false;
         requestAnimationFrame(function () { menu.classList.add('aperto'); });
+        $('.menu-chiudi', menu).focus();
+        // Il tasto indietro del telefono chiude il menu invece di lasciare la pagina.
+        if (!daStoria) history.pushState({ s54: 'menu' }, '');
       } else {
         menu.classList.remove('aperto');
-        setTimeout(function () { menu.hidden = true; }, 450);
+        tChiudi = setTimeout(function () { menu.hidden = true; }, 450);
+        apriMenu.focus();
+        if (!daStoria && history.state && history.state.s54 === 'menu') history.back();
       }
       apriMenu.setAttribute('aria-expanded', si ? 'true' : 'false');
       document.body.style.overflow = si ? 'hidden' : '';
@@ -279,6 +286,14 @@
     apriMenu.addEventListener('click', function () { mostra(true); });
     $('.menu-chiudi', menu).addEventListener('click', function () { mostra(false); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) mostra(false); });
+    window.addEventListener('popstate', function () { if (!menu.hidden && menu.classList.contains('aperto')) mostra(false, true); });
+    // Da una voce del menu si va alla pagina al posto del passaggio "menu aperto",
+    // così il tasto indietro non ci ripassa.
+    $$('.menu-voci a, .menu-testa a', menu).forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        if (history.state && history.state.s54 === 'menu' && !e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); location.replace(a.href); }
+      });
+    });
   }
 
   /* ----------------------------------------------------- comparsa morbida */
@@ -318,14 +333,24 @@
     img.src = vFoto[vI];
     $$('.visore-prec, .visore-succ', visore).forEach(function (b) { b.hidden = vFoto.length < 2; });
   }
+  var vDa = null;
   function vApri(foto, i) {
     vFoto = foto; vI = i;
+    vDa = document.activeElement;
     visore.hidden = false;
     document.body.style.overflow = 'hidden';
     vMostra();
     $('.visore-chiudi', visore).focus();
+    // Il tasto indietro del telefono chiude la foto invece di lasciare la pagina.
+    history.pushState({ s54: 'visore' }, '');
   }
-  function vChiudi() { visore.hidden = true; document.body.style.overflow = ''; }
+  function vChiudi(daStoria) {
+    if (visore.hidden) return;
+    visore.hidden = true;
+    document.body.style.overflow = '';
+    if (vDa && vDa.focus) vDa.focus({ preventScroll: true });
+    if (daStoria !== true && history.state && history.state.s54 === 'visore') history.back();
+  }
   function vVai(d) { vI = (vI + d + vFoto.length) % vFoto.length; vMostra(); }
   if (visore) {
     $('.visore-chiudi', visore).addEventListener('click', vChiudi);
@@ -338,6 +363,7 @@
       if (e.key === 'ArrowLeft' && vFoto.length > 1) vVai(-1);
     });
     sfoglia(visore, function (d) { if (vFoto.length > 1) vVai(d); });
+    window.addEventListener('popstate', function () { vChiudi(true); });
   }
 
   /* ============================================================ CAROSELLO */
@@ -467,7 +493,7 @@
     var qs = new URLSearchParams(location.search);
     $$('.filtro', box).forEach(function (f) {
       var v = (qs.get(f.getAttribute('data-filtro')) || '').toLowerCase();
-      if (v && $('li[data-v="' + v.replace(/"/g, '') + '"]', f)) f.scegli(v);
+      if (v && $$('li', f).some(function (li) { return li.getAttribute('data-v') === v; })) f.scegli(v);
     });
   });
 
@@ -489,13 +515,13 @@
       while (k < n) {
         var a = o(0), b = o(1), c = o(2);
         if (!a) {
-          if (b === true && c === true) { righe.push({ tipo: 'pila', alta: k, su: k + 1, giu: k + 2, sinistra: true }); k += 3; }
+          if (b === true && c === true) { righe.push({ tipo: 'pila', alta: k, su: k + 1, giu: k + 2 }); k += 3; }
           else if (b === false && c !== null) { righe.push({ tipo: 'fila', ids: [k, k + 1, k + 2] }); k += 3; }
           else if (b !== null) { righe.push({ tipo: 'fila', ids: [k, k + 1] }); k += 2; }
           else { righe.push({ tipo: 'una', ids: [k] }); k += 1; }
         } else {
           if (b === false && c === false) { righe.push({ tipo: 'fila', ids: [k, k + 1, k + 2] }); k += 3; }
-          else if (b === true && c === false) { righe.push({ tipo: 'pila', alta: k + 2, su: k, giu: k + 1, sinistra: false }); k += 3; }
+          else if (b === true && c === false) { righe.push({ tipo: 'pila', alta: k + 2, su: k, giu: k + 1 }); k += 3; }
           else if (b === true && c === true && giro % 2) { righe.push({ tipo: 'una', ids: [k] }); k += 1; }
           else if (b !== null) { righe.push({ tipo: 'fila', ids: [k, k + 1] }); k += 2; }
           else { righe.push({ tipo: 'una', ids: [k] }); k += 1; }
@@ -511,7 +537,8 @@
       var prima = -1;
       for (var q = 0; q < tavole.length; q++) { if (rapporti[q] > 1) { prima = q; break; } }
       ordine = tavole.map(function (_, q) { return q; });
-      if (prima > 0) { ordine.splice(prima, 1); ordine.unshift(prima); }
+      // Sul telefono, una sotto l'altra, l'ordine resta quello del gestionale.
+      if (prima > 0 && window.innerWidth >= 600) { ordine.splice(prima, 1); ordine.unshift(prima); }
       var r = function (pos) { return rapporto(ordine[pos]); };
       var t = function (pos) { return tavole[ordine[pos]]; };
       box.innerHTML = '';
@@ -519,11 +546,12 @@
       var piena = Math.floor(box.clientWidth - parseFloat(stile.paddingLeft) - parseFloat(stile.paddingRight)) - 1;
       var spazio = Math.max(10, Math.min(22, piena * 0.018));
       box.style.setProperty('--spazio', spazio + 'px');
-      var maxH = window.innerHeight * 0.9;
+      // Altezza dello schermo senza le barre del browser che vanno e vengono.
+      var maxH = document.documentElement.clientHeight * 0.9;
       var riga = function () { var d = document.createElement('div'); d.className = 'collage-riga'; box.appendChild(d); return d; };
       if (window.innerWidth < 600) {
         // Telefono: una sotto l'altra, intere.
-        ordine.forEach(function (_, pos) { riga().appendChild(misura(t(pos), piena, piena / r(pos))); });
+        ordine.forEach(function (_, pos) { riga().appendChild(misura(t(pos), piena + 1, (piena + 1) / r(pos))); });
       } else {
         var lato = 0;
         // Righe a specchio: la foto più larga una volta a sinistra e una a
@@ -564,23 +592,57 @@
       box.classList.add('composto');
     }
     // Si compone quando si conoscono le proporzioni di tutte le foto (al
-    // massimo dopo 3 secondi, con quelle note fino ad allora).
-    var mancanti = tavole.length, fatto = false;
+    // massimo dopo 3 secondi, con quelle note fino ad allora). Fino ad allora
+    // il collage resta nascosto, così la pagina non salta. Le proporzioni
+    // lette si ricordano: alla visita successiva il collage è subito pronto.
+    var CHIAVE = 's54-proporzioni', note = {};
+    try { note = JSON.parse(localStorage.getItem(CHIAVE)) || {}; } catch (e) {}
+    var chiave = function (k) { return tavole[k].getAttribute('data-foto'); };
+    var note0 = tavole.map(function (_, k) { var v = note[chiave(k)]; if (v > 0) rapporti[k] = v; return v > 0; });
+    var fatto = false, larghezza = 0;
     function pronta() {
       if (fatto) return;
       fatto = true;
+      tavole.forEach(function (_, k) { note[chiave(k)] = Math.round(rapporti[k] * 1000) / 1000; });
+      try { localStorage.setItem(CHIAVE, JSON.stringify(note)); } catch (e) {}
+      larghezza = box.clientWidth;
       componi();
+      // Si ricompone solo se cambia la larghezza: non quando sul telefono
+      // compare o sparisce la barra del browser.
       var t0;
-      window.addEventListener('resize', function () { clearTimeout(t0); t0 = setTimeout(componi, 150); });
+      window.addEventListener('resize', function () {
+        clearTimeout(t0);
+        t0 = setTimeout(function () { if (box.clientWidth !== larghezza) { larghezza = box.clientWidth; componi(); } }, 150);
+      });
     }
+    // Le misure di una foto arrivano prima della foto intera: si controlla
+    // spesso, senza aspettare che sia scaricata tutta.
+    var lette = note0.slice(), inizio = Date.now();
+    // Una foto che arriva dopo i 3 secondi: si ricompone, per non tagliarla.
+    function tardiva(k) {
+      var img = $('img', tavole[k]), t1;
+      img.addEventListener('load', function () {
+        if (!img.naturalWidth) return;
+        rapporti[k] = img.naturalWidth / img.naturalHeight;
+        note[chiave(k)] = Math.round(rapporti[k] * 1000) / 1000;
+        try { localStorage.setItem(CHIAVE, JSON.stringify(note)); } catch (e) {}
+        clearTimeout(t1); t1 = setTimeout(componi, 120);
+      }, { once: true });
+    }
+    (function controlla() {
+      tavole.forEach(function (tv, k) {
+        if (lette[k]) return;
+        var img = $('img', tv);
+        if (img.naturalWidth) { rapporti[k] = img.naturalWidth / img.naturalHeight; lette[k] = true; }
+        else if (img.complete) lette[k] = true; // non si carica: resta 3:2
+      });
+      if (lette.every(Boolean) || Date.now() - inizio > 3000) {
+        lette.forEach(function (ok, k) { if (!ok) tardiva(k); });
+        pronta();
+      }
+      else setTimeout(controlla, 50);
+    })();
     tavole.forEach(function (tv, k) {
-      var img = $('img', tv);
-      var letta = function () {
-        if (img.naturalWidth) rapporti[k] = img.naturalWidth / img.naturalHeight;
-        if (--mancanti === 0) pronta();
-      };
-      if (img.complete && img.naturalWidth) letta();
-      else { img.addEventListener('load', letta, { once: true }); img.addEventListener('error', letta, { once: true }); }
       var apri = function () {
         var seq = (ordine.length ? ordine : tavole.map(function (_, q) { return q; }));
         vApri(seq.map(function (q) { return tavole[q].getAttribute('data-foto'); }), Math.max(0, seq.indexOf(k)));
@@ -588,7 +650,6 @@
       tv.addEventListener('click', apri);
       tv.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apri(); } });
     });
-    setTimeout(pronta, 3000);
   });
 
   /* ============================================================ PREVENTIVO */
@@ -603,7 +664,7 @@
     /* Controlli, uguali a quelli dell'app. */
     var regole = {
       data: function (v) {
-        if (!v) return "Inserite la data dell'evento";
+        if (!v) return "Indicate la data dell'evento";
         var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v);
         if (!m) return 'Scrivete la data come gg/mm/aaaa';
         var d = new Date(+m[3], +m[2] - 1, +m[1]);
@@ -635,7 +696,7 @@
       var c = campo(n);
       if (!c) return '';
       var msg = regole[n](input(n).value.trim());
-      if (mostra) { c.classList.toggle('sbagliato', !!msg); $('.errore', c).textContent = msg; }
+      if (mostra) { c.classList.toggle('sbagliato', !!msg); $('.errore', c).textContent = msg; input(n).setAttribute('aria-invalid', msg ? 'true' : 'false'); }
       return msg;
     }
     function controllaTipo(mostra) {
@@ -667,7 +728,9 @@
       if (!el) return;
       el.addEventListener('input', function () {
         if (filtriTesto[n]) { var p = filtriTesto[n](el.value); if (p !== el.value) el.value = p; }
-        controlla(n, true);
+        // Mentre si scrive l'errore compare solo dopo il primo invio; uno già
+        // mostrato si aggiorna (e sparisce appena il campo è giusto).
+        controlla(n, provato || campo(n).classList.contains('sbagliato'));
       });
       el.addEventListener('blur', function () { if (el.value || provato) controlla(n, true); });
     });
@@ -717,7 +780,7 @@
 
     var consenso = $('.consenso', form), spunta = $('input', consenso), errorePrivacy = $('.errore-privacy', form);
     function controllaConsenso(mostra) {
-      var msg = spunta.checked ? '' : 'Serve il consenso per inviare la richiesta.';
+      var msg = spunta.checked ? '' : 'Serve il consenso per inviare la richiesta';
       if (mostra) { consenso.classList.toggle('sbagliato', !!msg); errorePrivacy.textContent = msg; }
       return msg;
     }
@@ -737,6 +800,8 @@
       if (primo) {
         var y = primo.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.2;
         window.scrollTo({ top: y, behavior: 'smooth' });
+        var fuoco = $('input, textarea, button', primo);
+        if (fuoco) fuoco.focus({ preventScroll: true });
         return;
       }
       var d = valore('data').split('/');
@@ -754,7 +819,18 @@
       };
       // Senza database la richiesta resta in questo browser: il gestionale,
       // aperto qui, la mostra tra le Richieste.
-      S54.nuovaRichiesta(richiesta);
+      var erroreInvio = $('.errore-invio', form);
+      if (!S54.nuovaRichiesta(richiesta)) {
+        if (!erroreInvio) {
+          erroreInvio = document.createElement('p');
+          erroreInvio.className = 'errore errore-invio';
+          erroreInvio.setAttribute('role', 'alert');
+          $('.modulo-invio', form).after(erroreInvio);
+        }
+        erroreInvio.textContent = 'Non siamo riusciti a inviare la richiesta. Riprovate, oppure chiamateci o scriveteci.';
+        return;
+      }
+      if (erroreInvio) erroreInvio.textContent = '';
       var grazie = $('[data-grazie]');
       $('.grazie-titolo', grazie).textContent = 'Grazie, ' + richiesta.firstName;
       $('.grazie-testo', grazie).textContent = richiesta.phone

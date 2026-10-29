@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/line_icons.dart';
@@ -164,6 +167,7 @@ class _SignInViewState extends State<SignInView> {
                 PillButton(
                   'Entra',
                   big: true,
+                  expand: true,
                   loading: _busy,
                   icon: Ico.arrowRight,
                   onTap: _submit,
@@ -174,7 +178,7 @@ class _SignInViewState extends State<SignInView> {
                       ? 'Prova: nome utente "titolare", password "studio54".'
                       : 'Non avete le credenziali? Scriveteci: ve le mandiamo noi.',
                   textAlign: TextAlign.center,
-                  style: body(13, color: Palette.ash),
+                  style: body(13, color: Palette.stone),
                 ),
               ],
             ),
@@ -221,15 +225,18 @@ class _ClientHomeState extends State<_ClientHome> {
   /// Download in corso (id del file).
   final _saving = <String>{};
 
-  void _snack(String m) {
-    final s = ScaffoldMessenger.maybeOf(context);
+  /// Messaggio in basso; [where] è il visore a schermo intero, se aperto
+  /// (altrimenti il messaggio resterebbe sotto la foto, invisibile).
+  void _snack(String m, [ScaffoldMessengerState? where]) {
+    final s = where ?? ScaffoldMessenger.maybeOf(context);
     s?.hideCurrentSnackBar();
     s?.showSnackBar(SnackBar(content: Text(m)));
   }
 
   /// Si scarica una foto (o un video) alla volta, guardandola.
-  Future<bool> _save(ClientMedia m) async {
+  Future<bool> _save(ClientMedia m, [BuildContext? viewer]) async {
     if (_saving.contains(m.id)) return false;
+    final where = viewer == null ? null : ScaffoldMessenger.maybeOf(viewer);
     setState(() => _saving.add(m.id));
     try {
       await mediaSaver.save(m);
@@ -238,6 +245,7 @@ class _ClientHomeState extends State<_ClientHome> {
           m.isVideo
               ? 'Video salvato nella galleria (album Studio 54).'
               : 'Foto salvata nella galleria (album Studio 54).',
+          where,
         );
       }
       return true;
@@ -245,6 +253,7 @@ class _ClientHomeState extends State<_ClientHome> {
       if (mounted) {
         _snack(
           e is SaveException ? e.message : 'Download non riuscito: riprovate.',
+          where,
         );
       }
       return false;
@@ -261,20 +270,49 @@ class _ClientHomeState extends State<_ClientHome> {
       transitionDuration: const Duration(milliseconds: 300),
       transitionBuilder: (_, a, _, child) =>
           FadeTransition(opacity: a, child: child),
-      pageBuilder: (ctx, _, _) => PhotoViewer(
-        photos: [for (final m in media) m.isVideo ? m.poster : m.url],
-        start: i,
-        itemBuilder: (_, k) =>
-            media[k].isVideo ? _VideoView(media: media[k]) : null,
-        actions: (_, k) => [
-          _DownloadButton(
-            key: ValueKey(media[k].id),
-            busy: _saving.contains(media[k].id),
-            onTap: () => _save(media[k]),
+      // Un suo Scaffold, perché l'esito del download si veda sopra la foto.
+      pageBuilder: (ctx, _, _) => ScaffoldMessenger(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: false,
+          body: PhotoViewer(
+            photos: [for (final m in media) m.isVideo ? m.poster : m.url],
+            start: i,
+            itemBuilder: (_, k) =>
+                media[k].isVideo ? _VideoView(media: media[k]) : null,
+            actions: (vc, k) => [
+              _DownloadButton(
+                key: ValueKey(media[k].id),
+                busy: _saving.contains(media[k].id),
+                onTap: () => _save(media[k], vc),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  /// Documenti: un link si apre; un PDF caricato nel gestionale (dentro i
+  /// dati) si salva sul telefono, dove si sceglie.
+  Future<void> _openFile(ClientFile f) async {
+    if (!f.url.startsWith('data:')) {
+      openUrl(f.url);
+      return;
+    }
+    try {
+      final bytes = base64Decode(f.url.substring(f.url.indexOf(',') + 1));
+      final name = f.name.trim().isEmpty ? 'documento' : f.name.trim();
+      final saved = await FilePicker.saveFile(
+        dialogTitle: 'Salva il documento',
+        fileName: name.toLowerCase().endsWith('.pdf') ? name : '$name.pdf',
+        bytes: bytes,
+        mimeType: 'application/pdf',
+      );
+      if (saved != null && mounted) _snack('Documento salvato.');
+    } catch (_) {
+      if (mounted) _snack('Non è stato possibile salvare il documento.');
+    }
   }
 
   String _count(List<ClientMedia> l) {
@@ -408,7 +446,7 @@ class _ClientHomeState extends State<_ClientHome> {
           const SizedBox(height: 10),
           Text(
             'Toccate una foto o un video per vederlo grande e scaricarlo.',
-            style: body(13, color: Palette.ash),
+            style: body(13, color: Palette.stone),
           ),
         ],
       ];
@@ -491,7 +529,7 @@ class _ClientHomeState extends State<_ClientHome> {
                 const SizedBox(height: 10),
                 for (final f in c.files)
                   InkWell(
-                    onTap: () => openUrl(f.url),
+                    onTap: () => _openFile(f),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: const BoxDecoration(

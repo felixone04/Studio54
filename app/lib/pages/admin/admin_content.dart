@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/site_scaffold.dart' show profileUrl;
 import 'admin_widgets.dart';
 
 /// Pagina di amministrazione scorrevole con margini coerenti.
@@ -40,9 +41,13 @@ class DraftEditor extends StatefulWidget {
     required this.title,
     this.subtitle,
     required this.builder,
+    this.validate,
   });
   final String title;
   final String? subtitle;
+
+  /// Controllo prima di salvare: un messaggio d'errore, o null se va bene.
+  final String? Function(SiteContent draft)? validate;
   final List<Widget> Function(
     BuildContext context,
     SiteContent draft,
@@ -68,6 +73,12 @@ class _DraftEditorState extends State<DraftEditor> with UnsavedGuard {
   void _rebuild() => setState(() => _dirty = true);
 
   Future<void> _save() async {
+    final error = widget.validate?.call(_draft);
+    if (error != null) {
+      toast(context, error, error: true);
+      setState(() => _rev++);
+      return;
+    }
     await context.read<AppState>().updateContent(_draft);
     if (!mounted) return;
     setState(() {
@@ -265,11 +276,49 @@ class AdminBioEditor extends StatelessWidget {
 class AdminIdentityEditor extends StatelessWidget {
   const AdminIdentityEditor({super.key});
 
+  static final _email = RegExp(
+    r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$',
+  );
+
+  /// Gli stessi controlli del gestionale sul computer: spazi tolti, email
+  /// valida, link social che iniziano con https:// (www. si completa).
+  static String? _check(SiteContent d) {
+    final k = d.contacts;
+    k
+      ..phone = k.phone.trim()
+      ..whatsapp = k.whatsapp.trim()
+      ..email = k.email.trim()
+      ..address = k.address.trim()
+      ..hours = k.hours.trim()
+      ..vat = k.vat.trim();
+    String social(String v) {
+      final u = v.trim();
+      return u.toLowerCase().startsWith('www.') ? 'https://$u' : u;
+    }
+
+    k
+      ..instagram = social(k.instagram)
+      ..facebook = social(k.facebook);
+    if (k.email.isNotEmpty && !_email.hasMatch(k.email)) {
+      return 'Email non valida.';
+    }
+    for (final (name, u) in [
+      ('Instagram', k.instagram),
+      ('Facebook', k.facebook),
+    ]) {
+      if (u.isNotEmpty && profileUrl(u) == null) {
+        return 'Link di $name: scrivi un indirizzo che inizia con https://';
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return DraftEditor(
       title: 'Contatti',
       subtitle: 'Nome, colore e recapiti: uguali sul sito e nell\'app.',
+      validate: _check,
       builder: (context, d, changed) => [
         Panel(
           title: 'Identità',
@@ -295,7 +344,7 @@ class AdminIdentityEditor extends StatelessWidget {
               ),
               const SizedBox(height: 22),
               const Text(
-                'Colore di accento',
+                'Colore di accento (solo nell\'app)',
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 10),
@@ -342,7 +391,7 @@ class AdminIdentityEditor extends StatelessWidget {
         ),
         Panel(
           title: 'Contatti',
-          subtitle: 'Compaiono nel footer del sito. I campi vuoti non vengono mostrati.',
+          subtitle: 'Compaiono in fondo alle pagine, sul sito e nell\'app. I campi vuoti non vengono mostrati.',
           child: Column(
             children: [
               FieldRow(

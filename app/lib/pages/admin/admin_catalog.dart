@@ -103,11 +103,12 @@ class _AdminCarouselState extends State<AdminCarousel> {
         AdminHeader(
           title: v ? 'Carosello verticale' : 'Carosello orizzontale',
           subtitle: v
-              ? 'Solo nell\'app: le foto riempiono lo schermo del telefono '
-                    'all\'apertura e scorrono da sole, 4 secondi l\'una. Usa '
-                    'foto verticali.'
-              : 'Solo sul sito: le foto scorrono a tutto schermo nella home, '
-                    '4 secondi l\'una, con dissolvenza. Usa foto orizzontali.',
+              ? 'Nell\'app tenuta in verticale: le foto riempiono lo schermo '
+                    'del telefono all\'apertura e scorrono da sole, 4 secondi '
+                    'l\'una. Usa foto verticali.'
+              : 'Sul sito (e nell\'app con il telefono girato in orizzontale): '
+                    'le foto scorrono a tutto schermo nella home, 4 secondi '
+                    'l\'una, con dissolvenza. Usa foto orizzontali.',
         ),
         Panel(
           child: Column(

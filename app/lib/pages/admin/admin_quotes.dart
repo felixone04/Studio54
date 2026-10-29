@@ -9,11 +9,12 @@ import '../../widgets/site_scaffold.dart' show openUrl;
 import 'admin_appointment.dart';
 import 'admin_widgets.dart';
 
+/// Gli stessi colori del gestionale sul computer (riservata.css).
 Color statusColor(QuoteStatus s) => switch (s) {
-  QuoteStatus.nuova => const Color(0xFFC25B2E),
-  QuoteStatus.contattata => const Color(0xFF3B6FB6),
-  QuoteStatus.confermata => const Color(0xFF2E7D4F),
-  QuoteStatus.archiviata => const Color(0xFF7A746B),
+  QuoteStatus.nuova => const Color(0xFF3D6A9E),
+  QuoteStatus.contattata => const Color(0xFF7A6340),
+  QuoteStatus.confermata => const Color(0xFF3F7D4E),
+  QuoteStatus.archiviata => const Color(0xFF6B635A),
 };
 
 class AdminQuotes extends StatefulWidget {
@@ -140,10 +141,13 @@ class _QuoteCard extends StatelessWidget {
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
-                '${q.eventType}'
-                '${q.eventDate != null ? ' · ${DateFormat('d MMM y', 'it_IT').format(q.eventDate!)}' : ''}'
-                '${q.location.trim().isNotEmpty ? ' · ${q.location.trim()}' : ''}'
-                ' · ${q.source == 'app' ? 'dall\'app' : 'dal sito'} il $date',
+                [
+                  q.eventType,
+                  if (q.eventDate != null)
+                    DateFormat('d MMM y', 'it_IT').format(q.eventDate!),
+                  q.location.trim(),
+                  '${q.source == 'app' ? 'dall\'app' : 'dal sito'} il $date',
+                ].where((e) => e.trim().isNotEmpty).join(' · '),
                 style: const TextStyle(color: Colors.black54),
               ),
             ),

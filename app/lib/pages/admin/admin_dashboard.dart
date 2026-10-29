@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/models.dart';
 import '../../state/app_state.dart';
+import '../../theme/app_theme.dart';
 import 'admin_quotes.dart' show statusColor;
 import 'admin_widgets.dart';
 
@@ -32,34 +33,32 @@ class AdminDashboard extends StatelessWidget {
         .where((q) => q.status == QuoteStatus.nuova)
         .length;
     final wide = MediaQuery.sizeOf(context).width > 980;
+    final in30 = now.add(const Duration(days: 30));
 
+    // Le stesse quattro schede del gestionale sul computer.
     final stats = [
       _Stat(
-        'Richieste nuove',
+        'Richieste da leggere',
         '$newQuotes',
         Icons.mark_email_unread_outlined,
-        newQuotes > 0 ? const Color(0xFFC25B2E) : null,
         () => context.go('/admin/richieste'),
       ),
       _Stat(
-        'Richieste totali',
-        '${s.quotes.length}',
-        Icons.inbox_outlined,
-        null,
-        () => context.go('/admin/richieste'),
-      ),
-      _Stat(
-        'Prossimi appuntamenti',
-        '${upcoming.length}',
+        'Appuntamenti nei prossimi 30 giorni',
+        '${upcoming.where((a) => a.start.isBefore(in30)).length}',
         Icons.event_outlined,
-        null,
         () => context.go('/admin/calendario'),
       ),
       _Stat(
-        'Clienti con accesso',
+        'Lavori pubblicati',
+        '${s.works.where((w) => w.published).length}',
+        Icons.auto_stories_outlined,
+        () => context.go('/admin/lavori'),
+      ),
+      _Stat(
+        'Clienti con accesso all\'app',
         '${s.clients.where((c) => c.active).length}',
         Icons.people_alt_outlined,
-        null,
         () => context.go('/admin/clienti'),
       ),
     ];
@@ -68,7 +67,8 @@ class AdminDashboard extends StatelessWidget {
       title: 'Ultime richieste',
       trailing: TextButton(
         onPressed: () => context.go('/admin/richieste'),
-        child: const Text('Vedi tutte'),
+        style: _link,
+        child: const Text('Tutte'),
       ),
       child: s.quotes.isEmpty
           ? const EmptyState(
@@ -86,7 +86,10 @@ class AdminDashboard extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     subtitle: Text(
-                      '${q.eventType} · ${DateFormat('d MMM', 'it_IT').format(q.createdAt)}',
+                      [
+                        q.eventType,
+                        DateFormat('d MMM', 'it_IT').format(q.createdAt),
+                      ].where((e) => e.trim().isNotEmpty).join(' · '),
                     ),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(
@@ -115,7 +118,8 @@ class AdminDashboard extends StatelessWidget {
       title: 'Prossimi appuntamenti',
       trailing: TextButton(
         onPressed: () => context.go('/admin/calendario'),
-        child: const Text('Apri calendario'),
+        style: _link,
+        child: const Text('Calendario'),
       ),
       child: upcoming.isEmpty
           ? const EmptyState(
@@ -130,19 +134,22 @@ class AdminDashboard extends StatelessWidget {
                     onTap: () => context.go('/admin/calendario'),
                     leading: Container(
                       width: 48,
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      height: 48,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary
                             .withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             DateFormat('d', 'it_IT').format(a.start),
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
-                              fontSize: 18,
+                              fontSize: 17,
+                              height: 1.1,
                             ),
                           ),
                           Text(
@@ -150,7 +157,7 @@ class AdminDashboard extends StatelessWidget {
                               'MMM',
                               'it_IT',
                             ).format(a.start).toUpperCase(),
-                            style: const TextStyle(fontSize: 10.5),
+                            style: const TextStyle(fontSize: 10, height: 1.1),
                           ),
                         ],
                       ),
@@ -206,58 +213,60 @@ class AdminDashboard extends StatelessWidget {
   }
 }
 
+/// "Tutte", "Calendario": allineati al bordo del pannello, senza rientro.
+final _link = TextButton.styleFrom(
+  padding: const EdgeInsets.symmetric(horizontal: 4),
+  minimumSize: const Size(0, 40),
+);
+
+/// Una scheda come sul computer: il numero grande e sottile, sotto la
+/// descrizione, l'icona in alto a destra. Tutte alte uguali.
 class _Stat extends StatelessWidget {
-  const _Stat(this.label, this.value, this.icon, this.highlight, this.onTap);
+  const _Stat(this.label, this.value, this.icon, this.onTap);
   final String label;
   final String value;
   final IconData icon;
-  final Color? highlight;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final c = highlight ?? Theme.of(context).colorScheme.primary;
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: c.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          height: 128,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 14, 14),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Icon(icon, size: 20, color: const Color(0xFF7A6340)),
                 ),
-                child: Icon(icon, color: c),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       value,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w600,
-                        height: 1.1,
-                      ),
+                      style: display(38, weight: FontWeight.w300, height: 1),
                     ),
+                    const Spacer(),
                     Text(
                       label,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.black54,
+                        color: Color(0xFF6B635A),
                         fontSize: 13,
+                        height: 1.3,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

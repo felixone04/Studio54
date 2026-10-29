@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -232,23 +233,25 @@ class _AdminCalendarState extends State<AdminCalendar> {
             ),
           ],
         ),
-        _GoogleBar(
-          state: s,
-          error: _error,
-          loading: _loading,
-          onConnect: _connect,
-          onRefresh: _loadGoogle,
-          onPush: _push,
-          onDisconnect: () async {
-            await s.disconnectGoogle();
-            if (!mounted) return;
-            setState(() {
-              _google = [];
-              _error = null;
-            });
-          },
-        ),
-        const SizedBox(height: 18),
+        // Google Calendar si collega solo dalla versione web.
+        if (kIsWeb)
+          _GoogleBar(
+            state: s,
+            error: _error,
+            loading: _loading,
+            onConnect: _connect,
+            onRefresh: _loadGoogle,
+            onPush: _push,
+            onDisconnect: () async {
+              await s.disconnectGoogle();
+              if (!mounted) return;
+              setState(() {
+                _google = [];
+                _error = null;
+              });
+            },
+          ),
+        if (kIsWeb) const SizedBox(height: 18),
         if (wide)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

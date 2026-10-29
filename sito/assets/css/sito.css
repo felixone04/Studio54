@@ -27,7 +27,6 @@
   --inizio: clamp(18px, calc(18px + 18 * (100vw - 360px) / 1240), 36px);
   --blocco: clamp(26px, calc(26px + 18 * (100vw - 360px) / 1240), 44px);
   --sezione: clamp(56px, calc(56px + 64 * (100vw - 360px) / 1240), 120px);
-  --max: 1240px;
 }
 
 * { box-sizing: border-box; }
@@ -93,8 +92,6 @@ main { padding-top: var(--barra); min-height: 60vh; }
 .pillola:hover i { transform: rotate(45deg); }
 .pillola.grande { height: 64px; padding-left: 32px; font-size: 13px; }
 .pillola.grande i { width: 52px; height: 52px; }
-.pillola.chiara { background: transparent; color: var(--inchiostro); border: 1.2px solid var(--inchiostro); }
-.pillola.chiara:hover { background: var(--inchiostro); color: var(--carta); }
 
 /* Bottone tondo e sottile (frecce). */
 .tondo {
@@ -161,7 +158,8 @@ main { padding-top: var(--barra); min-height: 60vh; }
 }
 .barra-voci { display: flex; gap: 34px; }
 .barra-voci .link { font: 600 11.5px/1.3 var(--display); letter-spacing: .24em; }
-.barra-menu { display: none; align-items: center; gap: 12px; padding: 12px 4px; font: 600 11.5px/1 var(--display); letter-spacing: .24em; }
+/* Area da toccare alta 44 px; i trattini finiscono sul margine destro. */
+.barra-menu { display: none; align-items: center; gap: 12px; padding: 16px 0 16px 12px; font: 600 11.5px/1 var(--display); letter-spacing: .24em; }
 .barra-menu i { position: relative; width: 26px; height: 8px; }
 .barra-menu i::before, .barra-menu i::after { content: ''; position: absolute; right: 0; height: 1.6px; background: currentColor; }
 .barra-menu i::before { top: 0; width: 26px; }
@@ -179,7 +177,7 @@ main { padding-top: var(--barra); min-height: 60vh; }
 }
 .menu.aperto { clip-path: inset(0 0 0 0); }
 .menu-testa { height: var(--barra); display: flex; align-items: center; }
-.menu-chiudi { display: grid; place-items: center; width: 44px; height: 44px; margin-right: -6px; }
+.menu-chiudi { display: grid; place-items: center; width: 44px; height: 44px; margin-right: -9px; }
 .menu-chiudi svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.4; }
 .menu-voci { margin: auto 0; display: flex; flex-direction: column; }
 .menu-voci a { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; font: 300 21px/1.12 var(--display); letter-spacing: .12em; color: var(--pietra); }
@@ -190,8 +188,8 @@ main { padding-top: var(--barra); min-height: 60vh; }
 /* ----------------------------------------------------------------- sezioni */
 
 .sezione { padding: var(--sezione) var(--margine); }
-.contenitore { max-width: calc(var(--max) + 2 * var(--margine)); margin: 0 auto; padding: 0 var(--margine); }
-.contenitore-stretto { max-width: var(--max); margin: 0 auto; }
+/* A tutta larghezza, con gli stessi margini della barra in alto (come nell'app). */
+.contenitore { padding: 0 var(--margine); }
 .vuoto { padding: 60px 0; font: italic 300 22px/1.4 var(--display); color: var(--pietra); }
 
 /* ================================================================ APERTURA */
@@ -218,7 +216,7 @@ main { padding-top: var(--barra); min-height: 60vh; }
 @media (max-aspect-ratio: 1/1) {
   .apertura { aspect-ratio: 3 / 2; }
   .apertura-frecce { right: 14px; bottom: 14px; }
-  .apertura-frecce .tondo { width: 38px; height: 38px; }
+  .apertura-frecce .tondo { width: 44px; height: 44px; }
 }
 
 /* ============================================================ LAVORI (schede) */
@@ -261,6 +259,13 @@ main { padding-top: var(--barra); min-height: 60vh; }
   animation: compare .18s ease-out;
 }
 .filtro-menu li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 16px; cursor: pointer; font: 300 16px/1.2 var(--display); color: var(--pietra); }
+/* Telefono: un filtro per riga, nomi e valori in colonna. */
+@media (max-width: 599px) {
+  .filtri-voci { display: grid; gap: 2px; }
+  .filtro-voce { padding: 10px 0 12px; }
+  .filtro-nome { width: 84px; }
+  .filtro-valore { width: 150px; max-width: none; }
+}
 .filtro-menu li:hover, .filtro-menu li:focus { background: var(--lino); outline: none; }
 .filtro-menu li[aria-selected="true"] { color: var(--inchiostro); font-style: italic; }
 .filtro-menu li[aria-selected="true"]::after { content: ''; width: 8px; height: 4px; border: solid var(--inchiostro); border-width: 0 0 1.4px 1.4px; transform: rotate(-45deg) translateY(-2px); }
@@ -268,22 +273,26 @@ main { padding-top: var(--barra); min-height: 60vh; }
 .filtri-azzera { font: 600 10.5px/1.3 var(--display); letter-spacing: .24em; }
 
 /* Dettaglio: solo foto, sparse, intere. */
-.collage { padding-top: var(--inizio); padding-bottom: var(--sezione); }
+.collage { position: relative; padding-top: var(--inizio); padding-bottom: var(--sezione); }
 .collage-riga { display: flex; justify-content: center; align-items: flex-start; gap: var(--spazio); }
 .collage-riga + .collage-riga { margin-top: calc(var(--spazio) * 1.6); }
 .collage-colonna { display: flex; flex-direction: column; gap: var(--spazio); }
 .tavola { margin: 0; cursor: zoom-in; background: var(--lino); overflow: hidden; }
 .tavola img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s cubic-bezier(.2, .7, .2, 1); }
 .tavola:hover img { transform: scale(1.02); }
-.collage:not(.composto) .tavola { width: 100%; aspect-ratio: 3 / 2; }
-.collage:not(.composto) .tavola + .tavola { margin-top: 24px; }
+/* Finché non si conoscono le proporzioni delle foto il collage è nascosto
+   (lo spazio resta occupato): poi compare già composto, senza salti. */
+.collage:not(.composto) { min-height: 100vh; }
+.collage:not(.composto) .tavola { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.collage.composto .collage-riga { animation: collage-entra .5s ease both; }
+@keyframes collage-entra { from { opacity: 0; } to { opacity: 1; } }
 .lavoro-assente { padding-top: 120px; padding-bottom: 160px; }
 .lavoro-assente p { font: italic 300 clamp(24px, 3vw, 34px)/1.3 var(--display); margin-bottom: 24px; }
 
 /* =============================================================== BIOGRAFIA */
 
 .bio { padding-top: var(--inizio); }
-.bio-griglia { max-width: var(--max); margin: 0 auto; display: grid; grid-template-columns: 6fr 5fr; gap: clamp(40px, 7vw, 110px); align-items: start; }
+.bio-griglia { display: grid; grid-template-columns: 6fr 5fr; gap: clamp(40px, 7vw, 110px); align-items: start; }
 .bio-attacco { font: 300 clamp(20px, calc(20px + 5 * (100vw - 360px) / 1240), 25px)/1.5 var(--display); margin-bottom: 20px; }
 .bio-paragrafo { font-size: clamp(16px, 1.3vw, 18px); line-height: 1.75; color: var(--pietra); margin-bottom: 20px; }
 .bio-foto { aspect-ratio: 4 / 5; background: var(--lino); }
@@ -371,16 +380,16 @@ main { padding-top: var(--barra); min-height: 60vh; }
 /* Una linea sottile lo separa dalla pagina, come quella in fondo. */
 .piede { padding: 0 var(--margine) 28px; }
 /* Larga come i contenuti: i bordi coincidono con quelli delle pagine. */
-.piede-dentro { max-width: var(--max); margin: 0 auto; padding-top: var(--sezione); border-top: 1px solid var(--linea); }
+.piede-dentro { padding-top: var(--sezione); border-top: 1px solid var(--linea); }
 .piede-colonne { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px 32px; }
 .piede h3 { margin-bottom: 16px; font: 600 10.5px/1.3 var(--display); letter-spacing: .24em; color: var(--pietra); }
 .piede-colonne > div { display: flex; flex-direction: column; align-items: flex-start; }
-.piede-colonne .link { padding: 4px 0 6px; font-size: 15px; }
+.piede-colonne .link { padding: 9px 0 11px; font-size: 15px; }
 .piede-colonne p { font-size: 14px; color: var(--pietra); }
 .piede-logo { width: clamp(150px, 14vw, 200px); margin: var(--sezione) auto var(--blocco); }
 .piede-fondo { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 20px; padding-top: 18px; border-top: 1px solid var(--linea); font-size: 12.5px; color: var(--pietra); }
 .piede-link { display: inline-flex; align-items: center; gap: 10px; }
-.piede-link .link { padding: 0 0 2px; }
+.piede-link .link { padding: 11px 0; }
 .punto { width: 6px; height: 6px; border-radius: 50%; background: var(--accento); }
 @media (max-width: 1023px) { .piede-colonne { grid-template-columns: 1fr 1fr; } }
 /* Telefono: due colonne compatte, come nell'app. */

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -23,21 +24,26 @@ class AdminSettingsPage extends StatelessWidget {
       children: [
         const AdminHeader(
           title: 'Impostazioni',
-          subtitle: 'Google Calendar, password e backup.',
+          subtitle: 'Accesso, copia di sicurezza e dati d\'esempio.',
         ),
-        Panel(
-          title: 'Google Calendar',
-          subtitle:
-              'Gli appuntamenti si salvano nel calendario principale del tuo account Google: li vedi su tutti i '
-              'dispositivi in cui usi Google Calendar.',
-          child: _GoogleSetup(origin: origin),
-        ),
-        gap,
+        // Il collegamento a Google Calendar funziona solo nella versione web.
+        if (kIsWeb) ...[
+          Panel(
+            title: 'Google Calendar',
+            subtitle:
+                'Gli appuntamenti si salvano nel calendario principale del tuo account Google: li vedi su tutti i '
+                'dispositivi in cui usi Google Calendar.',
+            child: _GoogleSetup(origin: origin),
+          ),
+          gap,
+        ],
         const Panel(title: 'Password area riservata', child: _PasswordForm()),
         gap,
         Panel(
           title: 'Dati e copie di sicurezza',
-          subtitle: 'Per ora i dati (testi, foto, richieste, appuntamenti) sono salvati nel browser di questo computer.',
+          subtitle: kIsWeb
+              ? 'Per ora i dati (testi, foto, richieste, appuntamenti) sono salvati in questo browser.'
+              : 'Per ora i dati (testi, foto, richieste, appuntamenti) sono salvati su questo telefono.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -72,7 +78,7 @@ class AdminSettingsPage extends StatelessWidget {
                     onPressed: () async {
                       if (await confirmDialog(
                         context,
-                        'Ripristinare testi, servizi, pacchetti e galleria ai contenuti di esempio? '
+                        'Ripristinare testi, caroselli, lavori e modulo del preventivo agli esempi? '
                         'Le richieste e gli appuntamenti non vengono toccati.',
                         confirm: 'Ripristina',
                         title: 'Contenuti di esempio',
@@ -92,11 +98,12 @@ class AdminSettingsPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              Text(
-                'Foto caricate dal computer: ${(s.embeddedImageChars / (1024 * 1024)).toStringAsFixed(2)} MB '
-                'di circa 5 MB disponibili nel browser.',
-                style: const TextStyle(color: Colors.black54),
-              ),
+              if (kIsWeb)
+                Text(
+                  'Foto caricate dal computer: ${(s.embeddedImageChars / (1024 * 1024)).toStringAsFixed(2)} MB '
+                  'di circa 5 MB disponibili nel browser.',
+                  style: const TextStyle(color: Colors.black54),
+                ),
             ],
           ),
         ),
@@ -401,9 +408,12 @@ class _PasswordFormState extends State<_PasswordForm> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Nuova password (almeno 8 caratteri)',
+                    helperText:
+                        'Lasciala vuota per cambiare solo il nome utente.',
                   ),
-                  validator: (v) =>
-                      (v ?? '').length < 8 ? 'Almeno 8 caratteri' : null,
+                  validator: (v) => (v ?? '').isNotEmpty && v!.length < 8
+                      ? 'Almeno 8 caratteri'
+                      : null,
                 ),
                 const SizedBox(height: 14),
                 TextFormField(
@@ -431,7 +441,7 @@ class _PasswordFormState extends State<_PasswordForm> {
               _old.clear();
               _new.clear();
               _again.clear();
-              if (context.mounted) toast(context, 'Password aggiornata.');
+              if (context.mounted) toast(context, 'Accesso aggiornato.');
             },
             child: const Text('Salva l\'accesso'),
           ),

@@ -203,6 +203,9 @@
       // Senza "name": nome utente e password non finiscono mai nell'indirizzo.
       '<label class="campo"><span>Nome utente</span><input id="acc-utente" autocomplete="username"></label>' +
       '<label class="campo"><span>Password</span><input id="acc-pw" type="password" autocomplete="current-password"></label>' +
+      // Con PHP (Hostinger) l'accesso arriverà dal server insieme al database:
+      // per ora il gestionale funziona solo nell'anteprima.
+      (Q.admin && Q.admin.passwordHash ? '' : '<p class="avviso">Il gestionale sarà attivo qui quando collegheremo il database. Per ora usate l\'anteprima su GitHub.</p>') +
       '<p class="errore-accesso" id="acc-err"></p><label class="spunta-riga"><input type="checkbox" id="acc-ricorda" checked> Ricordami su questo computer</label>' +
       '<button class="bottone pieno largo" type="submit">ENTRA</button><a class="bottone testo" href="' + S54.url('index') + '">&larr; Torna al sito</a></form></div></div>';
     $('#acc-utente').focus();
@@ -433,8 +436,9 @@
         errore(c, 'ap-giorno', giorno ? '' : 'Scegli il giorno');
         if (!titolo || !giorno) return false;
         var s = leggiData(giorno + 'T' + (tutto ? '00:00' : val(c, 'ap-inizio') || '10:00'));
-        var e = tutto ? new Date(s.getTime() + 86400000) : leggiData(giorno + 'T' + (val(c, 'ap-fine') || '11:00'));
-        if (e <= s) { errore(c, 'ap-fine', 'Deve finire dopo l\'inizio'); return false; }
+        // Tutto il giorno: fine uguale all'inizio, come nell'app.
+        var e = tutto ? s : leggiData(giorno + 'T' + (val(c, 'ap-fine') || '11:00'));
+        if (!tutto && e <= s) { errore(c, 'ap-fine', 'Deve finire dopo l\'inizio'); return false; }
         var r = Object.assign({}, a, { id: a.id || nuovoId('a'), title: titolo, start: isoLocale(s), end: isoLocale(e), allDay: tutto, location: val(c, 'ap-luogo'), notes: val(c, 'ap-note') });
         if (nuovo) Q.appointments.push(r); else Q.appointments = Q.appointments.map(function (x) { return x.id === r.id ? r : x; });
         salvaQ('Appuntamento salvato.');
@@ -488,7 +492,8 @@
 
   /* =========================================================== LAVORI */
 
-  var featured = function () { return P.works.filter(function (w) { return w.featured; }).length; };
+  // Contano solo i lavori in evidenza che si vedono (sul sito o nell'app).
+  var featured = function () { return P.works.filter(function (w) { return w.featured && w.published !== false && (w.onSite !== false || w.onApp !== false); }).length; };
   SEZIONE.lavori = function (p) {
     p.innerHTML = testa('Lavori', 'Gli stessi sul sito e nell\'app. La <b>stella</b> mette un lavoro in evidenza nella home (al massimo 4); <b>Sito</b> e <b>App</b> scelgono dove si vede.',
       '<a class="bottone bordo" href="' + S54.url('lavori') + '" target="_blank" rel="noopener">' + ico('esterno') + 'Vedi sul sito</a><button type="button" class="bottone pieno" data-nuovo>' + ico('piu') + 'Nuovo lavoro</button>') +
@@ -774,7 +779,7 @@
     p.innerHTML = testa(verticale ? 'Carosello verticale' : 'Carosello orizzontale',
       verticale
         ? '<span class="dove">' + ico('cellulare') + 'Solo nell\'app</span> Le foto riempiono lo schermo del telefono all\'apertura e scorrono da sole, 4 secondi l\'una. Usa foto <b>verticali</b>.'
-        : '<span class="dove">' + ico('schermo') + 'Solo sul sito</span> Le foto scorrono a tutto schermo nella home, 4 secondi l\'una, con dissolvenza. Usa foto <b>orizzontali</b>.',
+        : '<span class="dove">' + ico('schermo') + 'Sul sito</span> (e nell\'app con il telefono girato in orizzontale). Le foto scorrono a tutto schermo nella home, 4 secondi l\'una, con dissolvenza. Usa foto <b>orizzontali</b>.',
       verticale ? '' : '<a class="bottone bordo" href="' + S54.url('index') + '" target="_blank" rel="noopener">' + ico('esterno') + 'Vedi la home</a>') +
       '<section class="scheda pannello"><div class="griglia-foto' + (verticale ? ' verticali' : '') + '">' + l.map(function (f, i) {
         return '<figure class="foto-scheda' + (f.active === false ? ' spenta' : '') + '" data-i="' + i + '"><div class="foto-scheda-img"><img src="' + esc(miniatura(f.url, 500)) + '" alt="" loading="lazy"><span class="segno avviso-orient" hidden></span></div>' +
@@ -825,7 +830,7 @@
         var foto = (c.media || []).filter(function (m) { return !m.isVideo; }).length, video = (c.media || []).length - foto;
         return '<button type="button" class="riga" data-id="' + esc(c.id) + '"><span class="iniziali">' + esc(iniziali(c.name)) + '</span><span class="riga-testo"><strong>' + esc(c.name) +
           ' <span class="stato stato-' + (c.active === false ? 'sospeso">Sospeso' : 'attivo">Attivo') + '</span></strong><small>' +
-          esc(S54.unisci([c.email, c.eventTitle, foto + ' foto', video ? video + (video === 1 ? ' video' : ' video') : ''])) + '</small></span>' + ico('destra') + '</button>';
+          esc(S54.unisci([c.email, c.eventTitle, foto + ' foto', video ? video + ' video' : ''])) + '</small></span>' + ico('destra') + '</button>';
       }).join('') || '<p class="vuoto">Nessun cliente. Crea il primo account.</p>') + '</section>';
     $('[data-nuovo]', p).addEventListener('click', function () { modaleCliente(null); });
     $$('[data-id]', p).forEach(function (b) {
@@ -936,7 +941,7 @@
           if (b) { d.files.splice(+b.getAttribute('data-via-file'), 1); file(); }
         });
         suCaricamento(c, '#cl-carica', function (files) {
-          Promise.all(files.map(function (f) { return leggiImmagine(f, 2400).then(function (u) { return { u: u, n: f.name }; }); })).then(function (l) {
+          Promise.all(files.map(function (f) { return leggiImmagine(f, 2400).then(function (u) { return { u: u, n: f.name.replace(/\.[^.]+$/, '') + '.jpg' }; }); /* convertita in JPEG */ })).then(function (l) {
             l.forEach(function (x) { d.media.push({ id: nuovoId(d.id + '-m'), url: x.u, original: x.u, isVideo: false, poster: '', name: x.n }); });
             media();
           }).catch(function () { avviso('Questa foto non si riesce a leggere.', true); });

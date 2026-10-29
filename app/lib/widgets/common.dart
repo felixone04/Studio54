@@ -41,9 +41,20 @@ class PhotoAspects extends ChangeNotifier {
 
   final _known = <String, double>{};
   final _pending = <String>{};
+  final _failed = <String>{};
 
   /// Proporzione nota, oppure null se non ancora letta (o illeggibile).
   double? of(String url) => _known[url];
+
+  /// Vero quando la foto è stata letta, o non si è potuta leggere: non c'è
+  /// più niente da aspettare.
+  bool settled(String url) =>
+      _known.containsKey(url) || _failed.contains(url) || url.trim().isEmpty;
+
+  void _fail(String url) {
+    _failed.add(url);
+    notifyListeners();
+  }
 
   /// Vero solo quando si sa con certezza che la foto non è orizzontale.
   bool notLandscape(String url) => (_known[url] ?? 1.5) <= 1.0;
@@ -55,13 +66,19 @@ class PhotoAspects extends ChangeNotifier {
   }
 
   void resolve(String url) {
-    if (url.trim().isEmpty || _known.containsKey(url) || !_pending.add(url)) {
+    if (url.trim().isEmpty ||
+        _known.containsKey(url) ||
+        _failed.contains(url) ||
+        !_pending.add(url)) {
       return;
     }
     final ImageProvider provider;
     if (url.startsWith('data:')) {
       final bytes = _decode(url);
-      if (bytes == null) return;
+      if (bytes == null) {
+        _fail(url);
+        return;
+      }
       provider = MemoryImage(bytes);
     } else {
       // Basta una versione piccola per conoscere le proporzioni.
@@ -73,33 +90,29 @@ class PhotoAspects extends ChangeNotifier {
     final stream = provider.resolve(ImageConfiguration.empty);
     late final ImageStreamListener l;
     void done() => stream.removeListener(l);
-    l = ImageStreamListener((info, _) {
-      done();
-      try {
-        final w = info.image.width, h = info.image.height;
-        if (w > 0 && h > 0) {
-          _known[url] = w / h;
-          notifyListeners();
+    l = ImageStreamListener(
+      (info, _) {
+        done();
+        try {
+          final w = info.image.width, h = info.image.height;
+          if (w > 0 && h > 0) {
+            _known[url] = w / h;
+            notifyListeners();
+          } else {
+            _fail(url);
+          }
+        } catch (_) {
+          // Immagine mostrata dal browser senza accesso ai pixel: proporzioni
+          // sconosciute, la si tratta come orizzontale.
+          _fail(url);
         }
-      } catch (_) {
-        // Immagine mostrata dal browser senza accesso ai pixel: proporzioni
-        // sconosciute, la si tratta come orizzontale.
-      }
-    }, onError: (_, _) => done());
+      },
+      onError: (_, _) {
+        done();
+        _fail(url);
+      },
+    );
     stream.addListener(l);
-  }
-
-  /// Solo per i test.
-  @visibleForTesting
-  void debugSet(String url, double aspect) {
-    _known[url] = aspect;
-    notifyListeners();
-  }
-
-  @visibleForTesting
-  void debugClear() {
-    _known.clear();
-    _pending.clear();
   }
 }
 
@@ -266,7 +279,7 @@ class Section extends StatelessWidget {
   }
 }
 
-/// Piccola etichetta tipo cartellino: "(01) — La mostra".
+/// Piccola etichetta tipo cartellino (es. "— AREA CLIENTI").
 class Tag extends StatelessWidget {
   const Tag(this.text, {super.key, this.number, this.color = Palette.ink});
   final String text;
@@ -479,7 +492,7 @@ int introRemainingMs() {
   return math.max(0, splashMs - passed);
 }
 
-/// Logo d'apertura dell'app, come quello del sito: fondo crema, logo nero e
+/// Logo d'apertura dell'app, come quello del sito: fondo bianco, logo nero e
 /// una linea che si riempie; dopo 2 secondi sfuma.
 class AppIntro extends StatefulWidget {
   const AppIntro({super.key, required this.child});

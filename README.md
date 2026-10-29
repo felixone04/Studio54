@@ -4,7 +4,7 @@ Due progetti separati, con la stessa grafica:
 
 | Cartella | Cosa contiene |
 |---|---|
-| [`sito/`](sito) | Il sito web in **HTML, CSS, JavaScript e PHP**: home, lavori, biografia, preventivo e area riservata (per ora solo grafica). |
+| [`sito/`](sito) | Il sito web in **HTML, CSS, JavaScript e PHP**: home, lavori, biografia, preventivo e gestionale (`riservata`). |
 | [`app/`](app) | L'**app Android** in Flutter: le stesse pagine del sito e, dal menu, il gestionale per il titolare. |
 | [`apk/`](apk) | L'APK pronta da installare sul telefono (`studio54.apk`). |
 
@@ -18,18 +18,20 @@ GitHub Pages non esegue PHP: a ogni push su `master` la pubblicazione trasforma 
 
 ## Stato attuale
 
-- I contenuti sono quelli d'esempio, in `sito/data/contenuti.json` (generato dall'app con
-  `dart run tool/export_seed.dart ../sito/data/contenuti.json`).
-- Il modulo del preventivo fa tutti i controlli ma non salva ancora le richieste.
-- L'area riservata del sito è un'anteprima grafica: verrà rifatta da zero collegata al database.
+- I contenuti sono quelli d'esempio, in `sito/data/contenuti.json` e `gestionale.json` (generati
+  dall'app, dalla cartella `app`, con `dart run tool/export_seed.dart ../sito/data`).
+- Senza database tutto resta nel browser (sito) o sul telefono (app): le richieste del preventivo
+  arrivano al gestionale aperto nello stesso browser, e le modifiche fatte nel gestionale si vedono lì.
+- Il gestionale del sito funziona nell'anteprima su GitHub (accesso di prova: `titolare` / `studio54`).
+  Nella versione PHP l'accesso arriverà dal server insieme al database.
 
-## Prossimo passo: dominio e Hostinger
+## Prossimo passo: database su Cloudflare e sito su Hostinger
 
-1. Sito su Hostinger con il dominio dello studio, database MySQL.
-2. In PHP: lettura dei contenuti dal database (funzione `dati()` in `sito/inc/app.php`), salvataggio dei
-   preventivi, area riservata vera con accesso.
-3. API in PHP protetta da una chiave, usata dall'app: in Flutter basta una nuova implementazione di
-   `Repository` (`app/lib/data/repository.dart`) che legge e scrive tramite l'API.
+1. Database e foto su Cloudflare (D1 per i dati, R2 per foto e video, un Worker come API).
+2. Sito su Hostinger con il dominio dello studio: i PHP leggono i contenuti dall'API (funzione `dati()`
+   in `sito/inc/app.php`), il gestionale entra con un accesso controllato dal server.
+3. L'app usa la stessa API: in Flutter basta una nuova implementazione di `Repository`
+   (`app/lib/data/repository.dart`) che legge e scrive tramite l'API.
 
 ## Comandi utili (app)
 

@@ -1,82 +1,56 @@
 # Studio 54 – app Android (Flutter)
 
-App Android dello studio, con la stessa grafica del sito (cartella `../sito`): pagine pubbliche e, dal menu "Area riservata", il gestionale per il titolare. Il codice gira anche sul web, ma il sito ufficiale è quello in HTML/PHP.
+App Android dello studio, con la stessa grafica del sito (cartella `../sito`): le pagine pubbliche, l'area clienti e, entrando dall'area clienti con le credenziali del titolare, il gestionale.
 
 | Pagina | Percorso | Cosa fa |
 |---|---|---|
-| Home | `/#/` | Carosello di sole foto orizzontali (intere, 4 secondi ciascuna), manifesto, "La mostra" (galleria con lightbox), footer con info e contatti |
-| Lavori | `/#/lavori` | Elenco filtrabile per evento, stagione e tipo di location; il dettaglio mostra solo le foto in collage |
-| Preventivo | `/#/preventivo` | Modulo unico: evento (tipo, data, luogo), servizi, contatti; campi obbligatori con controllo dei caratteri |
-| Biografia | `/#/biografia` | Storia dello studio e metodo di lavoro |
-| Admin | `/#/admin` | Gestione di tutto il sito, richieste e calendario |
+| Home | `/` | Carosello a tutto schermo (foto verticali; con il telefono girato quelle orizzontali del sito), poi i 4 lavori in evidenza |
+| Lavori | `/lavori` | Elenco filtrabile per evento, stagione e location; il dettaglio mostra solo le foto (una sotto l'altra, sparse sul tablet in orizzontale) |
+| Preventivo | `/preventivo` | Modulo a passi (evento, richieste, contatti, messaggio, riepilogo) con le voci scelte nel gestionale |
+| Biografia | `/biografia` | Storia dello studio e metodo di lavoro |
+| Area clienti | `/area-clienti` | Foto e video del cliente, divisi in cartelle, da guardare e scaricare; documenti e link |
+| Gestionale | `/admin` | Richieste, calendario, lavori, preventivo, testi, caroselli, clienti, impostazioni |
 
 ## Avvio
 
 ```bash
 flutter pub get
-flutter run            # telefono o emulatore collegato
+flutter test
 flutter build apk --release --target-platform android-arm,android-arm64
 # poi copia build/app/outputs/flutter-apk/app-release.apk in ../apk/studio54.apk
 ```
 
-Build di produzione: `flutter build web --release` (output in `build/web`).
-
 > Nota: usa `google_fonts` 8.x. La 9.x dipende dal nuovo pacchetto `material_ui` ed è incompatibile con il `material.dart` di Flutter 3.47.
 
-## Area admin
+## Gestionale
 
-Al primo accesso (`/#/admin`) si crea la password. Sezioni:
+Si entra dall'Area clienti con le credenziali del titolare (di prova: `titolare` / `studio54`). Le sezioni sono raggruppate come nel gestionale del sito:
 
-- **Panoramica** – numeri e scorciatoie
-- **Richieste preventivo** – elenco, stato (nuova → contattata → confermata), contatto rapido (telefono / WhatsApp / email), stima interna del totale, "Fissa appuntamento"
-- **Calendario** – vista mensile + agenda del giorno, sincronizzato con Google Calendar
-- **Servizi e prodotti** – aggiungi/modifica/ordina/nascondi; il prezzo è facoltativo e **solo interno**
-- **Pacchetti** – combinazioni pronte di servizi
-- **Galleria** – foto della mostra e del carosello (caricamento da computer o URL)
-- **Lavori** – foto, didascalie, evento, stagione (automatica dal mese) e tipo di location (masseria, mare, montagna…)
-- **Pagina Home / Biografia / Identità e contatti** – tutti i testi, le immagini, i contatti, il colore di accento e i tipi di festa del modulo
-- **Impostazioni** – Client ID Google, password, backup/ripristino
+- **Attività** – Panoramica, Richieste (stato nuova → contattata → confermata, contatto rapido, "Fissa appuntamento"), Calendario
+- **Sito e app** – Lavori (stella = in evidenza, Sito/App = dove si vede), Preventivo (voci e parti accese), Biografia, Contatti
+- **Solo sito** – Carosello orizzontale (usato anche dall'app con il telefono girato)
+- **Solo app** – Carosello verticale, Area clienti (account, cartelle, foto, video, documenti)
+- **Sistema** – Impostazioni: accesso del titolare, copia di sicurezza, dati d'esempio
 
-## Google Calendar
+## Dove stanno i dati
 
-Gli appuntamenti si scrivono nel **calendario principale** dell'account Google con cui si fa l'accesso, quindi compaiono su tutti i dispositivi che usano quel calendario.
+Per ora **tutti i dati sono sul telefono** (SharedPreferences, tramite `LocalRepository`), separati da quelli del sito. Quando arriverà il database (Cloudflare) basterà implementare i due metodi di `Repository` (`lib/data/repository.dart`) — `read(key)` e `write(key, json)` — con l'API e sostituire `LocalRepository` in `lib/main.dart`.
 
-Una sola volta serve un Client ID OAuth (Admin → Impostazioni riporta i passaggi, con l'indirizzo esatto da autorizzare):
-
-1. console.cloud.google.com → nuovo progetto
-2. Abilita **Google Calendar API**
-3. Schermata consenso OAuth (Esterno) + il proprio Gmail come utente di prova
-4. Credenziali → ID client OAuth → *Applicazione web* → origine JavaScript autorizzata = indirizzo del sito
-5. Incolla il Client ID in Impostazioni (oppure `--dart-define=GOOGLE_CLIENT_ID=...` in fase di build)
-
-Lo scope richiesto è solo `calendar.events`. Il token vive in memoria e dura circa un'ora: poi basta "Ricollega Google" dal Calendario.
-
-## Dove stanno i dati (importante)
-
-Per ora **tutti i dati sono nel browser** (localStorage) tramite `LocalRepository`. Significa che:
-
-- le richieste di preventivo inviate dai visitatori restano nel *loro* browser, non arrivano al titolare;
-- le modifiche fatte in admin si vedono solo da quel browser;
-- le foto caricate dal computer sono incorporate nei dati (limite ~5 MB totali).
-
-Per un sito reale serve un archivio online condiviso. L'app è già predisposta: basta implementare i due metodi di `Repository` (`lib/data/repository.dart`) — `read(key)` e `write(key, json)` — con Firebase/Supabase/API proprie e sostituire `LocalRepository` in `lib/main.dart`. Con un backend vero andrebbero anche: login admin con account (al posto della password locale), upload delle foto su storage, e scrittura delle richieste dal sito pubblico con regole di sicurezza.
-
-La password admin protegge solo l'interfaccia, non i dati salvati nel browser.
+La copia di sicurezza dell'app e quella del gestionale del sito si possono caricare l'una nell'altra.
 
 ## Struttura
 
 ```
 lib/
-  main.dart, app.dart          avvio, tema, router
-  config.dart                  Client ID Google (opzionale)
-  models/models.dart           contenuti, servizi, pacchetti, foto, richieste, appuntamenti
-  data/                        Repository (+ implementazione locale) e dati di esempio
+  main.dart, app.dart          avvio, router, tasto indietro, barre di sistema
+  models/models.dart           contenuti, lavori, modulo preventivo, richieste, appuntamenti, clienti
+  data/                        Repository (+ implementazione locale) e dati d'esempio
   state/app_state.dart         stato dell'app e operazioni
-  services/                    Google Identity Services + API Calendar
-  theme/app_theme.dart         palette, tipografia, tema chiaro per l'admin
-  widgets/                     hero, galleria d'arte, navigazione, footer, componenti comuni
-  pages/                       home, preventivo, biografia
-  pages/admin/                 area riservata
+  services/                    salvataggio in galleria, tasto indietro, barre di sistema, Google Calendar (solo web)
+  theme/app_theme.dart         palette, tipografia, misure, tema del gestionale
+  widgets/                     barra e menu, footer, carosello, foto a schermo intero, icone sottili, componenti comuni
+  pages/                       home, lavori, preventivo, biografia, area clienti
+  pages/admin/                 gestionale
 ```
 
-I contenuti di esempio (testi, foto Unsplash, contatti fittizi) vanno sostituiti dall'admin.
+I contenuti d'esempio (testi, foto Unsplash, contatti fittizi) si sostituiscono dal gestionale.

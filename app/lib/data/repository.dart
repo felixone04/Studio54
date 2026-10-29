@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Contratto di persistenza: un semplice archivio chiave → JSON.
 ///
 /// Oggi i dati vivono nel browser ([LocalRepository]). Per condividerli tra
-/// dispositivi e visitatori basta scrivere un'altra implementazione (Firebase,
-/// Supabase, API proprie…) con questi due metodi: tutto il resto dell'app non
+/// dispositivi e visitatori basta scrivere un'altra implementazione (l'API
+/// su Cloudflare) con questi due metodi: tutto il resto dell'app non
 /// cambia.
 abstract class Repository {
   Future<Object?> read(String key);

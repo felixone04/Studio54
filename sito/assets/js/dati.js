@@ -33,7 +33,7 @@ window.S54 = (function () {
   /** Testi, caroselli, lavori e modulo: quelli del gestionale, se modificati qui. */
   function pubblici() {
     var d = copia(base);
-    if (bozza) PUBBLICI.forEach(function (k) { if (bozza[k] !== undefined) d[k] = bozza[k]; });
+    if (bozza) PUBBLICI.forEach(function (k) { if (bozza[k] !== undefined) d[k] = copia(bozza[k]); });
     d.content = d.content || {};
     d.content.contacts = d.content.contacts || {};
     d.carouselSite = d.carouselSite || [];
@@ -62,9 +62,10 @@ window.S54 = (function () {
     var nuove = leggi(CHIAVE_RICHIESTE) || [];
     if (nuove.length) {
       var ids = d.quotes.map(function (q) { return q.id; });
-      nuove.forEach(function (q) { if (ids.indexOf(q.id) < 0) d.quotes.unshift(q); });
-      scrivi(CHIAVE_PRIVATI, d);
-      togli(CHIAVE_RICHIESTE);
+      // Dalla più vecchia alla più nuova: ognuna va in cima, la più nuova resta prima.
+      nuove.slice().reverse().forEach(function (q) { if (ids.indexOf(q.id) < 0) d.quotes.unshift(q); });
+      // Si tolgono dalla coda solo se sono state salvate davvero.
+      if (scrivi(CHIAVE_PRIVATI, d)) togli(CHIAVE_RICHIESTE);
     }
     return d;
   }

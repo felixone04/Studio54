@@ -160,7 +160,8 @@ class CarouselPhoto {
 class WorkPhoto {
   String id;
   String url;
-  String caption; // solo per il gestionale e l'accessibilità: non si mostra
+  String
+  caption; // descrizione per l'accessibilità (testo alternativo): non si mostra
   WorkPhoto({String? id, required this.url, this.caption = ''})
     : id = id ?? newId();
 

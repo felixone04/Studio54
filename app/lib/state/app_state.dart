@@ -123,14 +123,10 @@ class AppState extends ChangeNotifier {
   List<Work> get featuredWorks =>
       publishedWorks.where((w) => w.featured).take(maxFeatured).toList();
 
-  int get featuredCount => works.where((w) => w.featured).length;
-
-  Work? workById(String? id) {
-    for (final w in works) {
-      if (w.id == id) return w;
-    }
-    return null;
-  }
+  /// Contano solo i lavori in evidenza che si vedono (sul sito o nell'app).
+  int get featuredCount => works
+      .where((w) => w.featured && w.published && (w.onSite || w.onApp))
+      .length;
 
   QuoteRequest? quoteById(String? id) {
     if (id == null) return null;
@@ -415,8 +411,11 @@ class AppState extends ChangeNotifier {
       List<int>.generate(16, (_) => r.nextInt(256)),
     );
     if (username.trim().isNotEmpty) settings.username = username.trim();
-    settings.passwordSalt = salt;
-    settings.passwordHash = _hash(salt, pw);
+    // Password vuota: si cambia solo il nome utente.
+    if (pw.isNotEmpty) {
+      settings.passwordSalt = salt;
+      settings.passwordHash = _hash(salt, pw);
+    }
     adminAuthenticated = true;
     if (remember) _rememberSession();
     await _persist('settings', settings.toJson());

@@ -126,6 +126,38 @@ void main() {
     await disposeApp(tester);
   });
 
+  testWidgets('contatti del gestionale: gli stessi controlli del computer', (
+    tester,
+  ) async {
+    final s = await loadState();
+    await s.loginAdmin(
+      Seed.demoAdminUser,
+      Seed.demoAdminPassword,
+      remember: false,
+    );
+    await pumpApp(tester, s, size: const Size(1280, 900));
+    await goTo(tester, '/admin/contatti');
+    final prima = s.content.contacts.email;
+    await tester.enterText(find.widgetWithText(TextField, 'Email'), 'non-va');
+    await settle(tester, 300);
+    await tester.tap(find.text('Salva'));
+    await settle(tester, 600);
+    expect(find.text('Email non valida.'), findsOneWidget);
+    expect(s.content.contacts.email, prima);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Email'), 'a@b.it');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Instagram (link)'),
+      'www.instagram.com/studio',
+    );
+    await settle(tester, 300);
+    await tester.tap(find.text('Salva'));
+    await settle(tester, 600);
+    expect(s.content.contacts.email, 'a@b.it');
+    expect(s.content.contacts.instagram, 'https://www.instagram.com/studio');
+    await disposeApp(tester);
+  });
+
   testWidgets('nel gestionale chiede prima di perdere le modifiche', (
     tester,
   ) async {

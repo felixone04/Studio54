@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:gal/gal.dart';
 import 'package:http/http.dart' as http;
@@ -33,11 +32,10 @@ class GalleryMediaSaver implements MediaSaver {
         'Per salvare le foto serve il permesso di accedere alla galleria.',
       );
     }
-    final bytes = await _bytes(m.downloadUrl);
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/${_fileName(m)}');
-    await file.writeAsBytes(bytes, flush: true);
     try {
+      await _download(m.downloadUrl, file);
       if (m.isVideo) {
         await Gal.putVideo(file.path, album: album);
       } else {
@@ -54,22 +52,40 @@ class GalleryMediaSaver implements MediaSaver {
     }
   }
 
-  Future<Uint8List> _bytes(String url) async {
+  /// Scrive il file a pezzi mentre arriva: un video di qualche GB non passa
+  /// mai tutto dalla memoria del telefono.
+  Future<void> _download(String url, File file) async {
     if (url.startsWith('data:')) {
-      return base64Decode(url.substring(url.indexOf(',') + 1));
-    }
-    final http.Response r;
-    try {
-      r = await http.get(Uri.parse(url));
-    } catch (_) {
-      throw const SaveException('Nessuna connessione: riprovate tra poco.');
-    }
-    if (r.statusCode != 200) {
-      throw const SaveException(
-        'Il file non è disponibile, riprovate più tardi.',
+      await file.writeAsBytes(
+        base64Decode(url.substring(url.indexOf(',') + 1)),
+        flush: true,
       );
+      return;
     }
-    return r.bodyBytes;
+    final client = http.Client();
+    try {
+      final http.StreamedResponse r;
+      try {
+        r = await client.send(http.Request('GET', Uri.parse(url)));
+      } catch (_) {
+        throw const SaveException('Nessuna connessione: riprovate tra poco.');
+      }
+      if (r.statusCode != 200) {
+        throw const SaveException(
+          'Il file non è disponibile, riprovate più tardi.',
+        );
+      }
+      final out = file.openWrite();
+      try {
+        await r.stream.pipe(out);
+      } on FileSystemException {
+        throw const SaveException('Spazio sul telefono esaurito.');
+      } catch (_) {
+        throw const SaveException('Download interrotto: riprovate tra poco.');
+      }
+    } finally {
+      client.close();
+    }
   }
 
   String _fileName(ClientMedia m) {

@@ -64,18 +64,22 @@ class _AppointmentDialogState extends State<_AppointmentDialog> {
           : TimeOfDay.fromDateTime(e.end);
       _allDay = e.allDay;
     } else {
-      final d =
-          widget.day ??
-          q?.eventDate ??
-          DateTime.now().add(const Duration(days: 1));
+      // Come sul computer: l'incontro si propone per domani alle 10, in studio
+      // (la data dell'evento resta nelle note).
+      final d = widget.day ?? DateTime.now().add(const Duration(days: 1));
       _date = DateTime(d.year, d.month, d.day);
       _start = const TimeOfDay(hour: 10, minute: 0);
       _end = const TimeOfDay(hour: 11, minute: 0);
       _allDay = false;
       _title = TextEditingController(
-        text: q == null ? '' : 'Incontro con ${q.fullName} · ${q.eventType}',
+        text: q == null
+            ? ''
+            : [
+                'Incontro con ${q.fullName}',
+                q.eventType,
+              ].where((e) => e.trim().isNotEmpty).join(' · '),
       );
-      _location = TextEditingController();
+      _location = TextEditingController(text: q == null ? '' : 'Studio');
       _notes = TextEditingController(
         text: q == null
             ? ''

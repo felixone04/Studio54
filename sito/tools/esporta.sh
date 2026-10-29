@@ -32,6 +32,25 @@ pagina() { # pagina <file php> <file html>
 echo "Pagine"
 for p in index lavori lavoro biografia preventivo riservata; do pagina "$p.php" "$p.html"; done
 
-# Indirizzi sconosciuti: la home.
-cp "$OUT/index.html" "$OUT/404.html"
+# Indirizzi sconosciuti: si torna alla home. Un rimando e non una copia della
+# home, perché da un indirizzo in una sottocartella (/Studio54/a/b) i percorsi
+# relativi di stili, foto e menu non funzionerebbero.
+cat > "$OUT/404.html" <<'HTML'
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex">
+<title>Studio 54</title>
+<script>
+  // Su GitHub Pages il sito sta in /<nome del progetto>/, altrove nella radice.
+  var parti = location.pathname.split('/');
+  var base = /\.github\.io$/.test(location.hostname) && parti[1] ? '/' + parti[1] + '/' : '/';
+  location.replace(base + 'index.html');
+</script>
+</head>
+<body style="background:#fff"></body>
+</html>
+HTML
+echo "  404.html"
 echo "Fatto: $OUT"

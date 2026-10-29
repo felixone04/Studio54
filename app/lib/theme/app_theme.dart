@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -194,7 +192,10 @@ class AppTheme {
         onSecondaryContainer: Palette.paper,
         surface: Colors.white,
         onSurface: Palette.ink,
+        // Righe di separazione chiare, come i bordi delle schede.
+        outlineVariant: Palette.line,
       ),
+      dividerTheme: const DividerThemeData(color: Palette.line),
       scaffoldBackgroundColor: Palette.paper,
     );
     OutlineInputBorder b(Color c, [double w = 1]) => OutlineInputBorder(
@@ -265,7 +266,6 @@ extension Responsive on BuildContext {
   double get w => MediaQuery.sizeOf(this).width;
   double get h => MediaQuery.sizeOf(this).height;
   bool get isPhone => w < 600;
-  bool get isMobile => w < 720;
   bool get isTablet => w < 1024;
 
   /// Valore che cresce linearmente con la larghezza tra telefono (360) e
@@ -287,10 +287,6 @@ extension Responsive on BuildContext {
 
   /// Altezza della barra di navigazione (con il logo in alto a sinistra).
   double get navH => fluid(72, 100);
-
-  /// Altezza utile per sezioni "a schermo intero" (mai troppo bassa né
-  /// troppo alta, anche su schermi in orizzontale di telefoni).
-  double get screenH => math.max(h, w < 600 ? 560 : 620);
 }
 
 /// Sui display più larghi di [designMaxWidth] (TV, monitor 4K) ingrandisce

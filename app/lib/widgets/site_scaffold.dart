@@ -210,7 +210,12 @@ class _SiteScaffoldState extends State<SiteScaffold> {
               child: ClipRect(
                 child: BackdropFilter(
                   enabled: g > 0,
-                  filter: ImageFilter.blur(sigmaX: 14 * g, sigmaY: 14 * g),
+                  // mirror: ai bordi la sfocatura non pesca il grigio da fuori.
+                  filter: ImageFilter.blur(
+                    sigmaX: 14 * g,
+                    sigmaY: 14 * g,
+                    tileMode: TileMode.mirror,
+                  ),
                   child: Container(
                     height: navH,
                     padding: EdgeInsets.symmetric(horizontal: context.gutter),
@@ -338,7 +343,8 @@ class _MenuButton extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+          // Area da toccare larga, ma i trattini finiscono sul margine.
+          padding: const EdgeInsets.fromLTRB(12, 14, 0, 14),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -373,7 +379,7 @@ class _CloseButton extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          padding: const EdgeInsets.fromLTRB(12, 10, 0, 10),
           child: SizedBox(
             width: 24,
             height: 24,
@@ -421,6 +427,7 @@ class _FullMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = content.contacts;
+    final wide = context.w > context.h;
     return Material(
       color: Palette.paper,
       child: SafeArea(
@@ -448,61 +455,123 @@ class _FullMenu extends StatelessWidget {
                   ],
                 ),
               ),
-              const Spacer(),
-              for (var i = 0; i < _navItems.length; i++)
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.go(_navItems[i].$2);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: Row(
+              // Le voci al centro, i contatti in fondo; sul telefono girato i
+              // contatti a destra. Se lo spazio non basta (testo grande) si
+              // scorre invece di uscire dallo schermo.
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, box) {
+                    final voci = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 3, right: 12),
-                          child: Text(
-                            '0${i + 1}',
-                            style: label(10, color: context.accentInk),
-                          ),
-                        ),
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              _navItems[i].$1.toUpperCase(),
-                              // Il 30% più piccole della prima versione (30).
-                              style: display(
-                                21,
-                                spacing: 0.12,
-                                color: location == _navItems[i].$2
-                                    ? Palette.ink
-                                    : Palette.stone,
+                        for (var i = 0; i < _navItems.length; i++)
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              Navigator.pop(context);
+                              context.go(_navItems[i].$2);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 3,
+                                      right: 12,
+                                    ),
+                                    child: Text(
+                                      '0${i + 1}',
+                                      style: label(
+                                        10,
+                                        color: context.accentInk,
+                                      ),
+                                    ),
+                                  ),
+                                  Flexible(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        _navItems[i].$1.toUpperCase(),
+                                        // Il 30% più piccole della prima versione (30).
+                                        style: display(
+                                          21,
+                                          spacing: 0.12,
+                                          color: location == _navItems[i].$2
+                                              ? Palette.ink
+                                              : Palette.stone,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ),
                       ],
-                    ),
-                  ),
+                    );
+                    final contatti = Column(
+                      crossAxisAlignment: wide
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (c.phone.isNotEmpty)
+                          GestureDetector(
+                            onTap: () => openUrl('tel:${digitsOf(c.phone)}'),
+                            child: Text(
+                              c.phone,
+                              style: body(14.5, color: Palette.stone),
+                            ),
+                          ),
+                        if (c.email.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          GestureDetector(
+                            onTap: () => openUrl('mailto:${c.email}'),
+                            child: Text(
+                              c.email,
+                              style: body(14.5, color: Palette.stone),
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: box.maxHeight),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 28),
+                          child: wide
+                              ? Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Expanded(child: voci),
+                                    const SizedBox(width: 24),
+                                    contatti,
+                                  ],
+                                )
+                              : IntrinsicHeight(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Spacer(),
+                                      voci,
+                                      const Spacer(),
+                                      const SizedBox(height: 16),
+                                      contatti,
+                                    ],
+                                  ),
+                                ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              const Spacer(),
-              if (c.phone.isNotEmpty)
-                GestureDetector(
-                  onTap: () => openUrl('tel:${digitsOf(c.phone)}'),
-                  child: Text(c.phone, style: body(14.5, color: Palette.stone)),
-                ),
-              if (c.email.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                GestureDetector(
-                  onTap: () => openUrl('mailto:${c.email}'),
-                  child: Text(c.email, style: body(14.5, color: Palette.stone)),
-                ),
-              ],
-              const SizedBox(height: 28),
+              ),
             ],
           ),
         ),
@@ -512,6 +581,14 @@ class _FullMenu extends StatelessWidget {
 }
 
 // -------------------------------------------------------------------- footer
+
+/// Un link social, come sul sito: solo indirizzi web veri (http/https),
+/// con `www.` completato in `https://www.`.
+String? profileUrl(String raw) {
+  var u = raw.trim();
+  if (u.toLowerCase().startsWith('www.')) u = 'https://$u';
+  return RegExp(r'^https?://\S+$', caseSensitive: false).hasMatch(u) ? u : null;
+}
 
 class SiteFooter extends StatelessWidget {
   const SiteFooter({super.key, required this.content});
@@ -526,11 +603,12 @@ class SiteFooter extends StatelessWidget {
 
     // Sul telefono le voci stanno più vicine.
     final under = context.isPhone ? 0.0 : 8.0;
+    final size = context.isPhone ? 14.0 : 15.0;
     Widget link(String text, String? url) => Padding(
       padding: EdgeInsets.only(bottom: under),
       child: url == null
-          ? Text(text, style: body(15))
-          : HoverLink(text, style: body(15), onTap: () => openUrl(url)),
+          ? Text(text, style: body(size))
+          : HoverLink(text, style: body(size), onTap: () => openUrl(url)),
     );
 
     Widget col(String title, List<Widget> children) => Column(
@@ -562,14 +640,14 @@ class SiteFooter extends StatelessWidget {
           Text(c.hours, style: body(14, color: Palette.stone)),
       ]),
       col('Social', [
-        if (c.instagram.isNotEmpty) link('Instagram', c.instagram),
-        if (c.facebook.isNotEmpty) link('Facebook', c.facebook),
+        if (profileUrl(c.instagram) case final u?) link('Instagram', u),
+        if (profileUrl(c.facebook) case final u?) link('Facebook', u),
       ]),
       col('Esplora', [
         for (final (t, p) in _navItems)
           Padding(
             padding: EdgeInsets.only(bottom: under),
-            child: HoverLink(t, style: body(15), onTap: () => context.go(p)),
+            child: HoverLink(t, style: body(size), onTap: () => context.go(p)),
           ),
       ]),
     ];

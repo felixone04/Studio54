@@ -39,7 +39,18 @@ final _date = DateFormat('d MMMM y', 'it_IT');
 final _onlyName = FilteringTextInputFormatter.allow(
   RegExp(r"[A-Za-zÀ-ÖØ-öø-ÿ' \-]"),
 );
-final _onlyPhone = FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]'));
+final _onlyPhone = TextInputFormatter.withFunction((old, v) {
+  final t = v.text.replaceAll(RegExp(r'[^0-9+ ]'), '');
+  final l = t.trimLeft(), plus = l.startsWith('+');
+  final out =
+      (plus ? '+' : '') + (plus ? l.substring(1) : l).replaceAll('+', '');
+  return out == v.text
+      ? v
+      : TextEditingValue(
+          text: out,
+          selection: TextSelection.collapsed(offset: out.length),
+        );
+});
 final _email = RegExp(
   r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}$',
 );
@@ -121,11 +132,11 @@ class _QuotePageState extends State<QuotePage> {
         !f.showDate
             ? ''
             : _when == null
-            ? 'Scegliete la data dell\'evento'
+            ? 'Indicate la data dell\'evento'
             : '',
       'location' =>
         f.showLocation && _location.text.trim().length < 2
-            ? 'Indicate la città o la location'
+            ? 'Indicate la città o la location dell\'evento'
             : '',
       'first' => name(_first.text, 'nome'),
       'last' => f.askLastName ? name(_last.text, 'cognome') : '',

@@ -146,9 +146,16 @@ class _AppCarouselState extends State<AppCarousel> {
   int _i = 0;
   Timer? _t;
 
+  // Con l'app in secondo piano il carosello si ferma.
+  late final _life = AppLifecycleListener(
+    onHide: () => _t?.cancel(),
+    onShow: _restart,
+  );
+
   @override
   void initState() {
     super.initState();
+    _life;
     // Aspetta che sparisca il logo d'apertura: così la prima foto dura
     // davvero 4 secondi.
     final wait = introRemainingMs();
@@ -191,6 +198,7 @@ class _AppCarouselState extends State<AppCarousel> {
   @override
   void dispose() {
     _t?.cancel();
+    _life.dispose();
     super.dispose();
   }
 

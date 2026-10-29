@@ -365,9 +365,11 @@ void main() {
       final dlg = tester.widget<CredentialsDialog>(
         find.byType(CredentialsDialog),
       );
-      expect(dlg.message, contains('Area clienti'));
-      expect(dlg.message, contains('sara.verdi'));
-      expect(dlg.message, contains(dlg.password));
+      final msg = dlg.messageFor(s.content.studioName);
+      expect(msg, contains('Area clienti'));
+      expect(msg, contains('sara.verdi'));
+      expect(msg, contains(dlg.password));
+      expect(msg, contains(s.content.studioName));
       expect(s.checkClientLogin('sara.verdi', dlg.password), isNotNull);
       await tester.tap(find.text('Chiudi'));
       await settle(tester, 800);

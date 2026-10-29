@@ -188,8 +188,16 @@ class _ClientDialogState extends State<_ClientDialog> {
 
   /// Copia nell'album le foto di un lavoro (es. il suo matrimonio).
   void _fromWork(Work w) => setState(() {
-    for (final p in w.photos) {
-      _d.media.add(ClientMedia(url: p.url, original: p.url));
+    // Nomi dei file come sul computer: giulia-marco-001.jpg, ...
+    final base = w.id.replaceFirst(RegExp(r'^w-'), '');
+    for (final (i, p) in w.photos.indexed) {
+      _d.media.add(
+        ClientMedia(
+          url: p.url,
+          original: p.url,
+          name: '$base-${(i + 1).toString().padLeft(3, '0')}.jpg',
+        ),
+      );
     }
   });
 
@@ -945,12 +953,13 @@ class CredentialsDialog extends StatelessWidget {
   final String password;
   final bool created;
 
-  String get message {
+  /// Lo stesso messaggio del gestionale sul computer.
+  String messageFor(String studio) {
     final first = client.name.trim().split(' ').first;
     return 'Ciao $first,\n'
         'le foto e i video del vostro evento sono pronti nella vostra area '
-        'riservata di Studio 54.\n\n'
-        'Aprite l\'app Studio 54, toccate il menu e poi "Area clienti", ed '
+        'riservata di $studio.\n\n'
+        'Aprite l\'app $studio, toccate il menu e poi "Area clienti", ed '
         'entrate con:\n'
         'Email: ${client.email}\n'
         '${client.username.trim().isEmpty ? '' : 'oppure nome utente: ${client.username.trim()}\n'}'
@@ -961,6 +970,8 @@ class CredentialsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final phone = digitsOf(client.phone).replaceAll('+', '');
+    final studio = context.read<AppState>().content.studioName.trim();
+    final message = messageFor(studio.isEmpty ? 'Studio 54' : studio);
     return AlertDialog(
       title: Text(created ? 'Account creato' : 'Nuova password'),
       content: SizedBox(
@@ -1005,7 +1016,7 @@ class CredentialsDialog extends StatelessWidget {
           ),
         TextButton.icon(
           onPressed: () => openUrl(
-            'mailto:${client.email}?subject=${Uri.encodeComponent('La tua area riservata di Studio 54')}'
+            'mailto:${client.email}?subject=${Uri.encodeComponent('La vostra area riservata')}'
             '&body=${Uri.encodeComponent(message)}',
           ),
           icon: const Icon(Icons.mail_outline_rounded, size: 18),
