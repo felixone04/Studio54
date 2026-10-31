@@ -58,7 +58,7 @@
       ' data-evento="' + esc((w.category || '').trim().toLowerCase()) + '"' +
       ' data-stagione="' + esc(S54.stagione(w).toLowerCase()) + '"' +
       ' data-location="' + esc((w.setting || '').trim().toLowerCase()) + '">' +
-      '<span class="scheda-foto"><img ' + S54.srcset(S54.copertina(w), '(max-width: 599px) 100vw, (min-aspect-ratio: 2/1) 34vw, 50vw') + ' alt="" loading="lazy"></span>' +
+      '<span class="scheda-foto"><img ' + S54.srcset(S54.copertina(w), '(max-width: 599px) 100vw, (min-aspect-ratio: 23/10) 34vw, 50vw') + ' alt="" loading="lazy"></span>' +
       '<span class="scheda-nome">' + esc(w.title) + '</span>' +
       '<span class="scheda-info">' + esc(S54.unisci([w.location, w.category])) + '</span></a>';
   }

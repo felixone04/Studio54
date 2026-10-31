@@ -218,7 +218,7 @@ main { flex: 1; padding-top: var(--barra); }
 .diapo.attiva img, .diapo.uscente img { animation: avvicina 5.4s linear forwards; }
 /* Monitor molto larghi (21:9, 32:9): la foto intera, con ai lati la stessa foto
    sfocata. Tagliata per riempire lo schermo perderebbe gli sposi. */
-@media (min-width: 1200px) and (min-aspect-ratio: 2/1) {
+@media (min-width: 1200px) and (min-aspect-ratio: 23/10) {
   .diapo::before { content: ''; position: absolute; inset: -6%; background: var(--sf, var(--lino)) center / cover; filter: blur(calc(40 * var(--px))) brightness(.9); }
   .diapo img { position: relative; object-fit: contain; }
 }
@@ -244,11 +244,12 @@ main { flex: 1; padding-top: var(--barra); }
 .lavori-griglia { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(calc(40 * var(--px)), 5vw, calc(72 * var(--px))) clamp(calc(20 * var(--px)), 3vw, calc(44 * var(--px))); }
 @media (max-width: 599px) { .lavori-griglia { grid-template-columns: minmax(0, 1fr); gap: calc(44 * var(--px)); } }
 /* Monitor molto larghi (21:9 e 32:9): più schede per riga, altrimenti ognuna
-   sarebbe molto più alta dello schermo. */
-@media (min-width: 1200px) and (min-aspect-ratio: 2/1) { .lavori-griglia { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+   sarebbe molto più alta dello schermo. La soglia è 23/10 e non 2/1 perché conta
+   la finestra: un normale FullHD con il browser aperto è già circa 1920×950. */
+@media (min-width: 1200px) and (min-aspect-ratio: 23/10) { .lavori-griglia { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1200px) and (min-aspect-ratio: 3/1) { .lavori-griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 /* In home i lavori in evidenza sono 4: su una riga sola, senza restarne uno a parte. */
-@media (min-width: 1200px) and (min-aspect-ratio: 2/1) { .evidenza .lavori-griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1200px) and (min-aspect-ratio: 23/10) { .evidenza .lavori-griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .scheda-lavoro { display: block; }
 .scheda-foto { display: block; position: relative; overflow: hidden; aspect-ratio: 4 / 5; background: var(--lino); }
 .scheda-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s cubic-bezier(.2, .7, .2, 1); }
@@ -328,7 +329,7 @@ main { flex: 1; padding-top: var(--barra); }
 .bio-foto img { width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 1023px) { .bio-griglia { grid-template-columns: 1fr; } }
 /* Monitor molto larghi: la foto sta nell'altezza dello schermo. */
-@media (min-width: 1200px) and (min-aspect-ratio: 2/1) {
+@media (min-width: 1200px) and (min-aspect-ratio: 23/10) {
   .bio-griglia { grid-template-columns: 1fr auto; }
   .bio-foto { height: calc(100vh - var(--barra) - 2 * var(--inizio)); width: auto; }
 }
