@@ -226,7 +226,8 @@ class _SiteScaffoldState extends State<SiteScaffold> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Color.fromRGBO(0, 0, 0, 0.38 * (1 - g)),
+                                // Sparisce insieme al testo chiaro.
+                                Color.fromRGBO(0, 0, 0, 0.38 * (1 - _inkOf(g))),
                                 const Color(0x00000000),
                               ],
                             )
@@ -245,12 +246,17 @@ class _SiteScaffoldState extends State<SiteScaffold> {
   }
 }
 
+/// Testo e logo della barra cambiano prima e più in fretta del vetro: così
+/// restano grigi su grigio solo per un breve tratto (come sul sito).
+double _inkOf(double glass) => ((glass - 0.15) / 0.3).clamp(0.0, 1.0);
+
 /// Il logo in alto a sinistra, che riporta alla home.
 class _HomeLogo extends StatelessWidget {
   const _HomeLogo({required this.onTap, this.glass = 1});
   final VoidCallback onTap;
 
-  /// 0: logo chiaro (sopra la foto), 1: logo scuro; in mezzo si sfumano.
+  /// Il vetro della barra: 0 logo chiaro (sopra la foto), poi logo scuro; in
+  /// mezzo si sfumano.
   final double glass;
 
   @override
@@ -261,17 +267,17 @@ class _HomeLogo extends StatelessWidget {
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: onTap,
-        child: glass >= 1
+        child: _inkOf(glass) >= 1
             ? BrandLogo(height: context.navH * 0.7)
             : Stack(
                 children: [
                   Opacity(
-                    opacity: glass,
+                    opacity: _inkOf(glass),
                     child: BrandLogo(height: context.navH * 0.7),
                   ),
                   Positioned.fill(
                     child: Opacity(
-                      opacity: 1 - glass,
+                      opacity: 1 - _inkOf(glass),
                       child: BrandLogo(height: context.navH * 0.7, light: true),
                     ),
                   ),
@@ -301,7 +307,7 @@ class _NavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = Color.lerp(Palette.paper, Palette.ink, glass)!;
+    final fg = Color.lerp(Palette.paper, Palette.ink, _inkOf(glass))!;
     return Row(
       children: [
         Expanded(

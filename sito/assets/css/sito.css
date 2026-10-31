@@ -153,6 +153,7 @@ main { flex: 1; padding-top: var(--barra); }
      voci chiari; --p (da 0 a 1, lo calcola sito.js mentre si scorre) la
      porta piano piano al vetro bianco, senza scatti. */
   --p: 1;
+  --t: 1; /* il testo e il logo: passano al nero prima del fondo (sito.js) */
   background-color: rgba(255, 255, 255, calc(.72 * var(--p)));
   -webkit-backdrop-filter: blur(calc(calc(16 * var(--px)) * var(--p))) saturate(calc(1 + .3 * var(--p)));
   backdrop-filter: blur(calc(calc(16 * var(--px)) * var(--p))) saturate(calc(1 + .3 * var(--p)));
@@ -161,12 +162,12 @@ main { flex: 1; padding-top: var(--barra); }
 }
 .barra-logo { position: relative; margin-right: auto; }
 .barra-logo img { height: calc(var(--barra) * .7); width: auto; transition: opacity .18s linear; }
-.barra-logo .logo-scuro { opacity: var(--p); }
-.barra-logo .logo-chiaro { position: absolute; left: 0; top: 0; opacity: calc(1 - var(--p)); }
+.barra-logo .logo-scuro { opacity: var(--t); }
+.barra-logo .logo-chiaro { position: absolute; left: 0; top: 0; opacity: calc(1 - var(--t)); }
 /* Velatura leggera in alto, solo sopra la foto, per leggere logo e voci. */
 .barra::before {
   content: ''; position: absolute; inset: 0 0 calc(-40 * var(--px)); z-index: -1; pointer-events: none;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, .38), rgba(0, 0, 0, 0)); opacity: calc(1 - var(--p)); transition: opacity .18s linear;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, .38), rgba(0, 0, 0, 0)); opacity: calc(1 - var(--t)); transition: opacity .18s linear;
 }
 .barra-voci { display: flex; gap: calc(34 * var(--px)); }
 .barra-voci .link { font: 600 calc(11.5 * var(--px))/1.3 var(--display); letter-spacing: .24em; }
@@ -251,6 +252,12 @@ main { flex: 1; padding-top: var(--barra); }
 .scheda-lavoro { display: block; }
 .scheda-foto { display: block; position: relative; overflow: hidden; aspect-ratio: 4 / 5; background: var(--lino); }
 .scheda-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s cubic-bezier(.2, .7, .2, 1); }
+/* Computer e tablet in orizzontale: foto, nome e luogo stanno insieme nello
+   schermo. La foto si taglia un po' più sotto che sopra, per salvare i volti. */
+@media (min-width: 1000px) and (min-aspect-ratio: 1/1) {
+  .scheda-foto { max-height: calc(100vh - var(--barra) - calc(100 * var(--px))); }
+  .scheda-foto img { position: absolute; inset: 0; object-position: 50% 30%; }
+}
 .scheda-lavoro:hover .scheda-foto img { transform: scale(1.03); }
 .scheda-nome { display: block; margin-top: calc(18 * var(--px)); font: 300 clamp(calc(20 * var(--px)), calc(calc(20 * var(--px)) + 8 * (100vw - calc(360 * var(--px))) / 1240), calc(28 * var(--px)))/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; }
 .scheda-info { display: block; margin-top: calc(8 * var(--px)); font: 600 calc(10.5 * var(--px))/1.4 var(--display); letter-spacing: .24em; text-transform: uppercase; color: var(--pietra); }

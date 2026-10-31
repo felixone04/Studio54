@@ -206,13 +206,19 @@ void main() {
       final navH = 72 + 28 * (phone.width - 360) / (1600 - 360);
       expect(menu(), Palette.paper);
 
-      // Il bordo della foto è a metà della zona di passaggio sotto la barra.
-      scroll.jumpTo(phone.height - navH - navH * 0.75);
+      // All'inizio della zona di passaggio il testo sta già cambiando...
+      scroll.jumpTo(phone.height - navH - navH * 1.05);
       await settle(tester, 400);
       final mid = menu();
       expect(mid, isNot(Palette.paper));
       expect(mid, isNot(Palette.ink));
       expect(mid.r, closeTo((Palette.paper.r + Palette.ink.r) / 2, 0.08));
+
+      // ...e a metà, mentre il vetro si riempie ancora, è già nero: niente
+      // grigio su grigio per tutto il passaggio.
+      scroll.jumpTo(phone.height - navH - navH * 0.75);
+      await settle(tester, 400);
+      expect(menu(), Palette.ink);
 
       scroll.jumpTo(phone.height);
       await settle(tester, 400);

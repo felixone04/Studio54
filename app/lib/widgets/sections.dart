@@ -302,7 +302,21 @@ class WorkCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(aspectRatio: 4 / 5, child: PhotoImage(w.coverUrl)),
+            // Tablet in orizzontale: foto, nome e luogo stanno insieme nello
+            // schermo, come sul sito. Altrove la foto è sempre 4:5.
+            LayoutBuilder(
+              builder: (context, box) {
+                var h = box.maxWidth * 5 / 4;
+                if (context.w >= 1000 && context.w > context.h) {
+                  h = math.min(h, context.h - context.navH - 100);
+                }
+                return SizedBox(
+                  width: box.maxWidth,
+                  height: h,
+                  child: PhotoImage(w.coverUrl),
+                );
+              },
+            ),
             const SizedBox(height: 16),
             Text(
               w.title.toUpperCase(),

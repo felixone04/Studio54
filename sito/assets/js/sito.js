@@ -265,7 +265,11 @@
     if (p === pPrima) return;
     pPrima = p;
     barra.style.setProperty('--p', p);
-    barra.style.color = 'rgb(' + INCHIOSTRO.map(function (c) { return Math.round(255 + (c - 255) * p); }).join(',') + ')';
+    // Testo e logo cambiano prima e più in fretta del fondo: così restano grigi
+    // su grigio solo per un breve tratto (come nell'app).
+    var t = Math.round(Math.min(1, Math.max(0, (p - 0.15) / 0.3)) * 1000) / 1000;
+    barra.style.setProperty('--t', t);
+    barra.style.color = 'rgb(' + INCHIOSTRO.map(function (c) { return Math.round(255 + (c - 255) * t); }).join(',') + ')';
   };
   var chiediBarra = function () { if (!inAttesa) { inAttesa = true; requestAnimationFrame(aggiornaBarra); } };
   window.addEventListener('scroll', chiediBarra, { passive: true });
