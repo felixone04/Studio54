@@ -255,7 +255,7 @@ main { flex: 1; padding-top: var(--barra); }
 /* Computer e tablet in orizzontale: foto, nome e luogo stanno insieme nello
    schermo. La foto si taglia un po' più sotto che sopra, per salvare i volti. */
 @media (min-width: 1000px) and (min-aspect-ratio: 1/1) {
-  .scheda-foto { max-height: calc(100vh - var(--barra) - calc(100 * var(--px))); }
+  .scheda-foto { width: 100%; max-height: calc(100vh - var(--barra) - calc(100 * var(--px))); }
   .scheda-foto img { position: absolute; inset: 0; object-position: 50% 30%; }
 }
 .scheda-lavoro:hover .scheda-foto img { transform: scale(1.03); }
