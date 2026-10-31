@@ -73,10 +73,10 @@
   // tablet, monitor girato): quelle verticali, come nell'app. Manca una serie:
   // si usa l'altra.
   var orizzontale = window.matchMedia('(min-aspect-ratio: 1/1)');
-  var attive = function (l) { return (l || []).filter(function (p) { return p.active !== false && (p.url || '').trim(); }); };
-  var serieGiusta = function () { return attive(orizzontale.matches ? D.carouselSite : D.carouselApp).length > 0; };
+  var fotoAttive = function (l) { return (l || []).filter(function (p) { return p.active !== false && (p.url || '').trim(); }); };
+  var serieGiusta = function () { return fotoAttive(orizzontale.matches ? D.carouselSite : D.carouselApp).length > 0; };
   function disegnaCarosello() {
-    var foto = attive(serieGiusta() === orizzontale.matches ? D.carouselSite : D.carouselApp);
+    var foto = fotoAttive(serieGiusta() === orizzontale.matches ? D.carouselSite : D.carouselApp);
     carosello.innerHTML = foto.map(function (p, i) {
       return '<figure class="diapo' + (i === 0 ? ' attiva' : '') + '"><img ' + S54.srcset(p.url, '(min-aspect-ratio: 1/1) 100vw, 120vw') + ' alt=""' + (i > 1 ? ' loading="lazy"' : '') + '></figure>';
     }).join('') + (foto.length > 1 ? '<div class="apertura-frecce"><button class="tondo chiaro ap-prec" type="button" aria-label="Foto precedente">' + FRECCIA_S + '</button><button class="tondo chiaro ap-succ" type="button" aria-label="Foto successiva">' + FRECCIA_D + '</button></div>' : '');
