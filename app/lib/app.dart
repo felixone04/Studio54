@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,6 +14,7 @@ import 'pages/home_page.dart';
 import 'pages/quote_page.dart';
 import 'pages/works_page.dart';
 import 'services/back_handlers.dart';
+import 'services/system_bars.dart';
 import 'state/app_state.dart';
 import 'theme/app_theme.dart';
 import 'widgets/common.dart';
@@ -45,11 +47,9 @@ class _SystemBars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context);
-    final top = mq.padding.top, bottom = mq.padding.bottom;
-    // Telefono girato: la barra dei tasti o la fotocamera possono stare di
-    // lato.
-    final left = mq.padding.left, right = mq.padding.right;
-    final bars = AnnotatedRegion<SystemUiOverlayStyle>(
+    // Il sistema legge questo stile a metà della barra di stato: deve coprire
+    // anche quella, non solo la pagina. Scuri ora e batteria, sempre.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
@@ -57,32 +57,74 @@ class _SystemBars extends StatelessWidget {
         systemNavigationBarColor: Palette.paper,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
-      child: child,
-    );
-    // Sempre la stessa struttura, anche quando le barre sono nascoste
-    // (spazio zero): se cambiasse, Flutter ricostruirebbe l'app da capo e
-    // ripartirebbe il logo d'apertura.
-    return ColoredBox(
-      color: Palette.paper,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(left, top, right, bottom),
-        child: MediaQuery(
-          data: mq.copyWith(
-            size: Size(
-              mq.size.width - left - right,
-              mq.size.height - top - bottom,
+      child: ValueListenableBuilder<bool>(
+        valueListenable: SystemBars.fullScreen,
+        builder: (context, full, inner) {
+          // A tutto schermo (carosello, foto) la foto riempie anche notch e
+          // lineetta dell'iPhone, che le pagine ricevono come margine interno.
+          // Altrove (telefono girato: anche di lato) la pagina sta fra le barre.
+          final outer = full ? EdgeInsets.zero : mq.padding;
+          // Sempre la stessa struttura: se cambiasse, Flutter ricostruirebbe
+          // l'app da capo e ripartirebbe il logo d'apertura.
+          return ColoredBox(
+            color: Palette.paper,
+            child: Padding(
+              padding: outer,
+              child: MediaQuery(
+                data: mq.copyWith(
+                  size: Size(
+                    mq.size.width - outer.horizontal,
+                    mq.size.height - outer.vertical,
+                  ),
+                  padding: full ? mq.padding : EdgeInsets.zero,
+                  viewPadding: full ? mq.viewPadding : EdgeInsets.zero,
+                ),
+                child: inner!,
+              ),
             ),
-            padding: EdgeInsets.zero,
-            viewPadding: mq.viewPadding.copyWith(
-              left: 0,
-              top: 0,
-              right: 0,
-              bottom: 0,
-            ),
-          ),
-          child: bars,
-        ),
+          );
+        },
+        child: child,
       ),
+    );
+  }
+}
+
+/// iPhone e iPad non hanno il tasto indietro: strisciando dal bordo sinistro si
+/// torna indietro come farebbe il tasto su Android (stesso percorso).
+class _EdgeSwipeBack extends StatefulWidget {
+  const _EdgeSwipeBack({required this.onBack, required this.child});
+  final VoidCallback onBack;
+  final Widget child;
+
+  @override
+  State<_EdgeSwipeBack> createState() => _EdgeSwipeBackState();
+}
+
+class _EdgeSwipeBackState extends State<_EdgeSwipeBack> {
+  double _dx = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return widget.child;
+    return Stack(
+      children: [
+        Positioned.fill(child: widget.child),
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 18,
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragStart: (_) => _dx = 0,
+            onHorizontalDragUpdate: (d) => _dx += d.delta.dx,
+            onHorizontalDragEnd: (d) {
+              if (_dx > 60 || (d.primaryVelocity ?? 0) > 500) widget.onBack();
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -239,14 +281,27 @@ class _StudioAppState extends State<StudioApp> {
           '${state.content.studioName} · ${state.content.tagline}',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.site(Color(state.content.accent)),
-      builder: (context, child) => ScreenScale(
-        child: _SystemBars(
-          // La chiave conserva l'app (pagine, scorrimento, logo d'apertura già
-          // visto) anche quando cambia la cornice intorno: barre del telefono
-          // che compaiono o spariscono, schermo che si gira.
-          child: KeyedSubtree(
-            key: _content,
-            child: introInApp ? AppIntro(child: child!) : child!,
+      // Testo di sistema ingrandito: fino al 150%, oltre la grafica non regge.
+      builder: (context, child) => MediaQuery.withClampedTextScaling(
+        maxScaleFactor: 1.5,
+        child: ScreenScale(
+          child: _SystemBars(
+            // Toccando fuori da un campo la tastiera si chiude: su iPhone il
+            // tastierino del telefono non ha un tasto per farlo.
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+              child: _EdgeSwipeBack(
+                onBack: () => _back.invokeCallback(Future.value(false)),
+                // La chiave conserva l'app (pagine, scorrimento, logo d'apertura
+                // già visto) anche quando cambia la cornice intorno: barre del
+                // telefono che compaiono o spariscono, schermo che si gira.
+                child: KeyedSubtree(
+                  key: _content,
+                  child: introInApp ? AppIntro(child: child!) : child!,
+                ),
+              ),
+            ),
           ),
         ),
       ),

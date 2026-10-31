@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/system_bars.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
@@ -36,7 +37,14 @@ class HomePage extends StatelessWidget {
           photos = app.isEmpty ? site : app;
         }
         final featured = s.featuredWorks;
-        final h = context.h;
+        // Il carosello riempie lo schermo. Quando le barre tornano visibili
+        // (si è già scorso oltre la foto) resta alto anche la lineetta in
+        // meno: così quel che segue non fa un salto.
+        final h =
+            context.h +
+            (SystemBars.fullScreen.value
+                ? 0
+                : MediaQueryData.fromView(View.of(context)).padding.bottom);
         return SiteScaffold(
           location: '/',
           photoUnderNav: photos.isEmpty ? null : h,

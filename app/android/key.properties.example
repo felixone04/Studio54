@@ -1,0 +1,6 @@
+﻿# Copia questo file come key.properties (stessa cartella) e compila i valori.
+# key.properties e il file .jks NON vanno mai su GitHub: conservane due copie.
+storeFile=C:/percorso/studio54-upload.jks
+storePassword=
+keyAlias=upload
+keyPassword=

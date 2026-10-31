@@ -217,7 +217,8 @@ Ogni uscita ha anche due o tre righe di "Novità", in italiano, da scrivere negl
 - **Privacy:** una pagina "Privacy" sul sito (es. `studio54.it/privacy`) e il modulo sui dati raccolti (nome, email, telefono del preventivo; foto dei clienti).
 - **Account di prova per i revisori:** un cliente d'esempio con qualche foto, perché Apple e Google vogliono provare l'area clienti.
 - **Account dei clienti:** li crea lo studio, non il cliente. Nelle note per la revisione va scritto, e va indicato come chiedere la cancellazione dei propri dati (es. un'email allo studio).
-- **Prima dell'App Store** va aggiunta all'app la parte iPhone (cartella `ios/`), che oggi non c'è. È un passaggio da fare una volta.
+- **Parte iPhone:** la cartella `app/ios/` c'è già, con icone, schermata d'avvio e permessi. Va compilata su un Mac o con un servizio cloud, e lì va provata la prima volta.
+- **Firma Android:** l'app è pronta a usare la chiave. Basta creare `app/android/key.properties` copiando `key.properties.example`: né quel file né la chiave vanno su GitHub.
 
 ---
 
@@ -256,7 +257,22 @@ Ogni uscita ha anche due o tre righe di "Novità", in italiano, da scrivere negl
 
 ---
 
-## 11. Decisioni da prendere prima di partire
+## 11. Cosa manca prima di pubblicare sugli store
+
+Il codice dell'app è adatto a Android, iPhone e tablet, ma **questi punti bloccano una pubblicazione vera**:
+
+| Punto | Perché blocca | Cosa serve |
+|---|---|---|
+| **Database collegato** | Oggi ogni telefono ha i suoi dati: le richieste di preventivo restano sul telefono del visitatore e non arrivano allo studio. Clienti, foto e modifiche del gestionale non passano da un telefono all'altro | Cloudflare collegato all'app (sezioni 4 e 5) |
+| **Credenziali di prova** | `titolare` / `studio54` e i clienti d'esempio sono dentro l'app: chiunque potrebbe entrare | Vanno tolti con il database, usando le credenziali vere |
+| **Contenuti d'esempio** | Foto, lavori e testi sono di prova, e i contatti in parte inventati | Quelli veri, dal gestionale |
+| **Pagina Privacy** | Entrambi gli store la chiedono, e il consenso del preventivo deve poterla aprire | Il testo della privacy, poi il link nell'app e sul sito |
+| **Dominio** | `Vedi il sito` apre ancora l'anteprima su GitHub | Dominio definitivo |
+| **ID dell'app** | Oggi Android `it.studio54.studio_fotografico` e iPhone `it.studio54.studioFotografico`; dopo la prima pubblicazione non si cambiano | Sceglierne uno solo (es. `it.studio54.app`) |
+
+---
+
+## 12. Decisioni da prendere prima di partire
 
 - [ ] **Dominio** definitivo (es. `studio54.it`) e su quale sito di domini comprarlo.
 - [ ] **ID definitivo dell'app** (es. `it.studio54.app`): dopo la prima pubblicazione non si cambia più.

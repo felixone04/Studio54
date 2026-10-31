@@ -119,7 +119,7 @@ class _PhotoViewerState extends State<PhotoViewer> {
             ),
             Positioned(
               top: pad.top + 14,
-              right: 14,
+              right: pad.right + 14,
               child: RoundIconButton(
                 Ico.close,
                 () => Navigator.pop(context),

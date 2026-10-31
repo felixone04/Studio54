@@ -176,7 +176,7 @@ class _SignInViewState extends State<SignInView> {
                 const SizedBox(height: 18),
                 Text(
                   widget.adminOnly
-                      ? 'Prova: nome utente "titolare", password "studio54".'
+                      ? 'Accesso riservato al titolare dello studio.'
                       : 'Non avete le credenziali? Scriveteci: ve le mandiamo noi.',
                   textAlign: TextAlign.center,
                   style: body(13, color: Palette.stone),
@@ -372,6 +372,7 @@ class _ClientHomeState extends State<_ClientHome> {
           behavior: HitTestBehavior.opaque,
           onTap: () => setState(() => _folder = null),
           child: Row(
+            // Alto abbastanza da toccarlo comodamente.
             mainAxisSize: MainAxisSize.min,
             children: [
               const LineIcon(Ico.arrowLeft, size: 15, color: Palette.stone),
@@ -482,7 +483,7 @@ class _ClientHomeState extends State<_ClientHome> {
                       behavior: HitTestBehavior.opaque,
                       onTap: s.logoutClient,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -832,8 +833,8 @@ class _VideoViewState extends State<_VideoView> {
         // Avanzamento e audio, sopra le frecce in basso.
         if (ready)
           Positioned(
-            left: 20,
-            right: 20,
+            left: pad.left + 20,
+            right: pad.right + 20,
             bottom: pad.bottom + 84,
             child: Row(
               children: [

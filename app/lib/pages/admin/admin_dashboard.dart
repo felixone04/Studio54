@@ -238,7 +238,8 @@ class _Stat extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         onTap: onTap,
         child: SizedBox(
-          height: 128,
+          // Tutte alte uguali, ma il testo ingrandito deve starci.
+          height: MediaQuery.textScalerOf(context).scale(128),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 16, 14, 14),
             child: Stack(

@@ -63,7 +63,7 @@ class RoundIconButton extends StatefulWidget {
     this.tooltip, {
     super.key,
     this.light = false,
-    this.size = 42,
+    this.size = 44,
   });
   final Ico icon;
   final VoidCallback onTap;

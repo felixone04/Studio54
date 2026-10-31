@@ -33,8 +33,11 @@ class GalleryMediaSaver implements MediaSaver {
       );
     }
     final dir = await getTemporaryDirectory();
-    // Con l'id: due file con lo stesso nome possono scaricarsi insieme.
-    final file = File('${dir.path}/${m.id}-${_fileName(m)}');
+    // Una cartella per ogni file: due con lo stesso nome possono scaricarsi
+    // insieme, e in galleria il nome resta quello originale.
+    final folder = await Directory('${dir.path}/${m.id}')
+        .create(recursive: true);
+    final file = File('${folder.path}/${_fileName(m)}');
     try {
       await _download(m.downloadUrl, file);
       if (m.isVideo) {
@@ -49,7 +52,7 @@ class GalleryMediaSaver implements MediaSaver {
         _ => 'Il telefono non ha accettato il file.',
       });
     } finally {
-      if (await file.exists()) await file.delete();
+      if (await folder.exists()) await folder.delete(recursive: true);
     }
   }
 

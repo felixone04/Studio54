@@ -21,7 +21,17 @@ Future<void> openUrl(String url) async {
   // schema il browser li tratterebbe come percorsi interni al sito.
   if (!u.hasScheme) u = Uri.tryParse('https://$t');
   if (u == null) return;
-  await launchUrl(u, webOnlyWindowName: '_blank');
+  // I link web si aprono fuori dall'app (browser, Instagram, WhatsApp...).
+  final web = u.isScheme('http') || u.isScheme('https');
+  try {
+    await launchUrl(
+      u,
+      mode: web ? LaunchMode.externalApplication : LaunchMode.platformDefault,
+      webOnlyWindowName: '_blank',
+    );
+  } catch (_) {
+    // Nessuna app per aprirlo (es. telefonare da un tablet): non si fa nulla.
+  }
 }
 
 String digitsOf(String s) => s.replaceAll(RegExp(r'[^0-9+]'), '');
@@ -135,7 +145,8 @@ class _SiteScaffoldState extends State<SiteScaffold> {
   /// Colore della parte di pagina appena sotto la barra.
   void _update() {
     if (!mounted) return;
-    final navH = context.navH;
+    // A tutto schermo la barra sta sotto il notch: finisce più in basso.
+    final navH = context.navH + MediaQuery.paddingOf(context).top;
     final offset = _scroll.hasClients ? _scroll.offset : 0.0;
     final photo = widget.photoUnderNav;
     final overPhoto = photo != null && offset < photo - navH;
@@ -174,6 +185,7 @@ class _SiteScaffoldState extends State<SiteScaffold> {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final navH = context.navH;
+    final inset = MediaQuery.paddingOf(context);
     final g = _glass;
     return Scaffold(
       backgroundColor: Palette.paper,
@@ -189,6 +201,8 @@ class _SiteScaffoldState extends State<SiteScaffold> {
               },
               child: SingleChildScrollView(
                 controller: _scroll,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -217,8 +231,13 @@ class _SiteScaffoldState extends State<SiteScaffold> {
                     tileMode: TileMode.mirror,
                   ),
                   child: Container(
-                    height: navH,
-                    padding: EdgeInsets.symmetric(horizontal: context.gutter),
+                    height: navH + inset.top,
+                    padding: EdgeInsets.fromLTRB(
+                      context.gutter + inset.left,
+                      inset.top,
+                      context.gutter + inset.right,
+                      0,
+                    ),
                     decoration: BoxDecoration(
                       color: _under.withValues(alpha: 0.72 * g),
                       gradient: g < 1
