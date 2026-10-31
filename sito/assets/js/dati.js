@@ -81,7 +81,7 @@ window.S54 = (function () {
 
   /** Torna ai dati d'esempio (cancella le modifiche fatte in questo browser). */
   function ripristina() {
-    [CHIAVE_PUBBLICI, CHIAVE_PRIVATI, CHIAVE_RICHIESTE].forEach(togli);
+    [CHIAVE_PUBBLICI, CHIAVE_PRIVATI, CHIAVE_RICHIESTE, 's54-proporzioni'].forEach(togli);
     bozza = null;
   }
 

@@ -45,28 +45,21 @@ const _groups = <(String, List<_Section>)>[
       _Section('preventivo', 'Preventivo', Icons.edit_note_rounded),
       _Section('biografia', 'Biografia', Icons.history_edu_outlined),
       _Section('contatti', 'Contatti', Icons.badge_outlined),
-    ],
-  ),
-  (
-    'Solo sito',
-    [
       _Section(
         'carosello-sito',
         'Carosello orizzontale',
         Icons.photo_library_outlined,
       ),
-    ],
-  ),
-  (
-    'Solo app',
-    [
       _Section(
         'carosello-app',
         'Carosello verticale',
         Icons.stay_current_portrait_rounded,
       ),
-      _Section('clienti', 'Area clienti', Icons.people_alt_outlined),
     ],
+  ),
+  (
+    'Solo app',
+    [_Section('clienti', 'Area clienti', Icons.people_alt_outlined)],
   ),
   ('Sistema', [_Section('impostazioni', 'Impostazioni', Icons.tune_rounded)]),
 ];
@@ -107,6 +100,7 @@ class _Shell extends StatefulWidget {
 
 class _ShellState extends State<_Shell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _pageKeys = <String, GlobalKey>{};
 
   String get _current => _sections.any((e) => e.id == widget.section)
       ? widget.section!
@@ -130,7 +124,12 @@ class _ShellState extends State<_Shell> {
       'impostazioni' => const AdminPageScroll(child: AdminSettingsPage()),
       _ => const AdminPageScroll(child: AdminDashboard()),
     };
-    return KeyedSubtree(key: ValueKey(_current), child: page);
+    // Una chiave globale: girando il dispositivo il layout cambia, ma la pagina
+    // e le sue modifiche non salvate restano.
+    return KeyedSubtree(
+      key: _pageKeys.putIfAbsent(_current, GlobalKey.new),
+      child: page,
+    );
   }
 
   Future<void> _select(String id) async {

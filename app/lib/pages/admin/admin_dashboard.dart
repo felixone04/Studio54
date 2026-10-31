@@ -180,7 +180,10 @@ class AdminDashboard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AdminHeader(title: 'Benvenuto', subtitle: 'La situazione di oggi.'),
+        AdminHeader(
+          title: 'Panoramica',
+          subtitle: 'Quello che succede nello studio, a colpo d\'occhio.',
+        ),
         LayoutBuilder(
           builder: (context, box) {
             final cols = box.maxWidth > 900 ? 4 : 2;

@@ -20,9 +20,8 @@
 
   var GRUPPI = [
     ['Attività', '', [['panoramica', 'Panoramica', 'griglia'], ['richieste', 'Richieste', 'busta'], ['calendario', 'Calendario', 'calendario']]],
-    ['Sito e app', '', [['lavori', 'Lavori', 'libro'], ['preventivo', 'Preventivo', 'pagina'], ['biografia', 'Biografia', 'penna'], ['contatti', 'Contatti', 'tessera']]],
-    ['Solo sito', 'schermo', [['carosello-sito', 'Carosello orizzontale', 'foto']]],
-    ['Solo app', 'cellulare', [['carosello-app', 'Carosello verticale', 'cellulare'], ['clienti', 'Area clienti', 'persone']]],
+    ['Sito e app', '', [['lavori', 'Lavori', 'libro'], ['preventivo', 'Preventivo', 'pagina'], ['biografia', 'Biografia', 'penna'], ['contatti', 'Contatti', 'tessera'], ['carosello-sito', 'Carosello orizzontale', 'foto'], ['carosello-app', 'Carosello verticale', 'cellulare']]],
+    ['Solo app', 'cellulare', [['clienti', 'Area clienti', 'persone']]],
     ['Sistema', '', [['impostazioni', 'Impostazioni', 'regola']]]
   ];
   var SEZIONI = {};
@@ -325,8 +324,13 @@
       '<span class="riga-testo"><strong>' + esc(a.title) + '</strong><small>' + esc(S54.unisci([a.allDay ? 'Tutto il giorno' : ora(d), a.location])) + '</small></span></button>';
   }
   function prossimiAppuntamenti() {
-    var oggi = new Date(); oggi.setHours(0, 0, 0, 0);
-    return Q.appointments.filter(function (a) { var d = leggiData(a.end || a.start); return d && d >= oggi; })
+    // Come nell'app: quelli finiti non contano; "tutto il giorno" vale fino a sera.
+    var adesso = new Date();
+    return Q.appointments.filter(function (a) {
+      var d = leggiData(a.end || a.start);
+      if (d && a.allDay) d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+      return d && d > adesso;
+    })
       .sort(function (a, b) { return leggiData(a.start) - leggiData(b.start); });
   }
   function apriAppuntamenti(root, dopo) {
@@ -778,9 +782,9 @@
     var l = P[chiave];
     p.innerHTML = testa(verticale ? 'Carosello verticale' : 'Carosello orizzontale',
       verticale
-        ? '<span class="dove">' + ico('cellulare') + 'Solo nell\'app</span> Le foto riempiono lo schermo del telefono all\'apertura e scorrono da sole, 4 secondi l\'una. Usa foto <b>verticali</b>.'
-        : '<span class="dove">' + ico('schermo') + 'Sul sito</span> (e nell\'app con il telefono girato in orizzontale). Le foto scorrono a tutto schermo nella home, 4 secondi l\'una, con dissolvenza. Usa foto <b>orizzontali</b>.',
-      verticale ? '' : '<a class="bottone bordo" href="' + S54.url('index') + '" target="_blank" rel="noopener">' + ico('esterno') + 'Vedi la home</a>') +
+        ? '<span class="dove">' + ico('cellulare') + 'Sito e app, schermo in verticale</span> Telefono, tablet o monitor girato: le foto riempiono lo schermo all\'apertura e scorrono da sole, 4 secondi l\'una. Usa foto <b>verticali</b>.'
+        : '<span class="dove">' + ico('schermo') + 'Sito e app, schermo in orizzontale</span> Computer, tablet o telefono girato: le foto scorrono a tutto schermo nella home, 4 secondi l\'una, con dissolvenza. Usa foto <b>orizzontali</b>.',
+      '<a class="bottone bordo" href="' + S54.url('index') + '" target="_blank" rel="noopener">' + ico('esterno') + 'Vedi la home</a>') +
       '<section class="scheda pannello"><div class="griglia-foto' + (verticale ? ' verticali' : '') + '">' + l.map(function (f, i) {
         return '<figure class="foto-scheda' + (f.active === false ? ' spenta' : '') + '" data-i="' + i + '"><div class="foto-scheda-img"><img src="' + esc(miniatura(f.url, 500)) + '" alt="" loading="lazy"><span class="segno avviso-orient" hidden></span></div>' +
           '<div class="foto-scheda-fondo"><span class="interruttore" title="Mostra o nascondi"><input type="checkbox" data-attiva' + (f.active !== false ? ' checked' : '') + ' aria-label="Mostra nel carosello"><span></span></span>' +

@@ -124,7 +124,7 @@ class _RoundIconButtonState extends State<RoundIconButton> {
 
 // ======================================================== CAROSELLO APP
 
-/// L'apertura dell'app: le foto verticali a tutto schermo che scorrono da
+/// L'apertura dell'app: le foto del verso dello schermo, intere, che scorrono da
 /// sole, 4 secondi l'una, con una dissolvenza. Niente scritte né frecce: si
 /// possono sfogliare anche con il dito.
 class AppCarousel extends StatefulWidget {

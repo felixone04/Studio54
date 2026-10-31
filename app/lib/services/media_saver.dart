@@ -33,7 +33,8 @@ class GalleryMediaSaver implements MediaSaver {
       );
     }
     final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/${_fileName(m)}');
+    // Con l'id: due file con lo stesso nome possono scaricarsi insieme.
+    final file = File('${dir.path}/${m.id}-${_fileName(m)}');
     try {
       await _download(m.downloadUrl, file);
       if (m.isVideo) {
@@ -77,11 +78,13 @@ class GalleryMediaSaver implements MediaSaver {
       }
       final out = file.openWrite();
       try {
-        await r.stream.pipe(out);
+        await out.addStream(r.stream);
       } on FileSystemException {
         throw const SaveException('Spazio sul telefono esaurito.');
       } catch (_) {
         throw const SaveException('Download interrotto: riprovate tra poco.');
+      } finally {
+        await out.close().catchError((_) {});
       }
     } finally {
       client.close();

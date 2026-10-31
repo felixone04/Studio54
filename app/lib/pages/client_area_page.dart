@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../widgets/line_icons.dart';
@@ -212,6 +213,7 @@ class _ClientHomeState extends State<_ClientHome> {
   @override
   void dispose() {
     BackHandlers.remove(_onBack);
+    _saving.dispose();
     super.dispose();
   }
 
@@ -222,22 +224,25 @@ class _ClientHomeState extends State<_ClientHome> {
     return true;
   }
 
-  /// Download in corso (id del file).
-  final _saving = <String>{};
+  /// Download in corso (id del file): anche il visore li ascolta.
+  final _saving = ValueNotifier<Set<String>>({});
 
   /// Messaggio in basso; [where] è il visore a schermo intero, se aperto
   /// (altrimenti il messaggio resterebbe sotto la foto, invisibile).
   void _snack(String m, [ScaffoldMessengerState? where]) {
-    final s = where ?? ScaffoldMessenger.maybeOf(context);
+    // Il visore può essere stato chiuso mentre si scaricava.
+    final s = where != null && where.mounted
+        ? where
+        : ScaffoldMessenger.maybeOf(context);
     s?.hideCurrentSnackBar();
     s?.showSnackBar(SnackBar(content: Text(m)));
   }
 
   /// Si scarica una foto (o un video) alla volta, guardandola.
   Future<bool> _save(ClientMedia m, [BuildContext? viewer]) async {
-    if (_saving.contains(m.id)) return false;
+    if (_saving.value.contains(m.id)) return false;
     final where = viewer == null ? null : ScaffoldMessenger.maybeOf(viewer);
-    setState(() => _saving.add(m.id));
+    _saving.value = {..._saving.value, m.id};
     try {
       await mediaSaver.save(m);
       if (mounted) {
@@ -258,7 +263,7 @@ class _ClientHomeState extends State<_ClientHome> {
       }
       return false;
     } finally {
-      if (mounted) setState(() => _saving.remove(m.id));
+      _saving.value = {..._saving.value}..remove(m.id);
     }
   }
 
@@ -283,7 +288,8 @@ class _ClientHomeState extends State<_ClientHome> {
             actions: (vc, k) => [
               _DownloadButton(
                 key: ValueKey(media[k].id),
-                busy: _saving.contains(media[k].id),
+                id: media[k].id,
+                saving: _saving,
                 onTap: () => _save(media[k], vc),
               ),
             ],
@@ -703,28 +709,26 @@ class _Tile extends StatelessWidget {
   );
 }
 
-class _DownloadButton extends StatefulWidget {
-  const _DownloadButton({super.key, required this.busy, required this.onTap});
-  final bool busy;
+class _DownloadButton extends StatelessWidget {
+  const _DownloadButton({
+    super.key,
+    required this.id,
+    required this.saving,
+    required this.onTap,
+  });
+  final String id;
+  final ValueListenable<Set<String>> saving;
   final Future<bool> Function() onTap;
 
   @override
-  State<_DownloadButton> createState() => _DownloadButtonState();
-}
-
-class _DownloadButtonState extends State<_DownloadButton> {
-  late bool _busy = widget.busy;
-
-  @override
-  Widget build(BuildContext context) => PillButton(
-    'Scarica',
-    loading: _busy,
-    icon: Ico.download,
-    onTap: () async {
-      setState(() => _busy = true);
-      await widget.onTap();
-      if (mounted) setState(() => _busy = false);
-    },
+  Widget build(BuildContext context) => ValueListenableBuilder(
+    valueListenable: saving,
+    builder: (_, ids, _) => PillButton(
+      'Scarica',
+      loading: ids.contains(id),
+      icon: Ico.download,
+      onTap: onTap,
+    ),
   );
 }
 
@@ -747,7 +751,9 @@ class _VideoViewState extends State<_VideoView> {
     final c0 = _c;
     if (c0 != null) {
       if (!c0.value.isInitialized) return;
-      setState(() => c0.value.isPlaying ? c0.pause() : c0.play());
+      setState(() {
+        c0.value.isPlaying ? c0.pause() : c0.play();
+      });
       return;
     }
     final c = VideoPlayerController.networkUrl(

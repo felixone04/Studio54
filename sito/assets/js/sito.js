@@ -76,7 +76,9 @@
   var fotoAttive = function (l) { return (l || []).filter(function (p) { return p.active !== false && (p.url || '').trim(); }); };
   var serieGiusta = function () { return fotoAttive(orizzontale.matches ? D.carouselSite : D.carouselApp).length > 0; };
   function disegnaCarosello() {
-    var foto = fotoAttive(serieGiusta() === orizzontale.matches ? D.carouselSite : D.carouselApp);
+    var orizz = orizzontale.matches;
+    if (!serieGiusta()) orizz = !orizz;
+    var foto = fotoAttive(orizz ? D.carouselSite : D.carouselApp);
     carosello.innerHTML = foto.map(function (p, i) {
       return '<figure class="diapo' + (i === 0 ? ' attiva' : '') + '"><img ' + S54.srcset(p.url, '(min-aspect-ratio: 1/1) 100vw, 120vw') + ' alt=""' + (i > 1 ? ' loading="lazy"' : '') + '></figure>';
     }).join('') + (foto.length > 1 ? '<div class="apertura-frecce"><button class="tondo chiaro ap-prec" type="button" aria-label="Foto precedente">' + FRECCIA_S + '</button><button class="tondo chiaro ap-succ" type="button" aria-label="Foto successiva">' + FRECCIA_D + '</button></div>' : '');
@@ -262,12 +264,14 @@
     pPrima = p;
     barra.style.setProperty('--p', p);
     barra.style.color = 'rgb(' + INCHIOSTRO.map(function (c) { return Math.round(255 + (c - 255) * p); }).join(',') + ')';
-    barra.classList.toggle('su-foto', p < 1);
   };
   var chiediBarra = function () { if (!inAttesa) { inAttesa = true; requestAnimationFrame(aggiornaBarra); } };
   window.addEventListener('scroll', chiediBarra, { passive: true });
   window.addEventListener('resize', aggiornaBarra);
   aggiornaBarra();
+
+  // Dopo un ricaricamento il segno "menu o foto aperti" nella cronologia non vale più.
+  if (history.state && history.state.s54) history.replaceState(null, '');
 
   var menu = $('#menu');
   var apriMenu = $('.barra-menu');
@@ -294,6 +298,8 @@
     $('.menu-chiudi', menu).addEventListener('click', function () { mostra(false); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) mostra(false); });
     window.addEventListener('popstate', function () { if (!menu.hidden && menu.classList.contains('aperto')) mostra(false, true); });
+    // Tornando dalla cache del browser il menu non deve restare aperto.
+    window.addEventListener('pageshow', function (e) { if (e.persisted && !menu.hidden) mostra(false, true); });
     // Da una voce del menu si va alla pagina al posto del passaggio "menu aperto",
     // così il tasto indietro non ci ripassa.
     $$('.menu-voci a, .menu-testa a', menu).forEach(function (a) {
@@ -413,15 +419,14 @@
       tutte = $$('.diapo', car);
       mostrate = tutte.slice();
       i = 0;
-      // Una foto nel verso sbagliato, caricata per sbaglio, si salta. Se c'è
-      // solo l'altra serie si usa quella, tagliata quanto serve.
-      var giusta = serieGiusta();
+      // Schermo in orizzontale: una verticale caricata per sbaglio si salta (come
+      // nell'app). In verticale un'orizzontale si mostra, tagliata quanto serve.
+      var giusta = serieGiusta() && orizzontale.matches;
       tutte.forEach(function (d) {
         var img = $('img', d);
         var controlla = function () {
           if (tutte.indexOf(d) < 0 || !giusta || !img.naturalWidth || mostrate.length < 2) return;
-          var largaFoto = img.naturalWidth > img.naturalHeight;
-          if (largaFoto === orizzontale.matches) return;
+          if (img.naturalWidth > img.naturalHeight) return;
           var corrente = mostrate[i];
           mostrate = mostrate.filter(function (x) { return x !== d; });
           var k = mostrate.indexOf(corrente);
@@ -507,7 +512,7 @@
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); li.click(); }
           if (e.key === 'ArrowDown' && li.nextElementSibling) li.nextElementSibling.focus();
           if (e.key === 'ArrowUp' && li.previousElementSibling) li.previousElementSibling.focus();
-          if (e.key === 'Escape') { lista.hidden = true; voce.focus(); }
+          if (e.key === 'Escape') { lista.hidden = true; voce.setAttribute('aria-expanded', 'false'); voce.focus(); }
         });
       });
     });
@@ -565,6 +570,9 @@
       if (prima > 0 && window.innerWidth >= 600) { ordine.splice(prima, 1); ordine.unshift(prima); }
       var r = function (pos) { return rapporto(ordine[pos]); };
       var t = function (pos) { return tavole[ordine[pos]]; };
+      // L'altezza resta ferma mentre si ricompone: la pagina non salta. La
+      // dissolvenza si vede solo la prima volta.
+      if (box.classList.contains('composto')) { box.style.minHeight = box.offsetHeight + 'px'; box.classList.add('ricomposto'); }
       box.innerHTML = '';
       var stile = getComputedStyle(box);
       var piena = Math.floor(box.clientWidth - parseFloat(stile.paddingLeft) - parseFloat(stile.paddingRight)) - 1;
@@ -619,6 +627,7 @@
         });
       }
       box.classList.add('composto');
+      box.style.minHeight = '';
     }
     // Si compone quando si conoscono le proporzioni di tutte le foto (al
     // massimo dopo 3 secondi, con quelle note fino ad allora). Fino ad allora
@@ -627,14 +636,21 @@
     var CHIAVE = 's54-proporzioni', note = {};
     try { note = JSON.parse(localStorage.getItem(CHIAVE)) || {}; } catch (e) {}
     var chiave = function (k) { return tavole[k].getAttribute('data-foto'); };
-    var note0 = tavole.map(function (_, k) { var v = note[chiave(k)]; if (v > 0) rapporti[k] = v; return v > 0; });
+    // Le foto caricate dal gestionale stanno dentro i dati: si leggono subito e
+    // non si ricordano (raddoppierebbero il peso nel browser).
+    var daRicordare = function (k) { return chiave(k).indexOf('data:') !== 0; };
+    var ricorda = function (k) {
+      if (!daRicordare(k)) return;
+      note[chiave(k)] = Math.round(rapporti[k] * 1000) / 1000;
+      try { localStorage.setItem(CHIAVE, JSON.stringify(note)); } catch (e) {}
+    };
+    var note0 = tavole.map(function (_, k) { var v = daRicordare(k) && note[chiave(k)]; if (v > 0) rapporti[k] = v; return v > 0; });
     var fatto = false, larghezza = 0, altezza = 0;
+    var larghezzaUtile = function () { var s = getComputedStyle(box); return box.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight); };
     function pronta() {
       if (fatto) return;
       fatto = true;
-      tavole.forEach(function (_, k) { note[chiave(k)] = Math.round(rapporti[k] * 1000) / 1000; });
-      try { localStorage.setItem(CHIAVE, JSON.stringify(note)); } catch (e) {}
-      larghezza = box.clientWidth;
+      larghezza = larghezzaUtile();
       altezza = document.documentElement.clientHeight;
       componi();
       // Si ricompone se cambia la larghezza (o molto l'altezza): non quando sul
@@ -643,34 +659,39 @@
       window.addEventListener('resize', function () {
         clearTimeout(t0);
         t0 = setTimeout(function () {
-          var alto = document.documentElement.clientHeight;
-          if (box.clientWidth !== larghezza || Math.abs(alto - altezza) > 150) { larghezza = box.clientWidth; altezza = alto; componi(); }
+          // La larghezza utile cambia anche con i margini, che crescono con lo schermo.
+          var alto = document.documentElement.clientHeight, utile = larghezzaUtile();
+          if (Math.abs(utile - larghezza) > 1 || Math.abs(alto - altezza) > 150) { larghezza = utile; altezza = alto; componi(); }
         }, 150);
       });
     }
     // Le misure di una foto arrivano prima della foto intera: si controlla
     // spesso, senza aspettare che sia scaricata tutta.
     var lette = note0.slice(), inizio = Date.now();
-    // Una foto che arriva dopo i 3 secondi: si ricompone, per non tagliarla.
-    function tardiva(k) {
-      var img = $('img', tavole[k]), t1;
-      img.addEventListener('load', function () {
+    // Una foto che arriva dopo i 3 secondi, o diversa da come la si ricordava
+    // (sostituita): si ricompone, per non tagliarla.
+    var t1;
+    function controllaArrivo(k) {
+      var img = $('img', tavole[k]);
+      var arrivata = function () {
         if (!img.naturalWidth) return;
-        rapporti[k] = img.naturalWidth / img.naturalHeight;
-        note[chiave(k)] = Math.round(rapporti[k] * 1000) / 1000;
-        try { localStorage.setItem(CHIAVE, JSON.stringify(note)); } catch (e) {}
-        clearTimeout(t1); t1 = setTimeout(componi, 120);
-      }, { once: true });
+        var vero = img.naturalWidth / img.naturalHeight;
+        if (Math.abs(vero - rapporti[k]) < 0.01) return;
+        rapporti[k] = vero;
+        ricorda(k);
+        if (fatto) { clearTimeout(t1); t1 = setTimeout(componi, 120); }
+      };
+      if (img.complete) arrivata(); else img.addEventListener('load', arrivata, { once: true });
     }
     (function controlla() {
       tavole.forEach(function (tv, k) {
         if (lette[k]) return;
         var img = $('img', tv);
-        if (img.naturalWidth) { rapporti[k] = img.naturalWidth / img.naturalHeight; lette[k] = true; }
+        if (img.naturalWidth) { rapporti[k] = img.naturalWidth / img.naturalHeight; lette[k] = true; ricorda(k); }
         else if (img.complete) lette[k] = true; // non si carica: resta 3:2
       });
       if (lette.every(Boolean) || Date.now() - inizio > 3000) {
-        lette.forEach(function (ok, k) { if (!ok) tardiva(k); });
+        tavole.forEach(function (_, k) { controllaArrivo(k); });
         pronta();
       }
       else setTimeout(controlla, 50);

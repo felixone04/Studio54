@@ -15,22 +15,26 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
-    // Schermo in verticale: le foto verticali dell'app; girato in
-    // orizzontale (telefono o tablet): quelle orizzontali del sito, saltando
-    // (come sul sito) una verticale caricata per sbaglio.
+    // Come sul sito: schermo in verticale, le foto verticali; in orizzontale
+    // quelle orizzontali, saltando una verticale caricata per sbaglio. Se la
+    // serie è vuota si usa l'altra.
     final landscape = context.w > context.h;
     final aspects = PhotoAspects.instance;
     if (landscape) aspects.resolveAll(s.siteCarousel);
     return ListenableBuilder(
       listenable: aspects,
       builder: (context, _) {
+        final site = s.siteCarousel, app = s.appCarousel;
         final wide = [
-          for (final u in s.siteCarousel)
+          for (final u in site)
             if (!aspects.notLandscape(u)) u,
         ];
-        final photos = landscape
-            ? (wide.isEmpty ? s.siteCarousel : wide)
-            : s.appCarousel;
+        final List<String> photos;
+        if (landscape) {
+          photos = site.isEmpty ? app : (wide.isEmpty ? site : wide);
+        } else {
+          photos = app.isEmpty ? site : app;
+        }
         final featured = s.featuredWorks;
         final h = context.h;
         return SiteScaffold(

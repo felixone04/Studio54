@@ -413,6 +413,11 @@ class _WorkPageState extends State<WorkPage> {
   List<String>? _frozenUrls;
   Map<String, double> _frozen = const {};
 
+  /// Foto di cui, al momento di fermare le misure, si aspettavano ancora le
+  /// proporzioni: quando arrivano si ricompone una volta, per non tagliarle.
+  Set<String> _guessed = const {};
+  bool _retried = false;
+
   @override
   void initState() {
     super.initState();
@@ -461,11 +466,19 @@ class _WorkPageState extends State<WorkPage> {
       );
     }
     final urls = [for (final p in w.photos) p.url];
+    if (!_retried) {
+      _retried = true;
+      _aspects.retry(urls);
+    }
     _aspects.resolveAll(urls);
     if (_frozenUrls == null || !listEquals(_frozenUrls, urls)) {
       final ready = _timeUp || urls.every(_aspects.settled);
       if (ready) {
         _frozenUrls = urls;
+        _guessed = {
+          for (final u in urls)
+            if (_aspects.of(u) == null) u,
+        };
         _frozen = {
           for (final u in urls) u: (_aspects.of(u) ?? 1.5).clamp(0.4, 3.0),
         };
@@ -474,6 +487,17 @@ class _WorkPageState extends State<WorkPage> {
           if (mounted) setState(() => _timeUp = true);
         });
       }
+    }
+    final late = [
+      for (final u in _guessed)
+        if (_aspects.of(u) != null) u,
+    ];
+    if (late.isNotEmpty) {
+      _frozen = {
+        ..._frozen,
+        for (final u in late) u: _aspects.of(u)!.clamp(0.4, 3.0),
+      };
+      _guessed = _guessed.difference(late.toSet());
     }
     final ready = _frozenUrls != null && listEquals(_frozenUrls, urls);
     double ratio(String u) => _frozen[u] ?? 1.5;
@@ -521,7 +545,6 @@ class _WorkPageState extends State<WorkPage> {
                                 );
                                 return Center(
                                   child: _Photo(
-                                    url: urls[i],
                                     label: 'Foto ${i + 1}',
                                     onTap: () =>
                                         showPhotoViewer(context, urls, i),
@@ -547,13 +570,7 @@ class _WorkPageState extends State<WorkPage> {
 }
 
 class _Photo extends StatelessWidget {
-  const _Photo({
-    required this.url,
-    required this.label,
-    required this.onTap,
-    required this.child,
-  });
-  final String url;
+  const _Photo({required this.label, required this.onTap, required this.child});
   final String label;
   final VoidCallback onTap;
   final Widget child;
@@ -685,7 +702,6 @@ class _Scattered extends StatelessWidget {
     final maxH = context.h * 0.9;
 
     Widget tile(int i, double w, double h) => _Photo(
-      url: photos[i],
       label: 'Foto ${i + 1}',
       onTap: () => open(photos, i),
       child: SizedBox(width: w, height: h, child: PhotoImage(photos[i])),

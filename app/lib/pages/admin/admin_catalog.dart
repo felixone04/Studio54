@@ -10,13 +10,13 @@ import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
 import 'admin_widgets.dart';
 
-// I due caroselli d'apertura: orizzontale per il sito, verticale per l'app.
-// Sono due elenchi separati: le modifiche a uno non toccano l'altro.
+// I due caroselli d'apertura, per sito e app: si vede quello del verso dello
+// schermo. Sono due elenchi separati: le modifiche a uno non toccano l'altro.
 
 class AdminCarousel extends StatefulWidget {
   const AdminCarousel({super.key, required this.vertical});
 
-  /// Vero: il carosello dell'app (foto verticali); falso: quello del sito.
+  /// Vero: il carosello verticale; falso: quello orizzontale.
   final bool vertical;
 
   @override
@@ -103,12 +103,12 @@ class _AdminCarouselState extends State<AdminCarousel> {
         AdminHeader(
           title: v ? 'Carosello verticale' : 'Carosello orizzontale',
           subtitle: v
-              ? 'Nell\'app tenuta in verticale: le foto riempiono lo schermo '
-                    'del telefono all\'apertura e scorrono da sole, 4 secondi '
-                    'l\'una. Usa foto verticali.'
-              : 'Sul sito (e nell\'app con il telefono girato in orizzontale): '
-                    'le foto scorrono a tutto schermo nella home, 4 secondi '
-                    'l\'una, con dissolvenza. Usa foto orizzontali.',
+              ? 'Sito e app, schermo in verticale (telefono, tablet o monitor '
+                    'girato): le foto riempiono lo schermo all\'apertura e '
+                    'scorrono da sole, 4 secondi l\'una. Usa foto verticali.'
+              : 'Sito e app, schermo in orizzontale (computer, tablet o '
+                    'telefono girato): le foto scorrono a tutto schermo nella '
+                    'home, 4 secondi l\'una, con dissolvenza. Usa foto orizzontali.',
         ),
         Panel(
           child: Column(
@@ -237,7 +237,7 @@ class _PhotoCard extends StatelessWidget {
         ? null
         : (vertical && a > 1
               ? 'Orizzontale: verrà tagliata'
-              : (!vertical && a <= 1 ? 'Verticale: sul sito si salta' : null));
+              : (!vertical && a <= 1 ? 'Verticale: si salta' : null));
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,

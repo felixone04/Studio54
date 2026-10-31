@@ -109,10 +109,10 @@ class AppState extends ChangeNotifier {
       if (p.active && p.url.trim().isNotEmpty) p.url,
   ];
 
-  /// Foto del carosello d'apertura dell'app (verticali).
+  /// Foto del carosello d'apertura per lo schermo in verticale.
   List<String> get appCarousel => _activeUrls(carouselApp);
 
-  /// Foto del carosello d'apertura del sito (orizzontali).
+  /// Foto del carosello d'apertura per lo schermo in orizzontale.
   List<String> get siteCarousel => _activeUrls(carouselSite);
 
   /// I lavori visibili nell'app.

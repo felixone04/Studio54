@@ -87,7 +87,7 @@ Il certificato HTTPS lo fanno Cloudflare e Hostinger in automatico. In Cloudflar
 |---|---|
 | `contenuti` | Nome dello studio, biografia, metodo, contatti, colore |
 | `lavori`, `foto_lavori` | Lavori, foto, ordine, in evidenza, Sito/App, pubblicato |
-| `caroselli` | Foto del carosello orizzontale (sito) e verticale (app) |
+| `caroselli` | Foto del carosello orizzontale e verticale: sito e app usano quello che corrisponde al verso dello schermo |
 | `modulo_preventivo` | Tipi di evento, richieste, parti accese |
 | `richieste` | Le richieste arrivate da sito e app, con lo stato |
 | `appuntamenti` | Calendario |

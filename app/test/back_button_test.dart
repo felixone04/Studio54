@@ -158,6 +158,34 @@ void main() {
     await disposeApp(tester);
   });
 
+  testWidgets('girando il dispositivo le modifiche non salvate restano', (
+    tester,
+  ) async {
+    final s = await loadState();
+    await s.loginAdmin(
+      Seed.demoAdminUser,
+      Seed.demoAdminPassword,
+      remember: false,
+    );
+    await pumpApp(tester, s, size: const Size(600, 960));
+    await goTo(tester, '/admin/biografia');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Titolo della pagina'),
+      'Nuovo titolo',
+    );
+    await settle(tester, 300);
+
+    // Da verticale (menu a scomparsa) a orizzontale (menu fisso) e ritorno.
+    setScreen(tester, const Size(960, 600));
+    await settle(tester, 400);
+    expect(find.text('Nuovo titolo'), findsOneWidget);
+    setScreen(tester, const Size(600, 960));
+    await settle(tester, 400);
+    expect(find.text('Nuovo titolo'), findsOneWidget);
+    expect(find.text('Salva'), findsOneWidget);
+    await disposeApp(tester);
+  });
+
   testWidgets('nel gestionale chiede prima di perdere le modifiche', (
     tester,
   ) async {

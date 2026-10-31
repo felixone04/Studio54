@@ -11,6 +11,7 @@ import 'site_scaffold.dart' show NavTint;
 
 // ------------------------------------------------------------------ immagini
 
+/// Le ultime foto caricate decodificate (non tutte: occuperebbero troppa memoria).
 final _dataCache = <String, Uint8List>{};
 
 /// Decodifica una foto caricata; null se il dato è danneggiato.
@@ -18,6 +19,7 @@ Uint8List? _decode(String url) {
   final hit = _dataCache[url];
   if (hit != null) return hit;
   try {
+    if (_dataCache.length >= 24) _dataCache.remove(_dataCache.keys.first);
     return _dataCache[url] = base64Decode(url.substring(url.indexOf(',') + 1));
   } on FormatException {
     return null;
@@ -53,11 +55,19 @@ class PhotoAspects extends ChangeNotifier {
 
   void _fail(String url) {
     _failed.add(url);
-    notifyListeners();
+    // Mai durante il disegno di chi ha chiesto la foto.
+    Future.microtask(notifyListeners);
   }
 
   /// Vero solo quando si sa con certezza che la foto non è orizzontale.
   bool notLandscape(String url) => (_known[url] ?? 1.5) <= 1.0;
+
+  /// Si riprova a leggere le foto non riuscite (es. rete tornata).
+  void retry(Iterable<String> urls) {
+    for (final u in urls) {
+      if (_failed.remove(u)) _pending.remove(u);
+    }
+  }
 
   void resolveAll(Iterable<String> urls) {
     for (final u in urls) {

@@ -27,9 +27,8 @@ flutter build apk --release --target-platform android-arm,android-arm64
 Si entra dall'Area clienti con le credenziali del titolare (di prova: `titolare` / `studio54`). Le sezioni sono raggruppate come nel gestionale del sito:
 
 - **Attività** – Panoramica, Richieste (stato nuova → contattata → confermata, contatto rapido, "Fissa appuntamento"), Calendario
-- **Sito e app** – Lavori (stella = in evidenza, Sito/App = dove si vede), Preventivo (voci e parti accese), Biografia, Contatti
-- **Solo sito** – Carosello orizzontale (usato anche dall'app con il telefono girato)
-- **Solo app** – Carosello verticale, Area clienti (account, cartelle, foto, video, documenti)
+- **Sito e app** – Lavori (stella = in evidenza, Sito/App = dove si vede), Preventivo (voci e parti accese), Biografia, Contatti, Carosello orizzontale e verticale (si usa quello del verso dello schermo)
+- **Solo app** – Area clienti (account, cartelle, foto, video, documenti)
 - **Sistema** – Impostazioni: accesso del titolare, copia di sicurezza, dati d'esempio
 
 ## Dove stanno i dati
