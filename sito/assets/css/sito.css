@@ -316,7 +316,7 @@ main { padding-top: var(--barra); min-height: 60vh; }
 
 /* ============================================================== PREVENTIVO */
 
-.preventivo { padding-top: var(--inizio); padding-bottom: var(--sezione); max-width: calc(980 * var(--px)); }
+.preventivo { padding-top: var(--inizio); padding-bottom: var(--sezione); max-width: calc(980 * var(--px)); margin: 0 auto; }
 .modulo { max-width: calc(820 * var(--px)); margin: 0 auto; }
 .passo-modulo + .passo-modulo { margin-top: clamp(calc(26 * var(--px)), 3vw, calc(36 * var(--px))); padding-top: clamp(calc(26 * var(--px)), 3vw, calc(36 * var(--px))); border-top: 1px solid var(--linea); }
 .passo-modulo h2 { display: flex; align-items: center; gap: calc(12 * var(--px)); margin-bottom: clamp(calc(16 * var(--px)), 2vw, calc(22 * var(--px))); font: 400 clamp(calc(17 * var(--px)), 1.6vw, calc(20 * var(--px)))/1.2 var(--display); letter-spacing: .1em; }
