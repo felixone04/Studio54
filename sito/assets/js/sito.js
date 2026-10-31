@@ -16,6 +16,8 @@
   var maiuscolo = function (t) { return (t || '').toLocaleUpperCase('it-IT'); };
   var FRECCIA_S = '<svg viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg>';
   var FRECCIA_D = '<svg viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg>';
+  // La foto a schermo intero si chiede grande quanto lo schermo (4K compreso).
+  var LARGA = Math.max(2400, Math.min(3840, Math.round(Math.max(screen.width, screen.height) * (window.devicePixelRatio || 1))));
 
   /* ================================================= PARTI COMUNI A TUTTE */
 
@@ -56,7 +58,7 @@
       ' data-evento="' + esc((w.category || '').trim().toLowerCase()) + '"' +
       ' data-stagione="' + esc(S54.stagione(w).toLowerCase()) + '"' +
       ' data-location="' + esc((w.setting || '').trim().toLowerCase()) + '">' +
-      '<span class="scheda-foto"><img ' + S54.srcset(S54.copertina(w), '(max-width: 719px) 100vw, 50vw') + ' alt="" loading="lazy"></span>' +
+      '<span class="scheda-foto"><img ' + S54.srcset(S54.copertina(w), '(max-width: 599px) 100vw, 50vw') + ' alt="" loading="lazy"></span>' +
       '<span class="scheda-nome">' + esc(w.title) + '</span>' +
       '<span class="scheda-info">' + esc(S54.unisci([w.location, w.category])) + '</span></a>';
   }
@@ -67,13 +69,21 @@
 
   // Home: il carosello e i lavori in evidenza.
   var carosello = $('[data-carosello]');
-  if (carosello) {
-    var foto = (D.carouselSite || []).filter(function (p) { return p.active !== false && (p.url || '').trim(); });
+  // Schermo in orizzontale: le foto orizzontali. In verticale (telefono,
+  // tablet, monitor girato): quelle verticali, come nell'app. Manca una serie:
+  // si usa l'altra.
+  var orizzontale = window.matchMedia('(min-aspect-ratio: 1/1)');
+  var attive = function (l) { return (l || []).filter(function (p) { return p.active !== false && (p.url || '').trim(); }); };
+  var serieGiusta = function () { return attive(orizzontale.matches ? D.carouselSite : D.carouselApp).length > 0; };
+  function disegnaCarosello() {
+    var foto = attive(serieGiusta() === orizzontale.matches ? D.carouselSite : D.carouselApp);
     carosello.innerHTML = foto.map(function (p, i) {
-      return '<figure class="diapo' + (i === 0 ? ' attiva' : '') + '"><img ' + S54.srcset(p.url, '100vw') + ' alt=""' + (i > 1 ? ' loading="lazy"' : '') + '></figure>';
+      return '<figure class="diapo' + (i === 0 ? ' attiva' : '') + '"><img ' + S54.srcset(p.url, '(min-aspect-ratio: 1/1) 100vw, 120vw') + ' alt=""' + (i > 1 ? ' loading="lazy"' : '') + '></figure>';
     }).join('') + (foto.length > 1 ? '<div class="apertura-frecce"><button class="tondo chiaro ap-prec" type="button" aria-label="Foto precedente">' + FRECCIA_S + '</button><button class="tondo chiaro ap-succ" type="button" aria-label="Foto successiva">' + FRECCIA_D + '</button></div>' : '');
-    if (!foto.length) carosello.hidden = true;
+    carosello.hidden = !foto.length;
+    document.body.classList.toggle('senza-apertura', !foto.length);
   }
+  if (carosello) disegnaCarosello();
   var evidenza = $('[data-evidenza]');
   if (evidenza) {
     var scelti = S54.inEvidenza(D);
@@ -119,8 +129,8 @@
     } else {
       document.title = w.title + ' · ' + (C.studioName || 'Studio 54');
       collageBox.innerHTML = w.photos.map(function (p, i) {
-        return '<figure class="tavola" data-foto="' + esc(S54.foto(p.url, 2400)) + '" tabindex="0" role="button" aria-label="' + esc(p.caption || 'Foto ' + (i + 1)) + '">' +
-          '<img ' + S54.srcset(p.url, '(max-width: 599px) 100vw, 60vw') + ' alt="' + esc(p.caption || '') + '"></figure>';
+        return '<figure class="tavola" data-foto="' + esc(S54.foto(p.url, LARGA)) + '" tabindex="0" role="button" aria-label="' + esc(p.caption || 'Foto ' + (i + 1)) + '">' +
+          '<img ' + S54.srcset(p.url, '(max-width: 599px) 100vw, 70vw') + ' alt="' + esc(p.caption || '') + '"></figure>';
       }).join('');
     }
   }
@@ -233,10 +243,7 @@
   /* ========================================================= BARRA E MENU */
 
   var barra = $('#barra');
-  var aperturaHome = $('.pagina-index .apertura:not([hidden])');
-  var orizzontale = window.matchMedia('(min-aspect-ratio: 1/1)');
-  // Sopra la foto d'apertura (home, schermo in orizzontale) la barra è
-  // trasparente; altrove ha il bianco della pagina, senza riga di stacco.
+  // Sopra la foto d'apertura della home la barra è trasparente; altrove ha il bianco della pagina, senza riga di stacco.
   // Il passaggio segue lo scorrimento: mentre il bordo della foto sale verso
   // la barra, il vetro si riempie piano piano ed è pieno quando la foto è
   // passata tutta sotto.
@@ -246,8 +253,8 @@
     inAttesa = false;
     if (!barra) return;
     var p = 1;
-    if (aperturaHome && orizzontale.matches) {
-      var hb = barra.offsetHeight, bordo = aperturaHome.getBoundingClientRect().bottom;
+    if (carosello && !carosello.hidden) {
+      var hb = barra.offsetHeight, bordo = carosello.getBoundingClientRect().bottom;
       p = Math.min(1, Math.max(0, 1 - (bordo - hb) / (hb * 1.5)));
     }
     p = Math.round(p * 1000) / 1000;
@@ -370,10 +377,8 @@
 
   $$('[data-carosello]').forEach(function (car) {
     var intervallo = +car.getAttribute('data-intervallo') || 4000;
-    var tutte = $$('.diapo', car);
-    var mostrate = tutte.slice();
+    var tutte = [], mostrate = [];
     var i = 0, timer = null, tUscita = null;
-    if (!tutte.length) return;
 
     function disegna() {
       if (!mostrate.length) return;
@@ -403,29 +408,48 @@
       disegna();
       riparti();
     }
-    // Nel carosello del sito solo foto orizzontali: una verticale caricata
-    // per sbaglio si salta.
-    tutte.forEach(function (d) {
-      var img = $('img', d);
-      var controlla = function () {
-        if (img.naturalWidth && img.naturalWidth <= img.naturalHeight && mostrate.length > 1) {
+    // Prepara le foto appena disegnate (all'apertura e girando lo schermo).
+    function prepara() {
+      tutte = $$('.diapo', car);
+      mostrate = tutte.slice();
+      i = 0;
+      // Una foto nel verso sbagliato, caricata per sbaglio, si salta. Se c'è
+      // solo l'altra serie si usa quella, tagliata quanto serve.
+      var giusta = serieGiusta();
+      tutte.forEach(function (d) {
+        var img = $('img', d);
+        var controlla = function () {
+          if (tutte.indexOf(d) < 0 || !giusta || !img.naturalWidth || mostrate.length < 2) return;
+          var largaFoto = img.naturalWidth > img.naturalHeight;
+          if (largaFoto === orizzontale.matches) return;
           var corrente = mostrate[i];
           mostrate = mostrate.filter(function (x) { return x !== d; });
           var k = mostrate.indexOf(corrente);
           i = k >= 0 ? k : 0;
           disegna();
           riparti();
-        }
-      };
-      if (img.complete) controlla(); else img.addEventListener('load', controlla);
-    });
-    $$('.ap-prec', car).forEach(function (b) { b.addEventListener('click', function () { vai(i - 1); }); });
-    $$('.ap-succ', car).forEach(function (b) { b.addEventListener('click', function () { vai(i + 1); }); });
+        };
+        if (img.complete) controlla(); else img.addEventListener('load', controlla);
+      });
+      $$('.ap-prec', car).forEach(function (b) { b.addEventListener('click', function () { vai(i - 1); }); });
+      $$('.ap-succ', car).forEach(function (b) { b.addEventListener('click', function () { vai(i + 1); }); });
+      disegna();
+    }
     sfoglia(car, function (d) { vai(i + d); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) clearInterval(timer); else riparti(); });
-    disegna();
+    prepara();
     // Il conto dei 4 secondi parte quando sparisce il logo d'apertura.
     quandoPronto(riparti);
+    // Lo schermo si gira: cambiano le foto, senza ricaricare la pagina.
+    var girato = function () {
+      clearInterval(timer);
+      disegnaCarosello();
+      prepara();
+      riparti();
+      aggiornaBarra();
+    };
+    if (orizzontale.addEventListener) orizzontale.addEventListener('change', girato);
+    else orizzontale.addListener(girato);
   });
 
   /* ======================================================== FILTRI LAVORI */
@@ -544,10 +568,14 @@
       box.innerHTML = '';
       var stile = getComputedStyle(box);
       var piena = Math.floor(box.clientWidth - parseFloat(stile.paddingLeft) - parseFloat(stile.paddingRight)) - 1;
-      var spazio = Math.max(10, Math.min(22, piena * 0.018));
+      // Come --px nel CSS: oltre FullHD anche gli spazi crescono con lo schermo.
+      var px = Math.max(1, Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+      var spazio = Math.max(10, Math.min(22 * px, piena * 0.018));
       box.style.setProperty('--spazio', spazio + 'px');
       // Altezza dello schermo senza le barre del browser che vanno e vengono.
-      var maxH = document.documentElement.clientHeight * 0.9;
+      var alto = document.documentElement.clientHeight, maxH = alto * 0.9;
+      // Monitor molto larghi: una foto o una riga non è mai molto più alta dello schermo.
+      var maxRiga = alto * 1.3;
       var riga = function () { var d = document.createElement('div'); d.className = 'collage-riga'; box.appendChild(d); return d; };
       if (window.innerWidth < 600) {
         // Telefono: una sotto l'altra, intere.
@@ -569,7 +597,7 @@
           var d = riga();
           if (p.tipo === 'una') {
             var h = piena / r(p.ids[0]);
-            if (r(p.ids[0]) <= 1) h = Math.min(h, maxH);
+            h = Math.min(h, r(p.ids[0]) <= 1 ? maxH : maxRiga);
             d.appendChild(misura(t(p.ids[0]), h * r(p.ids[0]), h));
           } else if (p.tipo === 'fila') {
             var somma = p.ids.reduce(function (s, k) { return s + r(k); }, 0);
@@ -581,6 +609,7 @@
             var av = r(p.alta), kk = 1 / r(p.su) + 1 / r(p.giu);
             var c = (piena - spazio - av * spazio) / (av * kk + 1);
             var hp = c * kk + spazio;
+            if (hp > maxRiga) { hp = maxRiga; c = (hp - spazio) / kk; }
             var col = document.createElement('div');
             col.className = 'collage-colonna';
             col.appendChild(misura(t(p.su), c, c / r(p.su)));
@@ -599,20 +628,24 @@
     try { note = JSON.parse(localStorage.getItem(CHIAVE)) || {}; } catch (e) {}
     var chiave = function (k) { return tavole[k].getAttribute('data-foto'); };
     var note0 = tavole.map(function (_, k) { var v = note[chiave(k)]; if (v > 0) rapporti[k] = v; return v > 0; });
-    var fatto = false, larghezza = 0;
+    var fatto = false, larghezza = 0, altezza = 0;
     function pronta() {
       if (fatto) return;
       fatto = true;
       tavole.forEach(function (_, k) { note[chiave(k)] = Math.round(rapporti[k] * 1000) / 1000; });
       try { localStorage.setItem(CHIAVE, JSON.stringify(note)); } catch (e) {}
       larghezza = box.clientWidth;
+      altezza = document.documentElement.clientHeight;
       componi();
-      // Si ricompone solo se cambia la larghezza: non quando sul telefono
-      // compare o sparisce la barra del browser.
+      // Si ricompone se cambia la larghezza (o molto l'altezza): non quando sul
+      // telefono compare o sparisce la barra del browser.
       var t0;
       window.addEventListener('resize', function () {
         clearTimeout(t0);
-        t0 = setTimeout(function () { if (box.clientWidth !== larghezza) { larghezza = box.clientWidth; componi(); } }, 150);
+        t0 = setTimeout(function () {
+          var alto = document.documentElement.clientHeight;
+          if (box.clientWidth !== larghezza || Math.abs(alto - altezza) > 150) { larghezza = box.clientWidth; altezza = alto; componi(); }
+        }, 150);
       });
     }
     // Le misure di una foto arrivano prima della foto intera: si controlla

@@ -418,7 +418,7 @@
       titolo: nuovo ? 'Nuovo appuntamento' : 'Appuntamento',
       corpo: campo('ap-titolo', 'Titolo *', a.title || '') +
         '<div class="coppia">' + campo('ap-giorno', 'Giorno *', giornoIso(inizio), { tipo: 'date' }) +
-        '<label class="campo"><span>&nbsp;</span><span class="spunta-riga" style="margin:12px 0 0"><input type="checkbox" id="ap-tutto"' + (a.allDay ? ' checked' : '') + '> Tutto il giorno</span></label></div>' +
+        '<label class="campo"><span>&nbsp;</span><span class="spunta-riga" style="margin:calc(12 * var(--px)) 0 0"><input type="checkbox" id="ap-tutto"' + (a.allDay ? ' checked' : '') + '> Tutto il giorno</span></label></div>' +
         '<div class="coppia" id="ap-ore">' + campo('ap-inizio', 'Dalle', ora(inizio), { tipo: 'time' }) + campo('ap-fine', 'Alle', ora(fine), { tipo: 'time' }) + '</div>' +
         campo('ap-luogo', 'Luogo', a.location || '') + campo('ap-note', 'Note', a.notes || '', { area: true, righe: 3 }),
       dopo: function (c) {
@@ -470,7 +470,7 @@
     var prossimi = prossimiAppuntamenti();
     p.innerHTML = testa('Calendario', 'Tocca un giorno per fissare un appuntamento, o un appuntamento per modificarlo.', '<button type="button" class="bottone pieno" data-nuovo>' + ico('piu') + 'Nuovo appuntamento</button>') +
       '<section class="scheda senza-margine"><div class="cal-testa"><button type="button" class="ico-bottone" data-mese="-1" aria-label="Mese precedente">' + ico('sinistra') + '</button>' +
-      '<span class="cal-mese">' + MESI[primo.getMonth()] + ' ' + primo.getFullYear() + '</span><span style="display:flex;gap:4px"><button type="button" class="bottone testo piccolo" data-mese="0">Oggi</button>' +
+      '<span class="cal-mese">' + MESI[primo.getMonth()] + ' ' + primo.getFullYear() + '</span><span style="display:flex;gap:calc(4 * var(--px))"><button type="button" class="bottone testo piccolo" data-mese="0">Oggi</button>' +
       '<button type="button" class="ico-bottone" data-mese="1" aria-label="Mese successivo">' + ico('destra') + '</button></span></div>' +
       '<div class="cal-giorni">' + ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map(function (d) { return '<span>' + d + '</span>'; }).join('') + '</div><div class="cal-griglia">' + griglia + '</div></section>' +
       '<section class="scheda"><div class="scheda-testa"><h2>In programma</h2></div>' + (prossimi.slice(0, 8).map(rigaAppuntamento).join('') || '<p class="vuoto">Nessun appuntamento in programma.</p>') + '</section>';
@@ -497,7 +497,7 @@
   SEZIONE.lavori = function (p) {
     p.innerHTML = testa('Lavori', 'Gli stessi sul sito e nell\'app. La <b>stella</b> mette un lavoro in evidenza nella home (al massimo 4); <b>Sito</b> e <b>App</b> scelgono dove si vede.',
       '<a class="bottone bordo" href="' + S54.url('lavori') + '" target="_blank" rel="noopener">' + ico('esterno') + 'Vedi sul sito</a><button type="button" class="bottone pieno" data-nuovo>' + ico('piu') + 'Nuovo lavoro</button>') +
-      '<p class="tenue piccolo" style="margin:-12px 0 14px">In evidenza nella home: ' + featured() + ' di 4.</p>' +
+      '<p class="tenue piccolo" style="margin:calc(-12 * var(--px)) 0 calc(14 * var(--px))">In evidenza nella home: ' + featured() + ' di 4.</p>' +
       '<section class="scheda senza-margine">' + (P.works.map(function (w, i) {
         var nascosto = w.published === false;
         return '<div class="riga' + (nascosto ? ' spenta' : '') + '" data-i="' + i + '">' +
@@ -558,10 +558,10 @@
         '<div class="coppia">' + campo('lv-date', 'Data', d.date, { aiuto: 'Es. Giugno 2024.' }) +
         '<label class="campo"><span>Stagione</span><select id="lv-season"><option value="">Dalla data</option>' + S54.STAGIONI.map(function (s) { return '<option' + (d.season === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></label></div>' +
         campo('lv-setting', 'Tipo di location', d.setting, { lista: 'lv-luoghi', aiuto: 'Serve al filtro "Location" della pagina Lavori.' }) +
-        '<h3 id="lv-conto"></h3><p class="nota-piccola" style="margin:-4px 0 10px">Orizzontali e verticali insieme: sul sito si dispongono da sole, nell\'app una sotto l\'altra. La stella sceglie la copertina.</p>' +
-        '<div class="griglia-foto piccole" id="lv-foto"></div><p class="errore-accesso" id="lv-err-foto" style="margin-top:8px"></p>' +
+        '<h3 id="lv-conto"></h3><p class="nota-piccola" style="margin:calc(-4 * var(--px)) 0 calc(10 * var(--px))">Orizzontali e verticali insieme: sul sito si dispongono da sole, nell\'app una sotto l\'altra. La stella sceglie la copertina.</p>' +
+        '<div class="griglia-foto piccole" id="lv-foto"></div><p class="errore-accesso" id="lv-err-foto" style="margin-top:calc(8 * var(--px))"></p>' +
         '<div class="aggiungi-foto">' + caricatore('Carica dal computer', 'image/*', true).replace('<label', '<label id="lv-carica"') +
-        '<span class="riga-aggiungi" style="margin:0;flex:1;min-width:240px"><span class="campo" style="margin:0"><input id="lv-url" placeholder="Oppure incolla l\'indirizzo di una foto (https://…)"></span><button type="button" class="bottone bordo" id="lv-aggiungi">Aggiungi</button></span></div>' +
+        '<span class="riga-aggiungi" style="margin:0;flex:1;min-width:calc(240 * var(--px))"><span class="campo" style="margin:0"><input id="lv-url" placeholder="Oppure incolla l\'indirizzo di una foto (https://…)"></span><button type="button" class="bottone bordo" id="lv-aggiungi">Aggiungi</button></span></div>' +
         '<h3>Dove si vede</h3>' + interruttore('lv-published', d.published !== false, 'Pubblicato', 'Spento: il lavoro resta qui ma non si vede da nessuna parte.') +
         interruttore('lv-featured', !!d.featured, 'In evidenza nella home', 'Al massimo 4 lavori, sul sito e nell\'app.') +
         interruttore('lv-onSite', d.onSite !== false, 'Sul sito') + interruttore('lv-onApp', d.onApp !== false, 'Nell\'app'),
@@ -694,7 +694,7 @@
   /** Campo per una foto: anteprima, indirizzo e caricamento dal computer. */
   function campoFoto(id, etichetta, valore) {
     return '<div class="campo"><span>' + etichetta + '</span><div class="campo-foto">' + (valore ? '<img src="' + esc(miniatura(valore, 400)) + '" alt="" id="' + id + '-anteprima">' : '<span class="segnaposto" id="' + id + '-anteprima"></span>') +
-      '<div><span class="campo" style="margin-bottom:10px"><input id="' + id + '" value="' + esc((valore || '').indexOf('data:') === 0 ? '' : valore) + '" placeholder="Indirizzo della foto (https://…)"></span>' +
+      '<div><span class="campo" style="margin-bottom:calc(10 * var(--px))"><input id="' + id + '" value="' + esc((valore || '').indexOf('data:') === 0 ? '' : valore) + '" placeholder="Indirizzo della foto (https://…)"></span>' +
       caricatore('Carica dal computer', 'image/*').replace('<label', '<label id="' + id + '-carica"') + '</div></div></div>';
   }
   function collegaFoto(root, id, imposta) {
@@ -727,7 +727,7 @@
         campoFoto('bio-bioImage', 'Foto accanto al racconto', c.bioImage || '') + '</section>' +
         '<section class="scheda pannello"><h2>Il metodo</h2><p class="tenue">I passaggi del lavoro: numero, titolo e testo.</p>' + c.timeline.map(function (m, i) {
           return '<div class="passo-metodo" data-i="' + i + '"><div class="passo-metodo-testa"><span>Passaggio ' + (i + 1) + '</span><span style="display:flex"><span class="ordina"><button type="button" data-sposta="-1" aria-label="Sposta su"' + (i ? '' : ' disabled') + '>' + ico('su') + '</button><button type="button" data-sposta="1" aria-label="Sposta giù"' + (i < c.timeline.length - 1 ? '' : ' disabled') + '>' + ico('giu') + '</button></span><button type="button" class="ico-bottone" data-via aria-label="Elimina">' + ico('cestino') + '</button></span></div>' +
-            '<div class="coppia" style="grid-template-columns:110px 1fr">' + campo('m' + i + '-year', 'Numero', m.year || '') + campo('m' + i + '-title', 'Titolo', m.title || '') + '</div>' + campo('m' + i + '-text', 'Testo', m.text || '', { area: true, righe: 2 }) + '</div>';
+            '<div class="coppia" style="grid-template-columns:calc(110 * var(--px)) 1fr">' + campo('m' + i + '-year', 'Numero', m.year || '') + campo('m' + i + '-title', 'Titolo', m.title || '') + '</div>' + campo('m' + i + '-text', 'Testo', m.text || '', { area: true, righe: 2 }) + '</div>';
         }).join('') + '<button type="button" class="bottone bordo" data-aggiungi>' + ico('piu') + 'Aggiungi passaggio</button></section>';
       barraSalva(p, function () { P.content = c; return salvaP('Biografia salvata.'); }, function () { disegna(); });
       ['bioTitle', 'bioIntro', 'bioStory'].forEach(function (k) { $('#bio-' + k, p).addEventListener('input', function (e) { c[k] = e.target.value; segnaSporco(); }); });
@@ -789,7 +789,7 @@
           '<button type="button" class="ico-bottone" data-via aria-label="Togli">' + ico('cestino') + '</button></span></div></figure>';
       }).join('') + '</div>' + (l.length ? '' : '<p class="vuoto">Nessuna foto: aggiungi la prima.</p>') +
       '<div class="aggiungi-foto">' + caricatore('Carica dal computer', 'image/*', true).replace('<label', '<label id="car-carica"') +
-      '<span class="riga-aggiungi" style="margin:0;flex:1;min-width:240px"><span class="campo" style="margin:0"><input id="car-url" placeholder="Oppure incolla l\'indirizzo di una foto (https://…)"></span><button type="button" class="bottone bordo" id="car-aggiungi">Aggiungi</button></span></div></section>';
+      '<span class="riga-aggiungi" style="margin:0;flex:1;min-width:calc(240 * var(--px))"><span class="campo" style="margin:0"><input id="car-url" placeholder="Oppure incolla l\'indirizzo di una foto (https://…)"></span><button type="button" class="bottone bordo" id="car-aggiungi">Aggiungi</button></span></div></section>';
 
     $$('.foto-scheda', p).forEach(function (s) {
       var i = +s.getAttribute('data-i'), img = $('img', s);
@@ -859,13 +859,13 @@
         '<div class="coppia">' + campo('cl-eventDate', 'Data', d.eventDate, { aiuto: 'Es. 18 maggio 2024.' }) + campo('cl-location', 'Luogo', d.location) + '</div>' +
         campo('cl-welcome', 'Benvenuto nella sua area', d.welcome, { area: true, righe: 2 }) +
         (nuovo ? '' : interruttore('cl-active', d.active !== false, 'Accesso attivo', 'Spento: il cliente non può più entrare.')) +
-        '<h3 id="cl-conto"></h3><p class="nota-piccola" style="margin:-4px 0 10px">Il cliente li guarda nell\'app e li scarica sul telefono in alta qualità, uno alla volta.</p>' +
-        '<p class="etichetta-campo">Cartelle</p><p class="nota-piccola" style="margin:-6px 0 8px">Per dividere foto e video in sezioni (es. Preparativi, Cerimonia, Festa). Sotto ogni foto scegli la sua cartella.</p><div class="cartelle" id="cl-cartelle"></div>' +
-        '<div class="riga-aggiungi" style="margin:6px 0 16px"><span class="campo"><input id="cl-nuova-cartella" placeholder="Nuova cartella (es. Cerimonia)"></span><button type="button" class="bottone bordo" id="cl-aggiungi-cartella">' + ico('piu') + 'Crea cartella</button></div>' +
+        '<h3 id="cl-conto"></h3><p class="nota-piccola" style="margin:calc(-4 * var(--px)) 0 calc(10 * var(--px))">Il cliente li guarda nell\'app e li scarica sul telefono in alta qualità, uno alla volta.</p>' +
+        '<p class="etichetta-campo">Cartelle</p><p class="nota-piccola" style="margin:calc(-6 * var(--px)) 0 calc(8 * var(--px))">Per dividere foto e video in sezioni (es. Preparativi, Cerimonia, Festa). Sotto ogni foto scegli la sua cartella.</p><div class="cartelle" id="cl-cartelle"></div>' +
+        '<div class="riga-aggiungi" style="margin:calc(6 * var(--px)) 0 calc(16 * var(--px))"><span class="campo"><input id="cl-nuova-cartella" placeholder="Nuova cartella (es. Cerimonia)"></span><button type="button" class="bottone bordo" id="cl-aggiungi-cartella">' + ico('piu') + 'Crea cartella</button></div>' +
         '<div class="griglia-foto piccole" id="cl-media"></div>' +
         '<div class="aggiungi-foto">' + caricatore('Carica foto', 'image/*', true).replace('<label', '<label id="cl-carica"') +
-        '<label class="campo" style="margin:0;min-width:200px"><select id="cl-da-lavoro"><option value="">Prendi le foto di un lavoro…</option>' + P.works.map(function (w) { return '<option value="' + esc(w.id) + '">' + esc(w.title) + '</option>'; }).join('') + '</select></label></div>' +
-        '<div class="coppia" style="margin-top:12px">' + campo('cl-foto-url', 'Indirizzo di una foto (originale)', '', { attr: ' placeholder="https://…"' }) +
+        '<label class="campo" style="margin:0;min-width:calc(200 * var(--px))"><select id="cl-da-lavoro"><option value="">Prendi le foto di un lavoro…</option>' + P.works.map(function (w) { return '<option value="' + esc(w.id) + '">' + esc(w.title) + '</option>'; }).join('') + '</select></label></div>' +
+        '<div class="coppia" style="margin-top:calc(12 * var(--px))">' + campo('cl-foto-url', 'Indirizzo di una foto (originale)', '', { attr: ' placeholder="https://…"' }) +
         '<div class="campo"><span>&nbsp;</span><button type="button" class="bottone bordo" id="cl-foto-aggiungi">Aggiungi foto</button></div></div>' +
         '<div class="coppia">' + campo('cl-video-url', 'Indirizzo di un video (mp4)', '', { attr: ' placeholder="https://…/video.mp4"' }) + campo('cl-video-poster', 'Foto di anteprima del video', '', { attr: ' placeholder="https://…"' }) + '</div>' +
         '<button type="button" class="bottone bordo" id="cl-video-aggiungi">' + ico('video') + 'Aggiungi video</button>' +
@@ -1069,9 +1069,9 @@
       '<button type="submit" class="bottone pieno">Salva l\'accesso</button></form></section>' +
       '<section class="scheda pannello"><h2>Copia di sicurezza</h2><p class="tenue">Scarica tutti i dati in un file, o ricaricali da una copia.</p><div class="azioni">' +
       '<button type="button" class="bottone bordo" id="im-scarica">' + ico('scarica') + 'Scarica la copia</button>' + caricatore('Carica una copia', 'application/json,.json').replace('<label', '<label id="im-carica"') + '</div>' +
-      '<h2 style="margin-top:26px">Dati d\'esempio</h2><p class="tenue" style="margin:2px 0 14px">Cancella le modifiche fatte in questo browser e torna ai lavori e ai testi d\'esempio.</p>' +
+      '<h2 style="margin-top:calc(26 * var(--px))">Dati d\'esempio</h2><p class="tenue" style="margin:calc(2 * var(--px)) 0 calc(14 * var(--px))">Cancella le modifiche fatte in questo browser e torna ai lavori e ai testi d\'esempio.</p>' +
       '<button type="button" class="bottone testo rosso" id="im-esempi">Torna agli esempi</button>' +
-      '<h2 style="margin-top:26px">Database</h2><p class="tenue" style="margin:2px 0 0">Per ora i dati restano in questo browser. Quando collegheremo il database (Cloudflare) ogni modifica arriverà subito al sito e all\'app di tutti.</p></section></div>';
+      '<h2 style="margin-top:calc(26 * var(--px))">Database</h2><p class="tenue" style="margin:calc(2 * var(--px)) 0 0">Per ora i dati restano in questo browser. Quando collegheremo il database (Cloudflare) ogni modifica arriverà subito al sito e all\'app di tutti.</p></section></div>';
     $('#form-credenziali', p).addEventListener('submit', function (e) {
       e.preventDefault();
       var u = val(p, 'im-utente'), att = $('#im-attuale', p).value, n = $('#im-nuova', p).value, r = $('#im-ripeti', p).value;
