@@ -325,10 +325,17 @@ class _FilterMenuState extends State<_FilterMenu> {
                       // Sul telefono, un filtro per riga: nomi e valori in
                       // colonna, come sul sito.
                       SizedBox(
-                        width: phone ? 84 : null,
-                        child: Text(
-                          widget.title.toUpperCase(),
-                          style: label(10, color: Palette.stone),
+                        width: phone ? 94 : null,
+                        // Con il testo di sistema ingrandito il nome si
+                        // rimpicciolisce invece di spezzarsi.
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            widget.title.toUpperCase(),
+                            maxLines: 1,
+                            style: label(phone ? 11 : 10, color: Palette.stone),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -337,7 +344,7 @@ class _FilterMenuState extends State<_FilterMenu> {
                       ConstrainedBox(
                         // Nomi molto lunghi: si accorciano con i puntini.
                         constraints: phone
-                            ? const BoxConstraints.tightFor(width: 150)
+                            ? const BoxConstraints.tightFor(width: 140)
                             : const BoxConstraints(maxWidth: 220),
                         child: Stack(
                           children: [

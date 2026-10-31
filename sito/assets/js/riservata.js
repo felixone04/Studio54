@@ -195,7 +195,7 @@
   }
   function disegnaAccesso() {
     var foto = ((P.carouselSite || []).filter(function (x) { return x.active !== false; })[0] || {}).url || '';
-    app.innerHTML = '<div class="accesso-griglia"><div class="accesso-foto">' + (foto ? '<img ' + S54.srcset(foto, '55vw') + ' alt="">' : '') +
+    app.innerHTML = '<div class="accesso-griglia"><div class="accesso-foto">' + (foto ? '<img ' + S54.srcset(foto, 'max(55vw, 150vh)') + ' alt="">' : '') +
       '<div class="accesso-cartoncino"><img src="assets/img/logo.png" alt="' + esc(P.content.studioName || 'Studio 54') + '"><p>GESTIONALE</p></div></div>' +
       '<div class="accesso-modulo"><form id="form-accesso" novalidate><p class="etichetta"><span class="trattino"></span>GESTIONALE</p><h1>Bentornato.</h1>' +
       '<p class="tenue">Entra per gestire il sito e l\'app.</p><p class="avviso">Accesso di prova: nome utente <b>titolare</b>, password <b>studio54</b>.</p>' +

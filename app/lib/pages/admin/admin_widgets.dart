@@ -645,6 +645,91 @@ class AdminListRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final narrow = isNarrow(context);
     final thumbW = narrow ? 58.0 : 88.0;
+    final row = Row(
+      children: [
+        ReorderableDragStartListener(
+          index: index,
+          child: const Padding(
+            padding: EdgeInsets.all(6),
+            child: Icon(Icons.drag_indicator_rounded, color: Colors.black38),
+          ),
+        ),
+        SizedBox(width: narrow ? 4 : 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: SizedBox(
+            width: thumbW,
+            height: thumbW * 0.72,
+            child: Opacity(
+              opacity: dimmed ? 0.45 : 1,
+              child: PhotoImage(image),
+            ),
+          ),
+        ),
+        SizedBox(width: narrow ? 10 : 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: body(
+                        15,
+                        weight: FontWeight.w600,
+                        color: dimmed ? Palette.stone : Palette.ink,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  if (leadingExtra != null) ...[
+                    const SizedBox(width: 6),
+                    leadingExtra!,
+                  ],
+                ],
+              ),
+              if (subtitle != null && subtitle!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    subtitle!,
+                    maxLines: narrow ? 1 : 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: body(13, color: Palette.stone, height: 1.35),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (!narrow) ...trailing,
+        if (narrow)
+          PopupMenuButton<String>(
+            tooltip: 'Azioni',
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'edit', child: Text('Modifica')),
+              PopupMenuItem(value: 'delete', child: Text('Elimina')),
+            ],
+          )
+        else ...[
+          IconButton(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Modifica',
+          ),
+          IconButton(
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_outline_rounded),
+            tooltip: 'Elimina',
+          ),
+        ],
+      ],
+    );
     return Material(
       color: Colors.white,
       child: InkWell(
@@ -657,94 +742,22 @@ class AdminListRow extends StatelessWidget {
             horizontal: narrow ? 6 : 12,
             vertical: 10,
           ),
-          child: Row(
-            children: [
-              ReorderableDragStartListener(
-                index: index,
-                child: const Padding(
-                  padding: EdgeInsets.all(6),
-                  child: Icon(
-                    Icons.drag_indicator_rounded,
-                    color: Colors.black38,
-                  ),
-                ),
-              ),
-              SizedBox(width: narrow ? 4 : 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: SizedBox(
-                  width: thumbW,
-                  height: thumbW * 0.72,
-                  child: Opacity(
-                    opacity: dimmed ? 0.45 : 1,
-                    child: PhotoImage(image),
-                  ),
-                ),
-              ),
-              SizedBox(width: narrow ? 10 : 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Sul telefono le azioni su una seconda riga: il nome si legge intero.
+          child: narrow && trailing.isNotEmpty
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: body(
-                              15,
-                              weight: FontWeight.w600,
-                              color: dimmed ? Palette.stone : Palette.ink,
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                        if (leadingExtra != null) ...[
-                          const SizedBox(width: 6),
-                          leadingExtra!,
-                        ],
-                      ],
-                    ),
-                    if (subtitle != null && subtitle!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(
-                          subtitle!,
-                          maxLines: narrow ? 1 : 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: body(13, color: Palette.stone, height: 1.35),
-                        ),
+                    row,
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: trailing,
                       ),
-                  ],
-                ),
-              ),
-              ...trailing,
-              if (narrow)
-                PopupMenuButton<String>(
-                  tooltip: 'Azioni',
-                  icon: const Icon(Icons.more_vert_rounded),
-                  onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Text('Modifica')),
-                    PopupMenuItem(value: 'delete', child: Text('Elimina')),
+                    ),
                   ],
                 )
-              else ...[
-                IconButton(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined),
-                  tooltip: 'Modifica',
-                ),
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  tooltip: 'Elimina',
-                ),
-              ],
-            ],
-          ),
+              : row,
         ),
       ),
     );

@@ -105,8 +105,8 @@ window.S54 = (function () {
   /** Attributi src, srcset e sizes per un <img>. */
   function srcset(u, sizes) {
     if ((u || '').indexOf('images.unsplash.com') < 0) return 'src="' + esc(u) + '"';
-    // Fino a 3840 px: sugli schermi 4K la foto a tutta larghezza resta nitida.
-    var set = [480, 800, 1200, 1600, 2200, 3200, 3840].map(function (w) { return esc(foto(u, w)) + ' ' + w + 'w'; }).join(', ');
+    // Fino a 7680 px: sugli schermi 4K e 8K la foto a tutta larghezza resta nitida.
+    var set = [480, 800, 1200, 1600, 2200, 3200, 3840, 5120, 7680].map(function (w) { return esc(foto(u, w)) + ' ' + w + 'w'; }).join(', ');
     return 'src="' + esc(foto(u, 1200)) + '" srcset="' + set + '" sizes="' + esc(sizes || '100vw') + '"';
   }
 

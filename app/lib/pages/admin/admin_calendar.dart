@@ -434,7 +434,7 @@ class _MonthGrid extends StatelessWidget {
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: display(mobile ? 26 : 32),
+                          style: display(mobile ? 22 : 32),
                         ),
                       ),
                       if (loading)
@@ -449,7 +449,16 @@ class _MonthGrid extends StatelessWidget {
                     ],
                   ),
                 ),
-                TextButton(onPressed: onToday, child: const Text('Oggi')),
+                TextButton(
+                  onPressed: onToday,
+                  style: mobile
+                      ? TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          minimumSize: const Size(0, 40),
+                        )
+                      : null,
+                  child: const Text('Oggi'),
+                ),
                 IconButton(
                   onPressed: onPrev,
                   tooltip: 'Mese precedente',

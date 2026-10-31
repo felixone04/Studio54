@@ -33,8 +33,11 @@
   --sezione: clamp(calc(56 * var(--px)), calc(calc(56 * var(--px)) + 64 * (100vw - calc(360 * var(--px))) / 1240), calc(120 * var(--px)));
 }
 
+/* Schermo in verticale (es. monitor girato): il riferimento è 1080×1920. */
+@media (max-aspect-ratio: 1/1) { :root { --px: max(1px, min(calc(100vw / 1080), calc(100vh / 1920))); } }
+
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: clip; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: clip; scroll-padding-top: var(--barra); }
 /* Nessuna barra di scorrimento visibile: si scorre lo stesso. */
 * { scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; }
@@ -53,7 +56,9 @@ p, h1, h2, h3 { margin: 0; }
 [hidden] { display: none !important; }
 :focus-visible { outline: calc(2 * var(--px)) solid var(--accento-scuro); outline-offset: calc(3 * var(--px)); }
 
-main { padding-top: var(--barra); min-height: 60vh; }
+/* Il footer resta in fondo allo schermo anche nelle pagine corte. */
+body { min-height: 100vh; display: flex; flex-direction: column; }
+main { flex: 1; padding-top: var(--barra); }
 
 /* ------------------------------------------------------------- tipografia */
 
@@ -96,6 +101,8 @@ main { padding-top: var(--barra); min-height: 60vh; }
 .pillola:hover i { transform: rotate(45deg); }
 .pillola.grande { height: calc(64 * var(--px)); padding-left: calc(32 * var(--px)); font-size: calc(13 * var(--px)); }
 .pillola.grande i { width: calc(52 * var(--px)); height: calc(52 * var(--px)); }
+/* Telefoni piccolissimi: il testo del bottone resta su una riga. */
+@media (max-width: 359px) { .pillola.grande { padding-left: calc(20 * var(--px)); gap: calc(10 * var(--px)); font-size: calc(12 * var(--px)); letter-spacing: .14em; white-space: nowrap; } }
 
 /* Bottone tondo e sottile (frecce). */
 .tondo {
@@ -208,6 +215,12 @@ main { padding-top: var(--barra); min-height: 60vh; }
 .diapo.uscente { opacity: 1; z-index: 1; }
 .diapo img { width: 100%; height: 100%; object-fit: cover; }
 .diapo.attiva img, .diapo.uscente img { animation: avvicina 5.4s linear forwards; }
+/* Monitor molto larghi (21:9, 32:9): la foto intera, con ai lati la stessa foto
+   sfocata. Tagliata per riempire lo schermo perderebbe gli sposi. */
+@media (min-width: 1200px) and (min-aspect-ratio: 2/1) {
+  .diapo::before { content: ''; position: absolute; inset: -6%; background: var(--sf, var(--lino)) center / cover; filter: blur(calc(40 * var(--px))) brightness(.9); }
+  .diapo img { position: relative; object-fit: contain; }
+}
 @keyframes avvicina { from { transform: scale(1); } to { transform: scale(1.04); } }
 .apertura-frecce { position: absolute; z-index: 4; right: var(--margine); bottom: calc(var(--margine) * .8); display: flex; gap: calc(10 * var(--px)); }
 .apertura::after { content: ''; position: absolute; inset: auto 0 0; z-index: 3; height: 30%; pointer-events: none; background: linear-gradient(to top, rgba(0, 0, 0, .28), rgba(0, 0, 0, 0)); }
@@ -233,6 +246,8 @@ main { padding-top: var(--barra); min-height: 60vh; }
    sarebbe molto più alta dello schermo. */
 @media (min-width: 1200px) and (min-aspect-ratio: 2/1) { .lavori-griglia { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1200px) and (min-aspect-ratio: 3/1) { .lavori-griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* In home i lavori in evidenza sono 4: su una riga sola, senza restarne uno a parte. */
+@media (min-width: 1200px) and (min-aspect-ratio: 2/1) { .evidenza .lavori-griglia { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .scheda-lavoro { display: block; }
 .scheda-foto { display: block; position: relative; overflow: hidden; aspect-ratio: 4 / 5; background: var(--lino); }
 .scheda-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s cubic-bezier(.2, .7, .2, 1); }
@@ -260,7 +275,7 @@ main { padding-top: var(--barra); min-height: 60vh; }
 .filtro-freccia { width: calc(7 * var(--px)); height: calc(7 * var(--px)); border: solid var(--cenere); border-width: 0 calc(1.4 * var(--px)) calc(1.4 * var(--px)) 0; transform: translateY(calc(-2 * var(--px))) rotate(45deg); }
 .filtro.attivo .filtro-freccia { border-color: var(--inchiostro); }
 .filtro-menu {
-  position: absolute; z-index: 15; top: calc(100% + calc(6 * var(--px))); left: 0; min-width: calc(190 * var(--px)); margin: 0; padding: calc(6 * var(--px)) 0; list-style: none;
+  max-height: 60vh; overflow-y: auto; position: absolute; z-index: 15; top: calc(100% + calc(6 * var(--px))); left: 0; min-width: calc(190 * var(--px)); margin: 0; padding: calc(6 * var(--px)) 0; list-style: none;
   background: #fff; border: calc(1 * var(--px)) solid var(--linea); border-radius: calc(4 * var(--px)); box-shadow: 0 calc(10 * var(--px)) calc(30 * var(--px)) rgba(30, 27, 23, .12);
   animation: compare .18s ease-out;
 }
@@ -269,8 +284,9 @@ main { padding-top: var(--barra); min-height: 60vh; }
 @media (max-width: 599px) {
   .filtri-voci { display: grid; gap: calc(2 * var(--px)); }
   .filtro-voce { padding: calc(10 * var(--px)) 0 calc(12 * var(--px)); }
-  .filtro-nome { width: calc(84 * var(--px)); }
-  .filtro-valore { width: calc(150 * var(--px)); max-width: none; }
+  .filtro-nome { width: calc(94 * var(--px)); font-size: calc(11.5 * var(--px)); }
+  .filtro-valore { width: calc(140 * var(--px)); max-width: none; }
+  .scheda-info, .piede h3 { font-size: calc(11.5 * var(--px)); }
 }
 .filtro-menu li:hover, .filtro-menu li:focus { background: var(--lino); outline: none; }
 .filtro-menu li[aria-selected="true"] { color: var(--inchiostro); font-style: italic; }
@@ -304,6 +320,11 @@ main { padding-top: var(--barra); min-height: 60vh; }
 .bio-foto { aspect-ratio: 4 / 5; background: var(--lino); }
 .bio-foto img { width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 1023px) { .bio-griglia { grid-template-columns: 1fr; } }
+/* Monitor molto larghi: la foto sta nell'altezza dello schermo. */
+@media (min-width: 1200px) and (min-aspect-ratio: 2/1) {
+  .bio-griglia { grid-template-columns: 1fr auto; }
+  .bio-foto { height: calc(100vh - var(--barra) - 2 * var(--inizio)); width: auto; }
+}
 .metodo .contenitore-stretto { padding-top: var(--sezione); border-top: calc(1 * var(--px)) solid var(--linea); }
 .metodo { padding-top: 0; }
 .metodo-passi { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(calc(28 * var(--px)), 4vw, calc(48 * var(--px))) clamp(calc(16 * var(--px)), 2.5vw, calc(32 * var(--px))); margin-top: var(--blocco); }
@@ -408,7 +429,7 @@ main { padding-top: var(--barra); min-height: 60vh; }
 /* Solo la foto, grande, con le frecce e la X per uscire. */
 .visore { position: fixed; inset: 0; z-index: 60; background: var(--carta); animation: compare .4s ease-out; }
 .visore figure { position: absolute; inset: 0; margin: 0; display: flex; align-items: center; justify-content: center; }
-.visore figure img { max-width: 100%; max-height: 100%; object-fit: contain; transition: opacity .35s; }
+.visore figure img { width: 100%; height: 100%; object-fit: contain; transition: opacity .35s; }
 .visore .tondo { position: absolute; z-index: 2; background: rgba(255, 255, 255, .82); }
 .visore .tondo:hover { background: var(--inchiostro); }
 .visore-chiudi { top: calc(16 * var(--px)); right: calc(16 * var(--px)); }
