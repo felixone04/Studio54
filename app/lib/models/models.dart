@@ -92,6 +92,13 @@ class SiteContent {
   Contacts contacts;
   int accent; // colore ARGB
 
+  // Pagina "Privacy e cookie": informativa, cookie e note legali. Righe che
+  // iniziano con "## " sono titoli, con "- " voci di elenco; {studio},
+  // {indirizzo}, {email}, {telefono} e {piva} si riempiono dai contatti.
+  String privacyText;
+  String cookieText;
+  String legalText;
+
   SiteContent({
     required this.studioName,
     required this.tagline,
@@ -102,6 +109,9 @@ class SiteContent {
     required this.timeline,
     required this.contacts,
     required this.accent,
+    this.privacyText = '',
+    this.cookieText = '',
+    this.legalText = '',
   });
 
   factory SiteContent.fromJson(Map<String, dynamic> j, SiteContent fallback) {
@@ -120,6 +130,9 @@ class SiteContent {
           ? Contacts.fromJson(Map<String, dynamic>.from(j['contacts']))
           : fallback.contacts,
       accent: (j['accent'] as int?) ?? fallback.accent,
+      privacyText: s('privacyText', fallback.privacyText),
+      cookieText: s('cookieText', fallback.cookieText),
+      legalText: s('legalText', fallback.legalText),
     );
   }
 
@@ -133,6 +146,9 @@ class SiteContent {
     'timeline': timeline.map((e) => e.toJson()).toList(),
     'contacts': contacts.toJson(),
     'accent': accent,
+    'privacyText': privacyText,
+    'cookieText': cookieText,
+    'legalText': legalText,
   };
 
   /// Copia profonda, usata dagli editor del gestionale per lavorare su una bozza.

@@ -14,6 +14,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/photo_ui.dart';
 import '../widgets/site_scaffold.dart';
+import 'legal_page.dart' show showLegal;
 
 // Il preventivo dell'app, a passi: una schermata per volta, con la barra
 // dell'avanzamento in alto e Indietro / Avanti in basso, a portata di
@@ -158,7 +159,8 @@ class _QuotePageState extends State<QuotePage> {
         f.showRequests && f.activeRequests.isNotEmpty && _requests.isEmpty
             ? 'Scegliete almeno una richiesta'
             : '',
-      'privacy' => _privacy ? '' : 'Serve il consenso per inviare la richiesta',
+      'privacy' =>
+        _privacy ? '' : 'Confermate di aver letto l\'informativa privacy',
       _ => '',
     };
     return r.isEmpty ? null : r;
@@ -624,10 +626,32 @@ class _QuotePageState extends State<QuotePage> {
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.only(top: 12),
-                      child: Text(
-                        'Acconsento al trattamento dei miei dati per essere '
-                        'ricontattato. *',
-                        style: body(14, color: Palette.stone),
+                      // L'informativa si apre sopra il modulo: chiudendola
+                      // si ritrova tutto com'era.
+                      child: Text.rich(
+                        TextSpan(
+                          style: body(14, color: Palette.stone),
+                          children: [
+                            const TextSpan(text: 'Ho letto l\''),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.baseline,
+                              baseline: TextBaseline.alphabetic,
+                              child: Semantics(
+                                link: true,
+                                child: GestureDetector(
+                                  onTap: () => showLegal(context),
+                                  child: Text(
+                                    'informativa privacy',
+                                    style: body(14).copyWith(
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const TextSpan(text: '. *'),
+                          ],
+                        ),
                       ),
                     ),
                   ),

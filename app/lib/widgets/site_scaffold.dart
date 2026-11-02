@@ -704,10 +704,27 @@ class SiteFooter extends StatelessWidget {
           SizedBox(height: context.spaceBlock),
           Container(height: 1, color: Palette.line),
           const SizedBox(height: 18),
-          Text(
-            '© ${DateTime.now().year} ${content.studioName}'
-            '${c.vat.isEmpty ? '' : '  ·  ${c.vat}'}',
-            style: body(12.5, color: Palette.stone),
+          Wrap(
+            spacing: 20,
+            runSpacing: 6,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                '© ${DateTime.now().year} ${content.studioName}'
+                '${c.vat.isEmpty ? '' : '  ·  ${c.vat}'}',
+                style: body(12.5, color: Palette.stone),
+              ),
+              // Obbligatoria anche per gli store: sempre raggiungibile.
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                child: HoverLink(
+                  'Privacy e cookie',
+                  style: body(12.5, color: Palette.stone),
+                  onTap: () => context.go('/privacy'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

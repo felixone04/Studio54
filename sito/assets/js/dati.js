@@ -34,6 +34,9 @@ window.S54 = (function () {
   function pubblici() {
     var d = copia(base);
     if (bozza) PUBBLICI.forEach(function (k) { if (bozza[k] !== undefined) d[k] = copia(bozza[k]); });
+    // Una bozza salvata prima che esistesse un testo (es. la privacy) lo
+    // prende dai dati del sito.
+    if (bozza && bozza.content && base.content) Object.keys(base.content).forEach(function (k) { if (d.content[k] === undefined) d.content[k] = copia(base.content[k]); });
     d.content = d.content || {};
     d.content.contacts = d.content.contacts || {};
     d.carouselSite = d.carouselSite || [];

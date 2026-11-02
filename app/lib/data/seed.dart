@@ -160,7 +160,51 @@ class Seed {
       vat: 'P.IVA 08154270726',
     ),
     accent: accentSand,
+    privacyText: privacyText,
+    cookieText: cookieText,
+    legalText: legalText,
   );
+
+  // Bozze della pagina "Privacy e cookie", scritte su come funzionano davvero
+  // sito e app. Le parti tra [parentesi quadre] le completa lo studio dal
+  // gestionale; i testi definitivi vanno fatti controllare da un consulente.
+
+  static const privacyText = '''## Chi tratta i vostri dati
+Titolare del trattamento è {studio}, {indirizzo} ({piva}). Per qualsiasi domanda sui vostri dati scriveteci a {email}.
+
+## Quali dati e perché
+- Richiesta di preventivo, dal sito o dall'app: nome, cognome, telefono, email, tipo, data e luogo dell'evento, le richieste scelte e il messaggio. Servono solo per rispondervi e prepararvi il preventivo (misure precontrattuali chieste da voi, art. 6.1.b del GDPR).
+- Area clienti: le credenziali di accesso e il materiale del vostro servizio (foto, video, documenti), per consegnarvelo (contratto, art. 6.1.b del GDPR).
+- Fatture e pagamenti: i dati richiesti dalla legge fiscale (obbligo di legge, art. 6.1.c del GDPR).
+
+Non usiamo i vostri dati per pubblicità o profilazione e non li vendiamo a nessuno.
+
+## Per quanto tempo
+- Richieste che non diventano un servizio: [12] mesi, poi le cancelliamo.
+- Materiale dell'area clienti: [12] mesi dalla consegna.
+- Dati di fatturazione: 10 anni, come chiede la legge.
+
+## Chi li riceve
+Solo i fornitori che fanno funzionare sito e app, nominati responsabili del trattamento: Hostinger (sito), Cloudflare (database e archivio delle foto)[, Google (calendario degli appuntamenti)]. Se un fornitore tratta dati fuori dall'Unione europea, lo fa con le garanzie previste dal GDPR (clausole contrattuali standard o Data Privacy Framework).
+
+## I vostri diritti
+Potete chiedere in ogni momento di vedere, correggere, cancellare o ricevere i vostri dati, di limitarne l'uso o di opporvi, scrivendo a {email}. Potete anche presentare reclamo al Garante per la protezione dei dati personali (garanteprivacy.it).
+
+Senza i dati di contatto non possiamo rispondere alla vostra richiesta.''';
+
+  static const cookieText = '''## Cookie e memorie del dispositivo
+Sito e app usano solo memorie tecniche, necessarie a farli funzionare. Non usiamo cookie di profilazione, di pubblicità o di statistica: per questo non vi chiediamo il consenso e non c'è nessun banner (linee guida del Garante, 10 giugno 2021).
+- Accesso: ricorda che siete entrati nell'area clienti o nel gestionale, finché non uscite.
+- Proporzioni delle foto: ricorda la forma delle foto dei lavori, così le pagine si compongono subito.
+
+Sul sito queste memorie stanno nel browser, nell'app sul telefono. Potete cancellarle in ogni momento dalle impostazioni del browser o del telefono.
+
+## Servizi esterni
+Caratteri e foto partono dai nostri server: aprendo le pagine non contattate altri servizi. WhatsApp, Instagram, Facebook e Google Maps si aprono solo se toccate i loro collegamenti; da lì valgono le loro regole.''';
+
+  static const legalText = '''{studio} · {indirizzo} · {piva}[ · PEC: ...]
+
+Foto e testi di sito e app appartengono a {studio}: non si possono copiare o riutilizzare senza il nostro permesso.''';
 
   /// Carosello del sito: solo foto orizzontali.
   static List<CarouselPhoto> carouselSite() => [

@@ -271,6 +271,62 @@ class AdminBioEditor extends StatelessWidget {
   }
 }
 
+// ========================================================= PRIVACY E COOKIE
+
+class AdminLegalEditor extends StatelessWidget {
+  const AdminLegalEditor({super.key});
+
+  static const _help =
+      'Una riga vuota separa i paragrafi. "## " all\'inizio della riga fa un '
+      'titolo, "- " una voce di elenco. {studio}, {indirizzo}, {email}, '
+      '{telefono} e {piva} si riempiono da soli con i Contatti.';
+
+  @override
+  Widget build(BuildContext context) {
+    Widget text(
+      String label,
+      String value,
+      ValueChanged<String> set,
+      VoidCallback changed,
+    ) => BoundField(
+      label: label,
+      value: value,
+      maxLines: 22,
+      minLines: 8,
+      helper: _help,
+      onChanged: (v) {
+        set(v);
+        changed();
+      },
+    );
+    return DraftEditor(
+      title: 'Privacy e cookie',
+      subtitle:
+          'La pagina "Privacy e cookie", uguale sul sito e nell\'app. Completa '
+          'le parti tra [parentesi quadre] e falla controllare da un consulente.',
+      builder: (context, d, changed) => [
+        Panel(
+          title: 'Informativa privacy',
+          child: text(
+            'Testo',
+            d.privacyText,
+            (v) => d.privacyText = v,
+            changed,
+          ),
+        ),
+        Panel(
+          title: 'Cookie',
+          child: text('Testo', d.cookieText, (v) => d.cookieText = v, changed),
+        ),
+        Panel(
+          title: 'Note legali',
+          child: text('Testo', d.legalText, (v) => d.legalText = v, changed),
+        ),
+      ],
+    );
+  }
+}
+
 // ======================================================= IDENTITÀ E CONTATTI
 
 class AdminIdentityEditor extends StatelessWidget {

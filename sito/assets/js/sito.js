@@ -41,7 +41,7 @@
       '<div><h3>ESPLORA</h3>' + link('Home', S54.url('index')) + link('Lavori', S54.url('lavori')) + link('Biografia', S54.url('biografia')) + link('Preventivo', S54.url('preventivo')) + '</div>' +
       '</div><img class="piede-logo" src="assets/img/logo.png" alt="' + esc(C.studioName || 'Studio 54') + '">' +
       '<div class="piede-fondo"><span>&copy; ' + new Date().getFullYear() + ' ' + esc(C.studioName || '') + (K.vat ? '  ·  ' + esc(K.vat) : '') + '</span>' +
-      '<span class="piede-link"><span class="punto"></span><a class="link" href="' + S54.url('riservata') + '">Area riservata</a></span></div></div>';
+      '<span class="piede-link"><a class="link" href="' + S54.url('privacy') + '">Privacy e cookie</a><span class="punto"></span><a class="link" href="' + S54.url('riservata') + '">Area riservata</a></span></div></div>';
   }
 
   if (S54.inBozza()) {
@@ -178,6 +178,39 @@
         '</div></div></section>' : '');
   }
 
+  // Privacy e cookie: i testi del gestionale (uguali nell'app). Righe con
+  // "## " sono titoli, con "- " voci di elenco; {studio}, {email}... si
+  // riempiono con i contatti.
+  var legaleBox = $('[data-legale]');
+  if (legaleBox) {
+    var riempi = function (t) {
+      var v = { studio: C.studioName || '', indirizzo: K.address || '', email: K.email || '', telefono: K.phone || '', piva: K.vat || '' };
+      return (t || '').replace(/\{(studio|indirizzo|email|telefono|piva)\}/g, function (_, k) { return v[k]; });
+    };
+    var testoLegale = function (t) {
+      var html = '', para = [], voci = [];
+      var chiudi = function () {
+        if (para.length) html += '<p>' + esc(para.join(' ')) + '</p>';
+        if (voci.length) html += '<ul>' + voci.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul>';
+        para = []; voci = [];
+      };
+      riempi(t).split('\n').forEach(function (r) {
+        var l = r.trim();
+        if (!l) chiudi();
+        else if (l.indexOf('## ') === 0) { chiudi(); html += '<h3>' + esc(maiuscolo(l.slice(3))) + '</h3>'; }
+        else if (l.indexOf('- ') === 0) { if (para.length) chiudi(); voci.push(l.slice(2)); }
+        else { if (voci.length) chiudi(); para.push(l); }
+      });
+      chiudi();
+      return html;
+    };
+    var parti = [['privacy', 'Informativa privacy', C.privacyText], ['cookie', 'Cookie', C.cookieText], ['note-legali', 'Note legali', C.legalText]]
+      .filter(function (p) { return (p[2] || '').trim(); });
+    legaleBox.innerHTML = '<h1 class="legale-titolo">PRIVACY E COOKIE</h1>' +
+      (parti.length > 1 ? '<nav class="legale-indice">' + parti.map(function (p) { return '<a class="link" href="#' + p[0] + '">' + maiuscolo(p[1]) + '</a>'; }).join('') + '</nav>' : '') +
+      parti.map(function (p) { return '<section class="legale-parte" id="' + p[0] + '"><p class="etichetta">' + maiuscolo(p[1]) + '</p>' + testoLegale(p[2]) + '</section>'; }).join('');
+  }
+
   // Preventivo: tutto in una pagina, con le parti accese dal gestionale.
   var prevBox = $('[data-preventivo]');
   var F = D.quoteForm;
@@ -230,7 +263,7 @@
         '<div class="campo area" data-campo="note"><textarea id="note" name="note" rows="4" maxlength="500" placeholder=" "></textarea><label for="note">Altre informazioni (facoltativo)</label><span class="conta-caratteri">0/500</span></div></section>';
     }
     prevBox.innerHTML = '<form class="modulo" novalidate data-modulo>' + html +
-      '<label class="consenso" data-campo="privacy"><input type="checkbox" name="privacy" value="1"><span class="spunta" aria-hidden="true"></span><span>Acconsento al trattamento dei miei dati per essere ricontattato. *</span></label><p class="errore errore-privacy"></p>' +
+      '<label class="consenso" data-campo="privacy"><input type="checkbox" name="privacy" value="1"><span class="spunta" aria-hidden="true"></span><span>Ho letto l\'<a class="sottolineato" href="' + S54.url('privacy') + '" target="_blank" rel="noopener">informativa privacy</a>. *</span></label><p class="errore errore-privacy"></p>' +
       '<div class="modulo-invio"><button type="submit" class="pillola grande">INVIA LA RICHIESTA <i>&rarr;</i></button><span class="nota">* campi obbligatori</span></div></form>' +
       '<div class="grazie" data-grazie hidden><img src="assets/img/mark.png" alt=""><p class="etichetta"><span class="trattino"></span>RICHIESTA INVIATA</p><h1 class="grazie-titolo">Grazie</h1><p class="grazie-testo"></p>' +
       '<div class="grazie-azioni"><a class="pillola" href="' + S54.url('index') + '">TORNA ALLA HOME <i>&#8599;</i></a><button type="button" class="link grazie-nuova">Nuova richiesta</button></div></div>';
@@ -976,7 +1009,7 @@
 
     var consenso = $('.consenso', form), spunta = $('input', consenso), errorePrivacy = $('.errore-privacy', form);
     function controllaConsenso(mostra) {
-      var msg = spunta.checked ? '' : 'Serve il consenso per inviare la richiesta';
+      var msg = spunta.checked ? '' : "Confermate di aver letto l'informativa privacy";
       if (mostra) { consenso.classList.toggle('sbagliato', !!msg); errorePrivacy.textContent = msg; }
       return msg;
     }

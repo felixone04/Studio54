@@ -20,7 +20,7 @@
 
   var GRUPPI = [
     ['Attività', '', [['panoramica', 'Panoramica', 'griglia'], ['richieste', 'Richieste', 'busta'], ['calendario', 'Calendario', 'calendario']]],
-    ['Sito e app', '', [['lavori', 'Lavori', 'libro'], ['preventivo', 'Preventivo', 'pagina'], ['biografia', 'Biografia', 'penna'], ['contatti', 'Contatti', 'tessera'], ['carosello-sito', 'Carosello orizzontale', 'foto'], ['carosello-app', 'Carosello verticale', 'cellulare']]],
+    ['Sito e app', '', [['lavori', 'Lavori', 'libro'], ['preventivo', 'Preventivo', 'pagina'], ['biografia', 'Biografia', 'penna'], ['contatti', 'Contatti', 'tessera'], ['carosello-sito', 'Carosello orizzontale', 'foto'], ['carosello-app', 'Carosello verticale', 'cellulare'], ['privacy', 'Privacy e cookie', 'pagina']]],
     ['Solo app', 'cellulare', [['clienti', 'Area clienti', 'persone']]],
     ['Sistema', '', [['impostazioni', 'Impostazioni', 'regola']]]
   ];
@@ -774,6 +774,18 @@
     ['phone', 'whatsapp', 'email', 'address', 'hours', 'instagram', 'facebook', 'vat'].forEach(function (n) {
       $('#ct-' + n, p).addEventListener('input', function (e) { k[n] = e.target.value.trim(); errore(p, 'ct-' + n, ''); segnaSporco(); });
     });
+  };
+
+  /* ================================================== PRIVACY E COOKIE */
+
+  SEZIONE.privacy = function (p) {
+    var c = copia(P.content);
+    var aiuto = 'Una riga vuota separa i paragrafi. "## " all\'inizio della riga fa un titolo, "- " una voce di elenco. {studio}, {indirizzo}, {email}, {telefono} e {piva} si riempiono da soli con i Contatti.';
+    var parti = [['privacyText', 'Informativa privacy'], ['cookieText', 'Cookie'], ['legalText', 'Note legali']];
+    p.innerHTML = testa('Privacy e cookie', 'La pagina "Privacy e cookie", uguale sul sito e nell\'app. Completa le parti tra [parentesi quadre] e falla controllare da un consulente.', '<a class="bottone bordo" href="' + S54.url('privacy') + '" target="_blank" rel="noopener">' + ico('esterno') + 'Vedi la pagina</a>') +
+      parti.map(function (x) { return '<section class="scheda pannello"><h2>' + x[1] + '</h2>' + campo('lg-' + x[0], 'Testo', c[x[0]] || '', { area: true, righe: 14, aiuto: aiuto }) + '</section>'; }).join('');
+    barraSalva(p, function () { P.content = c; return salvaP('Privacy e cookie salvati.'); }, function () { disegna(); });
+    parti.forEach(function (x) { $('#lg-' + x[0], p).addEventListener('input', function (e) { c[x[0]] = e.target.value; segnaSporco(); }); });
   };
 
   /* ========================================================= CAROSELLI */

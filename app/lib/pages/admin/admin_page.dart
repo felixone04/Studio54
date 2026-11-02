@@ -55,6 +55,7 @@ const _groups = <(String, List<_Section>)>[
         'Carosello verticale',
         Icons.stay_current_portrait_rounded,
       ),
+      _Section('privacy', 'Privacy e cookie', Icons.policy_outlined),
     ],
   ),
   (
@@ -121,6 +122,7 @@ class _ShellState extends State<_Shell> {
       ),
       'biografia' => const AdminBioEditor(),
       'contatti' => const AdminIdentityEditor(),
+      'privacy' => const AdminLegalEditor(),
       'impostazioni' => const AdminPageScroll(child: AdminSettingsPage()),
       _ => const AdminPageScroll(child: AdminDashboard()),
     };

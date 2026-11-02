@@ -11,6 +11,7 @@ import 'pages/admin/admin_page.dart';
 import 'pages/bio_page.dart';
 import 'pages/client_area_page.dart';
 import 'pages/home_page.dart';
+import 'pages/legal_page.dart';
 import 'pages/quote_page.dart';
 import 'pages/works_page.dart';
 import 'services/back_handlers.dart';
@@ -245,6 +246,10 @@ class _StudioAppState extends State<StudioApp> {
       GoRoute(
         path: '/biografia',
         pageBuilder: (c, s) => _fade(s, const BioPage()),
+      ),
+      GoRoute(
+        path: '/privacy',
+        pageBuilder: (c, s) => _fade(s, const LegalPage()),
       ),
       GoRoute(
         path: '/admin',

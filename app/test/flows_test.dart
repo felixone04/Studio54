@@ -105,16 +105,28 @@ void main() {
       await fill(tester, 'Messaggio (facoltativo)', 'Cerimonia al tramonto.');
       await tapText(tester, 'AVANTI');
 
-      // Riepilogo: senza consenso non parte.
+      // Riepilogo: senza la spunta sull'informativa non parte.
       expect(find.text('RIEPILOGO'), findsOneWidget);
       expect(find.textContaining('Masseria in Puglia'), findsOneWidget);
       expect(find.text('Video del matrimonio, Album fine art'), findsOneWidget);
       await tapText(tester, 'INVIA');
       expect(
-        find.text('Serve il consenso per inviare la richiesta'),
+        find.text('Confermate di aver letto l\'informativa privacy'),
         findsOneWidget,
       );
       expect(s.quotes.length, before);
+      // L'informativa si apre sopra il modulo e, chiusa, il modulo è com'era.
+      await tester.tap(find.text('informativa privacy'));
+      await settle(tester, 600);
+      expect(find.text('INFORMATIVA PRIVACY'), findsOneWidget);
+      expect(
+        find.textContaining('Titolare del trattamento è Studio 54'),
+        findsOneWidget,
+      );
+      await tester.tap(find.bySemanticsLabel('Chiudi').last);
+      await settle(tester, 600);
+      expect(find.text('RIEPILOGO'), findsOneWidget);
+      expect(find.textContaining('Masseria in Puglia'), findsOneWidget);
       await tester.tap(find.byType(Checkbox));
       await settle(tester, 400);
       await tapText(tester, 'INVIA');

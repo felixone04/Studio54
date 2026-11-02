@@ -340,6 +340,22 @@ main { flex: 1; padding-top: var(--barra); }
 /* Altri lavori in arrivo mentre si scorre. */
 .altri-lavori { display: flex; flex-direction: column; align-items: center; gap: calc(6 * var(--px)); padding-top: calc(48 * var(--px)); font: italic 300 calc(16 * var(--px))/1.3 var(--display); color: var(--pietra); }
 
+/* Privacy e cookie: una colonna di lettura, come una pagina di libro. */
+.legale { max-width: calc(820 * var(--px)); margin: 0 auto; padding-top: var(--inizio); padding-bottom: var(--sezione); }
+.legale-titolo { font: 300 clamp(calc(26 * var(--px)), calc(calc(26 * var(--px)) + 12 * (100vw - calc(360 * var(--px))) / 1240), calc(38 * var(--px)))/1.2 var(--display); letter-spacing: .1em; }
+.legale-indice { display: flex; flex-wrap: wrap; gap: calc(4 * var(--px)) calc(24 * var(--px)); margin-top: calc(14 * var(--px)); }
+.legale-indice .link { padding: calc(10 * var(--px)) 0; font: 600 calc(10.5 * var(--px))/1.3 var(--display); letter-spacing: .24em; color: var(--pietra); }
+.legale-parte { padding-top: var(--blocco); margin-top: var(--blocco); border-top: calc(1 * var(--px)) solid var(--linea); }
+.legale-parte .etichetta { color: var(--pietra); margin-bottom: calc(18 * var(--px)); }
+.legale h3 { margin: calc(26 * var(--px)) 0 calc(10 * var(--px)); font: 400 calc(17 * var(--px))/1.3 var(--display); letter-spacing: .08em; }
+.legale-parte .etichetta + h3 { margin-top: 0; }
+.legale p:not(.etichetta), .legale li { font-size: calc(15.5 * var(--px)); line-height: 1.65; }
+.legale p:not(.etichetta) { margin-bottom: calc(14 * var(--px)); }
+.legale ul { margin: 0 0 calc(14 * var(--px)); padding: 0; list-style: none; }
+.legale li { position: relative; padding-left: calc(22 * var(--px)); margin-bottom: calc(8 * var(--px)); }
+.legale li::before { content: ''; position: absolute; left: 0; top: .82em; width: calc(10 * var(--px)); height: calc(1 * var(--px)); background: var(--pietra); }
+.sottolineato { color: var(--inchiostro); text-decoration: underline; text-underline-offset: .2em; }
+
 /* Dettaglio: solo foto, sparse, intere. */
 .collage { position: relative; padding-top: var(--inizio); padding-bottom: var(--sezione); }
 .collage-riga { display: flex; justify-content: center; align-items: flex-start; gap: var(--spazio); }

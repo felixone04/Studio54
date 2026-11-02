@@ -30,7 +30,7 @@ pagina() { # pagina <file php> <file html>
 # Le pagine disegnano i contenuti nel browser (assets/js/sito.js): un solo
 # lavoro.html vale per tutti i lavori (lavoro.html?id=...).
 echo "Pagine"
-for p in index lavori lavoro biografia preventivo riservata; do pagina "$p.php" "$p.html"; done
+for p in index lavori lavoro biografia preventivo privacy riservata; do pagina "$p.php" "$p.html"; done
 
 # Indirizzi sconosciuti: si torna alla home. Un rimando e non una copia della
 # home, perché da un indirizzo in una sottocartella (/Studio54/a/b) i percorsi

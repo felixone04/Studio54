@@ -216,7 +216,9 @@ Ogni uscita ha anche due o tre righe di "Novità", in italiano, da scrivere negl
 | Materiale | Icona 512×512, immagine 1024×500, almeno 2 schermate del telefono, descrizione | Icona 1024×1024, schermate per iPhone (e iPad, se supportato), descrizione |
 
 **Valgono per entrambi:**
-- **Privacy:** una pagina "Privacy" sul sito (es. `studio54.it/privacy`) e il modulo sui dati raccolti (nome, email, telefono del preventivo; foto dei clienti).
+- **Privacy:** l'indirizzo della pagina "Privacy e cookie" (es. `studio54.it/privacy`) va inserito in entrambi gli store; nell'app la stessa pagina è nel footer di ogni pagina e si apre dalla spunta del preventivo. Poi il modulo sui dati raccolti:
+  - **Google Play, "Sicurezza dei dati":** raccolti nome, email, numero di telefono (e foto/video solo nell'area clienti); scopo: funzionalità dell'app e comunicazioni; non condivisi con terzi; cifrati durante il trasferimento; cancellazione su richiesta via email allo studio.
+  - **App Store, "Privacy dell'app":** Informazioni di contatto (nome, email, telefono) e Contenuti dell'utente (foto, video), collegati alla persona, usati solo per la funzionalità dell'app; nessun tracciamento.
 - **Account di prova per i revisori:** un cliente d'esempio con qualche foto, perché Apple e Google vogliono provare l'area clienti.
 - **Account dei clienti:** li crea lo studio, non il cliente. Nelle note per la revisione va scritto, e va indicato come chiedere la cancellazione dei propri dati (es. un'email allo studio).
 - **Parte iPhone:** la cartella `app/ios/` c'è già, con icone, schermata d'avvio e permessi. Va compilata su un Mac o con un servizio cloud, e lì va provata la prima volta.
@@ -268,7 +270,7 @@ Il codice dell'app è adatto a Android, iPhone e tablet, ma **questi punti blocc
 | **Database collegato** | Oggi ogni telefono ha i suoi dati: le richieste di preventivo restano sul telefono del visitatore e non arrivano allo studio. Clienti, foto e modifiche del gestionale non passano da un telefono all'altro | Cloudflare collegato all'app (sezioni 4 e 5) |
 | **Credenziali di prova** | `titolare` / `studio54` e i clienti d'esempio sono dentro l'app: chiunque potrebbe entrare | Vanno tolti con il database, usando le credenziali vere |
 | **Contenuti d'esempio** | Foto, lavori e testi sono di prova, e i contatti in parte inventati | Quelli veri, dal gestionale |
-| **Pagina Privacy** | Entrambi gli store la chiedono, e il consenso del preventivo deve poterla aprire | Il testo della privacy, poi il link nell'app e sul sito |
+| **Testi della privacy** | La pagina "Privacy e cookie" c'è già (sito e app, dal gestionale), ma i testi sono una bozza | Completare le parti tra [parentesi quadre] dal gestionale e far controllare i testi da un consulente |
 | **Dominio** | `Vedi il sito` apre ancora l'anteprima su GitHub | Dominio definitivo |
 | **ID dell'app** | Oggi Android `it.studio54.studio_fotografico` e iPhone `it.studio54.studioFotografico`; dopo la prima pubblicazione non si cambiano | Sceglierne uno solo (es. `it.studio54.app`) |
 
@@ -282,5 +284,5 @@ Il codice dell'app è adatto a Android, iPhone e tablet, ma **questi punti blocc
 - [ ] **Account degli store**: personale o organizzazione (D-U-N-S), e a nome di chi.
 - [ ] **iPhone**: un Mac a disposizione, oppure un servizio di compilazione nel cloud.
 - [ ] **Email** a cui mandare l'avviso delle nuove richieste di preventivo, e casella `info@` del dominio.
-- [ ] **Testo della pagina Privacy** (dati del preventivo e dell'area clienti).
+- [ ] **Testi della pagina Privacy e cookie**: ragione sociale, eventuale PEC, per quanti mesi tenere richieste e materiale dei clienti, se il calendario Google contiene i nomi dei clienti. Se un giorno si aggiungono statistiche (es. Google Analytics), mappe o video incorporati, serve anche il banner dei cookie.
 - [ ] **Dove conservare la chiave di firma Android** (due copie, fuori dal PC).
