@@ -268,6 +268,8 @@ class _QuotePageState extends State<QuotePage> {
     _i = _i.clamp(0, steps.length - 1);
     final step = steps[_i];
     final last = step == _Step.summary;
+    // Telefono girato: barra e intestazione più basse, entra un campo in più.
+    final short = context.isShort;
 
     final bar = SafeArea(
       top: false,
@@ -276,7 +278,12 @@ class _QuotePageState extends State<QuotePage> {
           color: Palette.paper,
           border: Border(top: BorderSide(color: Palette.line)),
         ),
-        padding: EdgeInsets.fromLTRB(context.gutter, 12, context.gutter, 14),
+        padding: EdgeInsets.fromLTRB(
+          context.gutter,
+          short ? 6 : 12,
+          context.gutter,
+          short ? 6 : 14,
+        ),
         // Sul tablet i due bottoni restano larghi quanto il modulo.
         child: Center(
           heightFactor: 1,
@@ -290,6 +297,7 @@ class _QuotePageState extends State<QuotePage> {
                       'Indietro',
                       filled: false,
                       expand: true,
+                      compact: short,
                       icon: Ico.arrowLeft,
                       onTap: _back,
                     ),
@@ -300,6 +308,7 @@ class _QuotePageState extends State<QuotePage> {
                   child: PillButton(
                     last ? 'Invia' : 'Avanti',
                     expand: true,
+                    compact: short,
                     icon: last ? Ico.send : Ico.arrowRight,
                     onTap: () => _next(f, steps),
                   ),
@@ -343,17 +352,17 @@ class _QuotePageState extends State<QuotePage> {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 22),
+                  SizedBox(height: short ? 12 : 22),
                   Text(
                     'PASSO ${_i + 1} DI ${steps.length}',
                     style: label(10.5, color: Palette.stone),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: short ? 4 : 10),
                   Text(
                     step.title.toUpperCase(),
-                    style: display(24, spacing: 0.1, height: 1.2),
+                    style: display(short ? 20 : 24, spacing: 0.1, height: 1.2),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: short ? 14 : 24),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     transitionBuilder: (c, a) => FadeTransition(
@@ -395,7 +404,7 @@ class _QuotePageState extends State<QuotePage> {
                 runSpacing: 8,
                 children: [
                   for (final t in types)
-                    _Choice(
+                    ChoicePill(
                       t.label,
                       selected: _type == t.label,
                       onTap: () => setState(() => _type = t.label),
@@ -438,7 +447,7 @@ class _QuotePageState extends State<QuotePage> {
               runSpacing: 8,
               children: [
                 for (final r in f.activeRequests)
-                  _Choice(
+                  ChoicePill(
                     r.label,
                     selected: _requests.contains(r.label),
                     onTap: () => setState(() {
@@ -654,55 +663,6 @@ class _Error extends StatelessWidget {
           padding: const EdgeInsets.only(top: 8),
           child: Text(text!, style: body(12.5, color: Palette.error)),
         );
-}
-
-/// Una voce da toccare, a pillola come sul sito.
-class _Choice extends StatelessWidget {
-  const _Choice(this.text, {required this.selected, required this.onTap});
-  final String text;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    selected: selected,
-    child: GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-        decoration: BoxDecoration(
-          color: selected ? Palette.ink : Palette.paper,
-          borderRadius: BorderRadius.circular(40),
-          border: Border.all(
-            color: selected ? Palette.ink : Palette.lineStrong,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (selected) ...[
-              const LineIcon(Ico.check, size: 16, color: Palette.paper),
-              const SizedBox(width: 6),
-            ],
-            // Una voce molto lunga va a capo invece di uscire dallo schermo.
-            Flexible(
-              child: Text(
-                text,
-                style: body(
-                  14,
-                  weight: FontWeight.w500,
-                  color: selected ? Palette.paper : Palette.ink,
-                  height: 1.2,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 class _DateField extends StatelessWidget {

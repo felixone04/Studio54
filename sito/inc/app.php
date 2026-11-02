@@ -71,3 +71,40 @@ function maiuscolo(string $s): string
 {
     return mb_strtoupper($s, 'UTF-8');
 }
+
+/** I lavori visibili sul sito, nell'ordine scelto (come S54.lavoriSito). */
+function lavori_sito(): array
+{
+    return array_values(array_filter(
+        dati()['works'] ?? [],
+        fn ($w) => ($w['published'] ?? true) !== false && ($w['onSite'] ?? true) !== false
+    ));
+}
+
+/** La foto principale di un lavoro (come S54.copertina). */
+function copertina(array $w): string
+{
+    $c = trim((string) ($w['cover'] ?? ''));
+    return $c !== '' ? $c : (string) ($w['photos'][0]['url'] ?? '');
+}
+
+/** Le foto di Unsplash si chiedono alla larghezza che serve (come S54.foto). */
+function foto_larga(string $u, int $w): string
+{
+    if (!str_contains($u, 'images.unsplash.com')) return $u;
+    if (preg_match('/[?&]w=\d+/', $u)) return preg_replace('/([?&])w=\d+/', '${1}w=' . $w, $u);
+    return $u . (str_contains($u, '?') ? '&' : '?') . 'w=' . $w;
+}
+
+/**
+ * Indirizzo completo di questa pagina (https://dominio/lavoro.php?id=...),
+ * per le anteprime dei link. Vuoto nell'anteprima statica, dove non c'è.
+ */
+function indirizzo_pagina(): string
+{
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+    if (STATICO || !preg_match('/^[A-Za-z0-9.\-]+(:\d+)?$/', $host)) return '';
+    $https = ($_SERVER['HTTPS'] ?? '') !== '' && ($_SERVER['HTTPS'] ?? '') !== 'off'
+        || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+    return ($https ? 'https' : 'http') . '://' . $host . ($_SERVER['REQUEST_URI'] ?? '/');
+}

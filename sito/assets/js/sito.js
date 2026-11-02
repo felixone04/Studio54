@@ -111,15 +111,38 @@
       ['stagione', 'Stagione', valori(S54.stagione, S54.STAGIONI)],
       ['location', 'Location', valori(function (w) { return w.setting; })]
     ].filter(function (f) { return f[2].length > 1; });
-    lavoriBox.innerHTML = (filtri.length ? '<div class="filtri" data-filtri><div class="filtri-voci">' + filtri.map(function (f) {
+    // Computer e tablet: una riga di voci, ognuna con il suo piccolo menu.
+    // Telefono: un solo "Filtra", che apre le scelte dal basso (foglio).
+    lavoriBox.innerHTML = (filtri.length ? '<div class="filtri" data-filtri>' +
+      '<div class="filtra-riga"><button type="button" class="filtra" aria-haspopup="dialog" aria-expanded="false" aria-controls="foglio-filtri"><span class="filtro-nome">FILTRA</span><span class="filtra-attivi"></span><span class="filtro-freccia" aria-hidden="true"></span></button><span class="contatore filtra-conto"></span></div>' +
+      '<div class="filtri-voci">' + filtri.map(function (f) {
       var opz = f[2].map(function (v) { return '<li role="option" data-v="' + esc(v.toLowerCase()) + '">' + esc(v) + '</li>'; }).join('');
       var testi = f[2].map(function (v) { return '<span data-v="' + esc(v.toLowerCase()) + '">' + esc(v) + '</span>'; }).join('');
       return '<div class="filtro" data-filtro="' + f[0] + '"><button type="button" class="filtro-voce" aria-haspopup="listbox" aria-expanded="false">' +
         '<span class="filtro-nome">' + maiuscolo(f[1]) + '</span><span class="filtro-valore"><span class="visibile" data-v="">Tutti</span>' + testi + '</span><span class="filtro-freccia" aria-hidden="true"></span></button>' +
         '<ul class="filtro-menu" role="listbox" hidden><li role="option" data-v="" aria-selected="true">Tutti</li>' + opz + '</ul></div>';
     }).join('') + '</div><div class="filtri-esito" hidden><span class="contatore filtri-conto"></span><button type="button" class="link filtri-azzera">AZZERA</button></div></div>' : '') +
-      (lavori.length ? '<div class="lavori-griglia">' + lavori.map(scheda).join('') + '</div>' : '<p class="vuoto">Presto qui i nostri lavori.</p>') +
+      (lavori.length ? '<div class="lavori-griglia">' + lavori.map(scheda).join('') + '</div>' +
+        '<p class="altri-lavori" hidden><span>Carico altri lavori…</span><span class="contatore altri-conto"></span></p>' : '<p class="vuoto">Presto qui i nostri lavori.</p>') +
       '<p class="vuoto filtri-nessuno" hidden>Nessun lavoro con questi filtri.</p>';
+    if (filtri.length) {
+      var foglio = document.createElement('div');
+      foglio.className = 'foglio';
+      foglio.id = 'foglio-filtri';
+      foglio.hidden = true;
+      foglio.setAttribute('role', 'dialog');
+      foglio.setAttribute('aria-modal', 'true');
+      foglio.setAttribute('aria-label', 'Filtra i lavori');
+      foglio.innerHTML = '<div class="foglio-velo"></div><div class="foglio-box">' +
+        '<div class="foglio-testa"><span class="etichetta">FILTRA</span><button type="button" class="link foglio-azzera">AZZERA</button></div>' +
+        filtri.map(function (f) {
+          return '<div class="foglio-gruppo" data-gruppo="' + f[0] + '"><p class="filtro-nome">' + maiuscolo(f[1]) + '</p><div class="scelte">' +
+            [''].concat(f[2]).map(function (v) { return '<button type="button" class="scelta-voce" data-v="' + esc(v.toLowerCase()) + '" aria-pressed="' + (v === '') + '">' + esc(v || 'Tutti') + '</button>'; }).join('') +
+            '</div></div>';
+        }).join('') +
+        '<button type="button" class="pillola grande foglio-mostra"><span class="foglio-mostra-testo"></span><i>&rarr;</i></button></div>';
+      document.body.appendChild(foglio);
+    }
   }
 
   // Un lavoro: solo le sue foto.
@@ -343,13 +366,34 @@
   /* ================================================= FOTO A SCHERMO INTERO */
 
   // Solo la foto, grande, con le frecce e la X: nessuna scritta.
+  // La foto dopo e quella prima si scaricano in anticipo; cambiando foto la
+  // nuova compare solo quando è pronta e sfuma sopra la vecchia: mai un
+  // lampo bianco in mezzo.
   var visore = $('#visore');
-  var vFoto = [], vI = 0;
-  function vMostra() {
-    var img = $('figure img', visore);
-    img.style.opacity = 0;
-    img.onload = function () { img.style.opacity = 1; };
-    img.src = vFoto[vI];
+  var vFoto = [], vI = 0, vGiro = 0, vPronte = {};
+  function vPrepara(k) {
+    var u = vFoto[(k + vFoto.length) % vFoto.length];
+    if (!u || vPronte[u]) return;
+    vPronte[u] = new Image();
+    vPronte[u].decoding = 'async';
+    vPronte[u].src = u;
+  }
+  function vMostra(subito) {
+    var livelli = $$('figure img', visore);
+    var sotto = livelli[0].classList.contains('su') ? livelli[1] : livelli[0];
+    var sopra = sotto === livelli[0] ? livelli[1] : livelli[0];
+    var giro = ++vGiro;
+    if (subito) sopra.classList.remove('su');
+    var mostra = function () {
+      if (giro !== vGiro) return; // nel frattempo si è passati a un'altra foto
+      sotto.classList.add('su');
+      sopra.classList.remove('su');
+    };
+    sotto.onload = mostra;
+    sotto.onerror = mostra;
+    sotto.src = vFoto[vI];
+    if (sotto.complete && sotto.naturalWidth) mostra();
+    if (vFoto.length > 1) { vPrepara(vI + 1); vPrepara(vI - 1); }
     $$('.visore-prec, .visore-succ', visore).forEach(function (b) { b.hidden = vFoto.length < 2; });
   }
   var vDa = null;
@@ -358,7 +402,7 @@
     vDa = document.activeElement;
     visore.hidden = false;
     document.body.style.overflow = 'hidden';
-    vMostra();
+    vMostra(true);
     $('.visore-chiudi', visore).focus();
     // Il tasto indietro del telefono chiude la foto invece di lasciare la pagina.
     history.pushState({ s54: 'visore' }, '');
@@ -463,26 +507,120 @@
     else orizzontale.addListener(girato);
   });
 
+  /* ================================================ PAGINA LAVORI: ELENCO */
+
+  // I lavori si mostrano a blocchi di 12: i successivi compaiono scorrendo,
+  // così con tanti lavori la pagina non scarica subito tutte le copertine.
+  var BLOCCO = 12;
+  $$('[data-lavori]').forEach(function (pag) {
+    var schede = $$('.scheda-lavoro', pag);
+    var scelte = {};
+    var limite = 'IntersectionObserver' in window ? BLOCCO : Infinity;
+    var altri = $('.altri-lavori', pag), nessuno = $('.filtri-nessuno', pag);
+    var box = $('[data-filtri]', pag), foglio = $('#foglio-filtri');
+    var trovate = 0;
+
+    function aggiorna(daFiltro) {
+      trovate = 0;
+      schede.forEach(function (w) {
+        var ok = Object.keys(scelte).every(function (k) { return !scelte[k] || w.getAttribute('data-' + k) === scelte[k]; });
+        if (ok) trovate++;
+        w.hidden = !ok || trovate > limite;
+        // Scegliendo un filtro le schede compaiono subito, senza attendere lo scorrimento.
+        if (daFiltro && !w.hidden) w.classList.add('visto');
+      });
+      if (altri) {
+        altri.hidden = trovate <= limite;
+        $('.altri-conto', altri).textContent = Math.min(limite, trovate) + ' DI ' + trovate;
+      }
+      if (nessuno) nessuno.hidden = trovate > 0 || !schede.length;
+      if (!box) return;
+      var attivi = Object.keys(scelte).filter(function (k) { return scelte[k]; }).length;
+      $('.filtri-esito', box).hidden = !attivi;
+      $('.filtri-conto', box).textContent = due(trovate) + (trovate === 1 ? ' TROVATO' : ' TROVATI');
+      $('.filtra-attivi', box).textContent = attivi ? ' · ' + attivi + (attivi === 1 ? ' ATTIVO' : ' ATTIVI') : '';
+      $('.filtra', box).classList.toggle('attivo', attivi > 0);
+      $('.filtra-conto', box).textContent = due(trovate) + (trovate === 1 ? ' LAVORO' : ' LAVORI');
+      if (foglio) $('.foglio-mostra-testo', foglio).textContent = trovate ? 'MOSTRA ' + trovate + (trovate === 1 ? ' LAVORO' : ' LAVORI') : 'NESSUN LAVORO';
+    }
+
+    // Arrivati in fondo (o quasi) si aggiunge un blocco; se lo schermo è così
+    // alto che il fondo resta in vista, se ne aggiunge un altro.
+    function forseAltri() {
+      if (!altri || altri.hidden || altri.getBoundingClientRect().top > window.innerHeight + 600) return;
+      limite += BLOCCO;
+      aggiorna(false);
+      requestAnimationFrame(forseAltri);
+    }
+    if (altri && limite !== Infinity) {
+      new IntersectionObserver(function (v) { if (v[0].isIntersecting) forseAltri(); }, { rootMargin: '600px 0px' }).observe(altri);
+    }
+
+    /** Una scelta di filtro, dal menu (computer) o dal foglio (telefono). */
+    function scegli(id, v) {
+      scelte[id] = v;
+      if (box) {
+        var f = $('.filtro[data-filtro="' + id + '"]', box);
+        f.classList.toggle('attivo', !!v);
+        $$('.filtro-valore span', f).forEach(function (s) { s.classList.toggle('visibile', s.getAttribute('data-v') === v); });
+        $$('li', f).forEach(function (li) { li.setAttribute('aria-selected', li.getAttribute('data-v') === v ? 'true' : 'false'); });
+      }
+      if (foglio) $$('[data-gruppo="' + id + '"] .scelta-voce', foglio).forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-v') === v ? 'true' : 'false'); });
+      limite = limite === Infinity ? Infinity : BLOCCO;
+      aggiorna(true);
+    }
+    var azzera = function () { Object.keys(scelte).forEach(function (k) { scegli(k, ''); }); };
+    pag.s54Scegli = scegli;
+    pag.s54Azzera = azzera;
+    aggiorna(false);
+
+    /* Il foglio delle scelte sul telefono. */
+    if (box && foglio) {
+      var apri = $('.filtra', box);
+      var mostraFoglio = function (si, daStoria) {
+        if (si === !foglio.hidden && !foglio.classList.contains('via')) return;
+        if (si) {
+          foglio.hidden = false;
+          foglio.classList.remove('via');
+          document.body.style.overflow = 'hidden';
+          ($('.scelta-voce[aria-pressed="true"]', foglio) || $('.foglio-mostra', foglio)).focus({ preventScroll: true });
+          // Il tasto indietro del telefono chiude il foglio invece di lasciare la pagina.
+          if (!daStoria) history.pushState({ s54: 'foglio' }, '');
+        } else {
+          foglio.classList.add('via');
+          setTimeout(function () { if (foglio.classList.contains('via')) { foglio.hidden = true; foglio.classList.remove('via'); } }, 300);
+          document.body.style.overflow = '';
+          apri.focus({ preventScroll: true });
+          if (!daStoria && history.state && history.state.s54 === 'foglio') history.back();
+        }
+        apri.setAttribute('aria-expanded', si ? 'true' : 'false');
+      };
+      apri.addEventListener('click', function () { mostraFoglio(true); });
+      $('.foglio-velo', foglio).addEventListener('click', function () { mostraFoglio(false); });
+      $('.foglio-azzera', foglio).addEventListener('click', azzera);
+      $$('.scelta-voce', foglio).forEach(function (b) {
+        b.addEventListener('click', function () { scegli(b.closest('[data-gruppo]').getAttribute('data-gruppo'), b.getAttribute('data-v')); });
+      });
+      $('.foglio-mostra', foglio).addEventListener('click', function () {
+        mostraFoglio(false);
+        // Si torna all'inizio dell'elenco, se lo si era già passato.
+        var y = pag.getBoundingClientRect().top + window.scrollY - barra.offsetHeight;
+        if (window.scrollY > y) window.scrollTo({ top: y, behavior: 'smooth' });
+      });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !foglio.hidden) mostraFoglio(false); });
+      window.addEventListener('popstate', function () { if (!foglio.hidden) mostraFoglio(false, true); });
+      window.addEventListener('pageshow', function (e) { if (e.persisted && !foglio.hidden) mostraFoglio(false, true); });
+      // Girando il telefono (o allargando la finestra) il foglio non serve più.
+      var telefono = window.matchMedia('(max-width: 599px)');
+      var cambia = function () { if (!telefono.matches && !foglio.hidden) mostraFoglio(false); };
+      if (telefono.addEventListener) telefono.addEventListener('change', cambia); else telefono.addListener(cambia);
+    }
+  });
+
   /* ======================================================== FILTRI LAVORI */
 
   $$('[data-filtri]').forEach(function (box) {
-    var scelte = {};
-    var lavori = $$('.scheda-lavoro');
-    var esito = $('.filtri-esito', box);
-    var nessuno = $('.filtri-nessuno');
-
-    function applica() {
-      var visibili = 0;
-      lavori.forEach(function (w) {
-        var ok = Object.keys(scelte).every(function (k) { return !scelte[k] || w.getAttribute('data-' + k) === scelte[k]; });
-        w.hidden = !ok;
-        if (ok) { visibili++; w.classList.add('visto'); }
-      });
-      var attivi = Object.keys(scelte).some(function (k) { return scelte[k]; });
-      esito.hidden = !attivi;
-      $('.filtri-conto', box).textContent = due(visibili) + (visibili === 1 ? ' TROVATO' : ' TROVATI');
-      if (nessuno) nessuno.hidden = visibili > 0;
-    }
+    var pag = box.closest('[data-lavori]');
     function chiudiTutti(tranne) {
       $$('.filtro', box).forEach(function (f) {
         if (f === tranne) return;
@@ -494,13 +632,9 @@
       var id = f.getAttribute('data-filtro');
       var voce = $('.filtro-voce', f), lista = $('.filtro-menu', f);
       function scegli(v) {
-        scelte[id] = v;
-        f.classList.toggle('attivo', !!v);
-        $$('.filtro-valore span', f).forEach(function (s) { s.classList.toggle('visibile', s.getAttribute('data-v') === v); });
-        $$('li', lista).forEach(function (li) { li.setAttribute('aria-selected', li.getAttribute('data-v') === v ? 'true' : 'false'); });
+        pag.s54Scegli(id, v);
         lista.hidden = true;
         voce.setAttribute('aria-expanded', 'false');
-        applica();
       }
       f.scegli = scegli;
       voce.addEventListener('click', function (e) {
@@ -523,7 +657,7 @@
       });
     });
     document.addEventListener('click', function () { chiudiTutti(null); });
-    $('.filtri-azzera', box).addEventListener('click', function () { $$('.filtro', box).forEach(function (f) { f.scegli(''); }); });
+    $('.filtri-azzera', box).addEventListener('click', pag.s54Azzera);
     // Con un filtro nell'indirizzo (es. ?evento=matrimonio) la scelta è già fatta.
     var qs = new URLSearchParams(location.search);
     $$('.filtro', box).forEach(function (f) {

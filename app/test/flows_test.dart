@@ -8,8 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:studio_fotografico/models/models.dart';
 import 'package:studio_fotografico/theme/app_theme.dart';
+import 'package:studio_fotografico/widgets/common.dart';
 import 'package:studio_fotografico/widgets/lightbox.dart';
+import 'package:studio_fotografico/widgets/photo_ui.dart';
 import 'package:studio_fotografico/widgets/sections.dart';
+import 'package:studio_fotografico/widgets/site_scaffold.dart';
 
 import 'support/harness.dart';
 
@@ -368,10 +371,21 @@ void main() {
       final s = await loadState();
       await pumpApp(tester, s, location: '/lavori', size: phone);
       expect(find.byType(WorkCard), findsNWidgets(10));
-      await tester.tap(find.byKey(const ValueKey('filtro-evento')));
+      // Sul telefono un solo "Filtra": le scelte si aprono dal basso.
+      expect(find.byKey(const ValueKey('filtro-evento')), findsNothing);
+      expect(find.text('10 LAVORI'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('filtra')));
       await settle(tester, 600);
+      expect(find.text('MOSTRA 10 LAVORI'), findsOneWidget);
       await tester.tap(find.text('Battesimo').last);
+      await settle(tester, 400);
+      expect(find.text('MOSTRA 1 LAVORO'), findsOneWidget);
+      await tester.tap(find.text('MOSTRA 1 LAVORO'));
       await settle(tester, 800);
+      expect(find.text('MOSTRA 1 LAVORO'), findsNothing);
+      expect(find.text('FILTRA'), findsOneWidget);
+      expect(find.text(' · 1 ATTIVO'), findsOneWidget);
+      expect(find.text('01 LAVORO'), findsOneWidget);
       expect(find.byType(WorkCard), findsOneWidget);
       await tester.tap(find.byType(WorkCard));
       await settle(tester, 1200);
@@ -385,6 +399,145 @@ void main() {
       await tester.tap(find.bySemanticsLabel('Chiudi').last);
       await settle(tester, 800);
       expect(find.byType(PhotoViewer), findsNothing);
+      await disposeApp(tester);
+    });
+
+    testWidgets('telefono: Azzera nel foglio toglie i filtri', (tester) async {
+      await pumpApp(
+        tester,
+        await loadState(),
+        location: '/lavori',
+        size: phone,
+      );
+      await tester.tap(find.byKey(const ValueKey('filtra')));
+      await settle(tester, 600);
+      await tester.tap(find.text('Battesimo').last);
+      await settle(tester, 400);
+      await tester.tap(find.text('AZZERA'));
+      await settle(tester, 400);
+      expect(find.text('MOSTRA 10 LAVORI'), findsOneWidget);
+      // Il tasto indietro chiude il foglio e resta sulla pagina.
+      await tester.binding.handlePopRoute();
+      await settle(tester, 800);
+      expect(find.text('MOSTRA 10 LAVORI'), findsNothing);
+      expect(find.byType(WorkCard), findsNWidgets(10));
+      await disposeApp(tester);
+    });
+
+    testWidgets('tablet: i filtri restano in riga, ognuno col suo menu', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        await loadState(),
+        location: '/lavori',
+        size: const Size(1180, 820),
+      );
+      expect(find.byKey(const ValueKey('filtra')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('filtro-evento')));
+      await settle(tester, 600);
+      await tester.tap(find.text('Battesimo').last);
+      await settle(tester, 800);
+      expect(find.byType(WorkCard), findsOneWidget);
+      await disposeApp(tester);
+    });
+
+    testWidgets('tanti lavori: 12 alla volta, gli altri scorrendo', (
+      tester,
+    ) async {
+      final s = await loadState();
+      final base = s.works;
+      s.works = [
+        for (var i = 0; i < 30; i++)
+          Work.fromJson({...base[i % base.length].toJson(), 'id': 'molti-$i'}),
+      ];
+      await pumpApp(tester, s, location: '/lavori', size: phone);
+      expect(find.byType(WorkCard), findsNWidgets(12));
+      expect(find.text('12 DI 30'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('24 DI 30'),
+        600,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.scrollUntilVisible(
+        find.byType(SiteFooter),
+        600,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await settle(tester, 400);
+      expect(find.byType(WorkCard), findsNWidgets(30));
+      expect(find.textContaining(' DI 30'), findsNothing);
+      await disposeApp(tester);
+    });
+  });
+
+  group('foto a schermo intero', () {
+    testWidgets('la foto dopo sfuma sopra la prima, che resta piena sotto', (
+      tester,
+    ) async {
+      setScreen(tester, phone);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PhotoViewer(
+            photos: const ['a.jpg', 'b.jpg', 'c.jpg'],
+            start: 0,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(InteractiveViewer), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Foto successiva'));
+      // I livelli del visore: uno per foto, ognuno con la sua dissolvenza.
+      final layers = find.byWidgetPredicate(
+        (w) => w is KeyedSubtree && w.key is ValueKey<int>,
+      );
+      // Il cambio arriva quando la foto nuova è pronta (al massimo 2,5 s).
+      for (var t = 0; t < 30 && layers.evaluate().length < 2; t++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      final fades = [
+        for (final w in tester.widgetList<KeyedSubtree>(layers))
+          w.child as FadeTransition,
+      ];
+      expect(fades.length, 2);
+      // A metà: la vecchia piena, la nuova a metà strada.
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(fades.first.opacity.value, 1);
+      expect(fades.last.opacity.value, inExclusiveRange(0, 1));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(InteractiveViewer), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 3));
+    });
+  });
+
+  group('telefono girato', () {
+    testWidgets('barra in alto e barra Avanti più basse', (tester) async {
+      await pumpApp(
+        tester,
+        await loadState(),
+        location: '/preventivo',
+        size: const Size(844, 390),
+      );
+      final avanti = find.ancestor(
+        of: find.text('AVANTI'),
+        matching: find.byType(PillButton),
+      );
+      expect(tester.getSize(avanti).height, 44);
+      expect(
+        tester.getSize(find.byType(BrandLogo).first).height,
+        closeTo(36.4, 0.5),
+      );
+      await disposeApp(tester);
+
+      // In verticale restano come prima.
+      await pumpApp(
+        tester,
+        await loadState(),
+        location: '/preventivo',
+        size: phone,
+      );
+      expect(tester.getSize(avanti).height, 50);
       await disposeApp(tester);
     });
   });

@@ -7,7 +7,7 @@
   <footer class="piede" data-piede></footer>
 
   <div class="visore" id="visore" hidden aria-modal="true" role="dialog" aria-label="Foto a schermo intero">
-    <figure><img alt=""></figure>
+    <figure><img alt=""><img alt=""></figure>
     <button class="tondo visore-chiudi" type="button" aria-label="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <button class="tondo visore-prec" type="button" aria-label="Foto precedente"><svg viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg></button>
     <button class="tondo visore-succ" type="button" aria-label="Foto successiva"><svg viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg></button>

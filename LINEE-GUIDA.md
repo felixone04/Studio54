@@ -74,6 +74,8 @@ Il certificato HTTPS lo fanno Cloudflare e Hostinger in automatico. In Cloudflar
   - `studio54.it/lavori` invece di `lavori.php`;
   - un indirizzo inesistente mostra la pagina 404.
 - L'anteprima su GitHub Pages resta come area di prova: lì le pagine sono convertite in HTML statico, con i dati d'esempio.
+- **Anteprima dei link.** Condividendo un lavoro (WhatsApp, Facebook, Telegram...) compaiono la sua copertina e il nome. La prepara `lavoro.php` sul server, quindi funziona solo su Hostinger: su GitHub Pages c'è un solo `lavoro.html` per tutti i lavori e l'anteprima è quella generale dello studio. Servono foto con un indirizzo web (R2): una foto incorporata nei dati non si può mostrare fuori dal sito.
+- **Caratteri.** Josefin Sans e Jost stanno in `assets/fonts/` e partono dal nostro server, non da Google: i visitatori non contattano nessun altro (privacy, GDPR) e la pagina si apre prima.
 
 **Pubblicare il sito:** da GitHub una procedura automatica copia i file su Hostinger (via FTP o SSH) a ogni modifica approvata. In alternativa si caricano a mano dal File Manager di Hostinger.
 

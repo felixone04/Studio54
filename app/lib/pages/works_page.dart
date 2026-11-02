@@ -73,9 +73,27 @@ class WorksPage extends StatefulWidget {
   State<WorksPage> createState() => _WorksPageState();
 }
 
+/// I lavori si mostrano 12 alla volta; gli altri arrivano scorrendo.
+const _batch = 12;
+
 class _WorksPageState extends State<WorksPage> {
   /// Valore scelto per ogni criterio (assente = tutti).
   final _selected = <String, String>{};
+  int _limit = _batch;
+
+  void _select(String id, String? v) => setState(() {
+    if (v == null) {
+      _selected.remove(id);
+    } else {
+      _selected[id] = v;
+    }
+    _limit = _batch;
+  });
+
+  void _clear() => setState(() {
+    _selected.clear();
+    _limit = _batch;
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -108,13 +126,16 @@ class _WorksPageState extends State<WorksPage> {
       return vals.any((e) => _key(e) == _key(v)) ? v : null;
     }
 
-    final works = all.where((w) {
+    /// I lavori che rispondono alle scelte (id del criterio → valore).
+    List<Work> matching(Map<String, String?> sel) => all.where((w) {
       for (final f in _facets) {
-        final v = chosen(f);
+        final v = sel[f.id];
         if (v != null && _key(f.read(w)) != _key(v)) return false;
       }
       return true;
     }).toList();
+
+    final works = matching({for (final f in _facets) f.id: chosen(f)});
     final filtering = _facets.any((f) => chosen(f) != null);
 
     return SiteScaffold(
@@ -132,14 +153,9 @@ class _WorksPageState extends State<WorksPage> {
               ],
               shown: works.length,
               filtering: filtering,
-              onSelect: (id, v) => setState(() {
-                if (v == null) {
-                  _selected.remove(id);
-                } else {
-                  _selected[id] = v;
-                }
-              }),
-              onClear: () => setState(_selected.clear),
+              count: (sel) => matching(sel).length,
+              onSelect: _select,
+              onClear: _clear,
             ),
           ),
         _Wrap(
@@ -155,7 +171,15 @@ class _WorksPageState extends State<WorksPage> {
                     style: display(22, color: Palette.stone, italic: true),
                   ),
                 )
-              : WorkList(works: works),
+              : WorkList(
+                  works: works,
+                  limit: _limit,
+                  onMore: () {
+                    if (mounted && _limit < works.length) {
+                      setState(() => _limit += _batch);
+                    }
+                  },
+                ),
         ),
       ],
     );
@@ -169,6 +193,7 @@ class _Filters extends StatelessWidget {
     required this.groups,
     required this.shown,
     required this.filtering,
+    required this.count,
     required this.onSelect,
     required this.onClear,
   });
@@ -177,11 +202,70 @@ class _Filters extends StatelessWidget {
   final List<(String, String, List<String>, String?)> groups;
   final int shown;
   final bool filtering;
+
+  /// Quanti lavori con queste scelte (per il foglio sul telefono).
+  final int Function(Map<String, String?>) count;
   final void Function(String id, String? value) onSelect;
   final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
+    // Telefono: una riga sola, "Filtra" e quanti lavori; le scelte si
+    // aprono dal basso. Così il primo lavoro sale subito sotto.
+    if (context.isPhone) {
+      final active = groups.where((g) => g.$4 != null).length;
+      return Container(
+        padding: const EdgeInsets.only(bottom: 4),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Palette.line)),
+        ),
+        child: Row(
+          children: [
+            Semantics(
+              button: true,
+              label: 'Filtra',
+              excludeSemantics: true,
+              child: GestureDetector(
+                key: const ValueKey('filtra'),
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _FilterSheet.open(
+                  context,
+                  groups: groups,
+                  count: count,
+                  onSelect: onSelect,
+                  onClear: onClear,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('FILTRA', style: label(11.5)),
+                      if (active > 0)
+                        Text(
+                          ' · $active ${active == 1 ? 'ATTIVO' : 'ATTIVI'}',
+                          style: label(11.5),
+                        ),
+                      const SizedBox(width: 6),
+                      LineIcon(
+                        Ico.expandMore,
+                        size: 18,
+                        color: active > 0 ? Palette.ink : Palette.ash,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${_two(shown)} ${shown == 1 ? 'LAVORO' : 'LAVORI'}',
+              style: cameraText(10.5),
+            ),
+          ],
+        ),
+      );
+    }
     final menus = Wrap(
       spacing: context.fluid(22, 44),
       runSpacing: context.isPhone ? 0 : 12,
@@ -209,20 +293,127 @@ class _Filters extends StatelessWidget {
             ],
           )
         : null;
-    if (context.isPhone) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          menus,
-          if (result != null) ...[const SizedBox(height: 10), result],
-        ],
-      );
-    }
     return Row(
       children: [
         Expanded(child: menus),
         ?result,
       ],
+    );
+  }
+}
+
+/// Il foglio delle scelte sul telefono: sale dal basso, ogni criterio con le
+/// sue voci a pillola. Ogni tocco filtra subito; il bottone in fondo dice
+/// quanti lavori restano e chiude.
+class _FilterSheet extends StatefulWidget {
+  const _FilterSheet({
+    required this.groups,
+    required this.count,
+    required this.onSelect,
+    required this.onClear,
+  });
+  final List<(String, String, List<String>, String?)> groups;
+  final int Function(Map<String, String?>) count;
+  final void Function(String id, String? value) onSelect;
+  final VoidCallback onClear;
+
+  static Future<void> open(
+    BuildContext context, {
+    required List<(String, String, List<String>, String?)> groups,
+    required int Function(Map<String, String?>) count,
+    required void Function(String id, String? value) onSelect,
+    required VoidCallback onClear,
+  }) => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Palette.paper,
+    barrierColor: const Color(0x591E1B17),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+    ),
+    builder: (_) => _FilterSheet(
+      groups: groups,
+      count: count,
+      onSelect: onSelect,
+      onClear: onClear,
+    ),
+  );
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  late final _sel = <String, String?>{
+    for (final g in widget.groups) g.$1: g.$4,
+  };
+
+  void _pick(String id, String? v) {
+    setState(() => _sel[id] = v);
+    widget.onSelect(id, v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final n = widget.count(_sel);
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(context.gutter, 16, context.gutter, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Text('FILTRA', style: label(11, color: Palette.stone)),
+                const Spacer(),
+                HoverLink(
+                  'AZZERA',
+                  style: label(10.5, color: Palette.stone),
+                  onTap: () {
+                    setState(() => _sel.updateAll((_, _) => null));
+                    widget.onClear();
+                  },
+                ),
+              ],
+            ),
+            for (final (id, title, values, _) in widget.groups) ...[
+              const SizedBox(height: 18),
+              Text(title.toUpperCase(), style: label(11, color: Palette.stone)),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoicePill(
+                    'Tutti',
+                    selected: _sel[id] == null,
+                    onTap: () => _pick(id, null),
+                  ),
+                  for (final v in values)
+                    ChoicePill(
+                      v,
+                      selected: _sel[id] != null && _key(_sel[id]!) == _key(v),
+                      onTap: () => _pick(id, v),
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 24),
+            PillButton(
+              n == 0
+                  ? 'Nessun lavoro'
+                  : 'Mostra $n ${n == 1 ? 'lavoro' : 'lavori'}',
+              expand: true,
+              big: true,
+              icon: Ico.arrowRight,
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

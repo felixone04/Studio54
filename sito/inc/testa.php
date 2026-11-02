@@ -5,6 +5,21 @@
 $c = contenuti();
 $nome = $c['studioName'] ?? 'Studio 54';
 $titolo_pagina = isset($titolo) && $titolo !== '' ? $titolo . ' · ' . $nome : $nome . ' · ' . ($c['tagline'] ?? '');
+$descrizione = $nome . ' · Fotografia di matrimoni ed eventi. Guardate i nostri lavori e chiedeteci informazioni.';
+
+// Anteprima del link quando lo si condivide (WhatsApp, Facebook, Telegram...):
+// la pagina di un lavoro la prepara con copertina e nome (lavoro.php), le
+// altre mostrano una foto del carosello. Solo foto con un indirizzo web:
+// quelle caricate dentro i dati non si possono mostrare fuori dal sito.
+$anteprima = ($anteprima ?? []) + ['titolo' => $titolo_pagina, 'testo' => $descrizione, 'foto' => ''];
+if ($anteprima['foto'] === '') {
+    foreach (array_merge(dati()['carouselSite'] ?? [], array_map(fn ($w) => ['url' => copertina($w)], lavori_sito())) as $f) {
+        if (($f['active'] ?? true) !== false && preg_match('#^https?://#', (string) ($f['url'] ?? ''))) { $anteprima['foto'] = $f['url']; break; }
+    }
+}
+$anteprima['foto'] = preg_match('#^https?://#', $anteprima['foto']) ? foto_larga($anteprima['foto'], 1200) : '';
+$indirizzo = indirizzo_pagina();
+
 $voci = [
     ['Home', 'index'],
     ['Lavori', 'lavori'],
@@ -17,15 +32,23 @@ $voci = [
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= e($titolo_pagina) ?></title>
-  <meta name="description" content="<?= e($nome) ?> · Fotografia di matrimoni ed eventi. Guardate i nostri lavori e chiedeteci informazioni.">
-  <meta name="theme-color" content="#FFFFFF">
+  <meta name="description" content="<?= e($descrizione) ?>">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="<?= e($nome) ?>">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:title" content="<?= e($anteprima['titolo']) ?>">
+  <meta property="og:description" content="<?= e($anteprima['testo']) ?>">
+  <?php if ($indirizzo !== ''): ?><meta property="og:url" content="<?= e($indirizzo) ?>">
+  <?php endif; ?><?php if ($anteprima['foto'] !== ''): ?><meta property="og:image" content="<?= e($anteprima['foto']) ?>">
+  <meta name="twitter:card" content="summary_large_image">
+  <?php endif; ?><meta name="theme-color" content="#FFFFFF">
   <meta name="color-scheme" content="light only">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
   <link rel="apple-touch-icon" href="assets/img/icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://images.unsplash.com">
-  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="preload" href="assets/fonts/josefin-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/jost-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="<?= e(risorsa('assets/css/caratteri.css')) ?>">
   <link rel="stylesheet" href="<?= e(risorsa('assets/css/sito.css')) ?>">
   <script>
     // Il logo d'apertura si vede entrando nel sito (o ricaricando la pagina);

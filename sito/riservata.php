@@ -18,9 +18,8 @@ $c = contenuti();
   <meta name="theme-color" content="#FFFFFF">
   <meta name="color-scheme" content="light only">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,600;1,300&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preload" href="assets/fonts/jost-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="<?= e(risorsa('assets/css/caratteri.css')) ?>">
   <link rel="stylesheet" href="<?= e(risorsa('assets/css/riservata.css')) ?>">
 </head>
 <body>

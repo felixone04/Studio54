@@ -155,6 +155,32 @@ class PhotoImage extends StatelessWidget {
   /// ridimensionamento della finestra.
   static const _steps = [480, 800, 1200, 1600, 2000, 2600];
 
+  /// La stessa immagine che mostrerebbe un PhotoImage largo [width]: serve
+  /// per scaricarla in anticipo (precacheImage). Null se non c'è niente.
+  static ImageProvider? providerFor(
+    BuildContext context,
+    String url,
+    double width,
+  ) {
+    if (url.trim().isEmpty) return null;
+    if (url.startsWith('data:')) {
+      final bytes = _decode(url);
+      return bytes == null ? null : MemoryImage(bytes);
+    }
+    var src = url;
+    if (url.contains('images.unsplash.com')) {
+      final px = width * MediaQuery.devicePixelRatioOf(context);
+      src = _withWidth(
+        url,
+        _steps.firstWhere((s) => s >= px, orElse: () => _steps.last),
+      );
+    }
+    return NetworkImage(
+      src,
+      webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
+    );
+  }
+
   /// Fa riprovare le foto rimaste senza connessione.
   static void reloadAll() => _reload.value++;
   static final _reload = ValueNotifier<int>(0);
@@ -335,6 +361,60 @@ class Tag extends StatelessWidget {
 
 // ----------------------------------------------------------------- bottoni
 
+/// Una voce da toccare, a pillola come sul sito.
+class ChoicePill extends StatelessWidget {
+  const ChoicePill(
+    this.text, {
+    super.key,
+    required this.selected,
+    required this.onTap,
+  });
+  final String text;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    child: GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+        decoration: BoxDecoration(
+          color: selected ? Palette.ink : Palette.paper,
+          borderRadius: BorderRadius.circular(40),
+          border: Border.all(
+            color: selected ? Palette.ink : Palette.lineStrong,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              const LineIcon(Ico.check, size: 16, color: Palette.paper),
+              const SizedBox(width: 6),
+            ],
+            // Una voce molto lunga va a capo invece di uscire dallo schermo.
+            Flexible(
+              child: Text(
+                text,
+                style: body(
+                  14,
+                  weight: FontWeight.w500,
+                  color: selected ? Palette.paper : Palette.ink,
+                  height: 1.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 /// Bottone a pillola con freccia che ruota al passaggio del mouse.
 class PillButton extends StatefulWidget {
   const PillButton(
@@ -346,11 +426,15 @@ class PillButton extends StatefulWidget {
     this.loading = false,
     this.icon = Ico.arrowOutward,
     this.expand = false,
+    this.compact = false,
   });
   final String text;
   final VoidCallback? onTap;
   final bool filled;
   final bool big;
+
+  /// Più bassa (44, l'altezza minima da toccare): telefono girato.
+  final bool compact;
   final bool loading;
   final Ico icon;
 
@@ -377,7 +461,7 @@ class _PillButtonState extends State<PillButton> {
       fg = _hover ? Palette.paper : base;
     }
     final enabled = widget.onTap != null && !widget.loading;
-    final h = widget.big ? 64.0 : 50.0;
+    final h = widget.compact ? 44.0 : (widget.big ? 64.0 : 50.0);
     return Semantics(
       button: true,
       label: widget.text,

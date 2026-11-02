@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'line_icons.dart';
 
 import 'package:go_router/go_router.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import '../models/models.dart';
 import '../theme/app_theme.dart';
 import 'common.dart';
+import 'photo_ui.dart' show cameraText;
 
 // ============================================================ animazioni
 
@@ -343,25 +345,65 @@ class WorkCard extends StatelessWidget {
 /// I lavori come sul sito: uno per riga sul telefono in verticale, due per
 /// riga sugli schermi più larghi (telefono girato, tablet), a tutta larghezza.
 class WorkList extends StatelessWidget {
-  const WorkList({super.key, required this.works});
+  const WorkList({super.key, required this.works, this.limit, this.onMore});
   final List<Work> works;
+
+  /// Quanti mostrarne (null = tutti): con tanti lavori si mostrano a blocchi,
+  /// così non si scaricano subito tutte le copertine.
+  final int? limit;
+
+  /// Chiamato quando si arriva in fondo e ce ne sono altri da mostrare.
+  final VoidCallback? onMore;
 
   @override
   Widget build(BuildContext context) {
+    final shown = limit == null || works.length <= limit!
+        ? works
+        : works.take(limit!).toList();
     return LayoutBuilder(
       builder: (context, box) {
         final cols = box.maxWidth >= 600 ? 2 : 1;
         final gap = context.fluid(20, 44);
         final w = (box.maxWidth - gap * (cols - 1)) / cols;
-        return Wrap(
+        final list = Wrap(
           spacing: gap,
           runSpacing: context.fluid(44, 72),
           children: [
-            for (final work in works)
+            for (final work in shown)
               SizedBox(
                 width: w,
                 child: Reveal(child: WorkCard(work: work)),
               ),
+          ],
+        );
+        if (shown.length == works.length) return list;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            list,
+            // Appena si vede il fondo arriva il blocco successivo.
+            VisibilityDetector(
+              key: ValueKey('altri-lavori-${shown.length}'),
+              onVisibilityChanged: (info) {
+                if (info.visibleFraction > 0) onMore?.call();
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(top: 48),
+                child: Column(
+                  children: [
+                    Text(
+                      'Carico altri lavori…',
+                      style: display(16, color: Palette.stone, italic: true),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${shown.length} DI ${works.length}',
+                      style: cameraText(10.5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         );
       },

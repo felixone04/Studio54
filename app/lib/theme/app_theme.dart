@@ -285,8 +285,12 @@ extension Responsive on BuildContext {
   double get spaceBlock => fluid(26, 44);
   double get spaceSection => fluid(56, 120);
 
+  /// Telefono girato: lo schermo è basso, barre e spazi si stringono per
+  /// lasciare posto a foto e moduli (come sul sito).
+  bool get isShort => h < 500 && w > h;
+
   /// Altezza della barra di navigazione (con il logo in alto a sinistra).
-  double get navH => fluid(72, 100);
+  double get navH => isShort ? 52 : fluid(72, 100);
 }
 
 /// Sui display più larghi di [designMaxWidth] (TV, monitor 4K) ingrandisce
