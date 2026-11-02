@@ -314,7 +314,9 @@ main { flex: 1; padding-top: var(--barra); }
   .filtra-riga { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: calc(12 * var(--px)); padding-bottom: calc(10 * var(--px)); border-bottom: calc(1 * var(--px)) solid var(--linea); }
   .filtra { display: inline-flex; align-items: center; gap: calc(10 * var(--px)); min-height: calc(44 * var(--px)); }
   .filtra .filtro-nome, .filtra-attivi { font: 600 calc(11.5 * var(--px))/1 var(--display); letter-spacing: .24em; color: var(--inchiostro); }
+  .filtra .filtro-nome { width: auto; }
   .filtra-attivi { margin-left: calc(-4 * var(--px)); }
+  .filtra-attivi:empty { display: none; }
   .filtra.attivo .filtro-freccia { border-color: var(--inchiostro); }
 }
 .foglio { position: fixed; inset: 0; z-index: 50; }
